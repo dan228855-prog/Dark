@@ -1,0 +1,24 @@
+# Unreal Engine — генерируемое, в git не нужно
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Плагины: собранное тоже не храним
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# Исходники скачанных ассетов (архивы, raw-файлы до импорта) — держать вне репозитория
+/RawAssets/
+*.zip
+*.rar
+*.7z
