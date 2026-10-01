@@ -1,0 +1,94 @@
+// InteractionComponent.cpp
+#include "InteractionComponent.h"
+#include "Interactable.h"
+#include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
+
+UInteractionComponent::UInteractionComponent()
+{
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickInterval = 0.1f; // 10 раз/сек достаточно для проверки прицела
+}
+
+void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// Чисто локальная косметика для HUD - на сервере/чужих клиентах не считаем.
+	FocusedActor = FindInteractableInView();
+}
+
+AActor* UInteractionComponent::FindInteractableInView() const
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	APawn* OwnerPawn = Cast<APawn>(Owner);
+	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled())
+	{
+		return nullptr; // трейсим только на локальном клиенте владельца
+	}
+
+	FVector ViewLocation;
+	FRotator ViewRotation;
+	OwnerPawn->GetActorEyesViewPoint(ViewLocation, ViewRotation);
+
+	const FVector TraceEnd = ViewLocation + ViewRotation.Vector() * InteractionRange;
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(Owner);
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, ViewLocation, TraceEnd, ECC_Visibility, Params))
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (HitActor && HitActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+		{
+			if (IInteractable::Execute_CanInteract(HitActor, Owner))
+			{
+				return HitActor;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+void UInteractionComponent::TryInteract()
+{
+	if (FocusedActor)
+	{
+		Server_Interact(FocusedActor);
+	}
+}
+
+bool UInteractionComponent::Server_Interact_Validate(AActor* TargetActor)
+{
+	// Подробная проверка - в Implementation. Здесь только базовая защита от мусора.
+	return true;
+}
+
+void UInteractionComponent::Server_Interact_Implementation(AActor* TargetActor)
+{
+	if (!TargetActor || !TargetActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+	{
+		return;
+	}
+
+	AActor* Owner = GetOwner();
+
+	// Сервер никогда не доверяет FocusedActor клиента - перепроверяем дистанцию сами.
+	const float DistSq = FVector::DistSquared(Owner->GetActorLocation(), TargetActor->GetActorLocation());
+	if (DistSq > FMath::Square(InteractionRange * 1.5f)) // небольшой запас на задержку сети
+	{
+		return;
+	}
+
+	if (IInteractable::Execute_CanInteract(TargetActor, Owner))
+	{
+		IInteractable::Execute_OnInteract(TargetActor, Owner);
+	}
+}

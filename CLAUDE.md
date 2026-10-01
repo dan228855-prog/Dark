@@ -26,14 +26,15 @@
 - **Первая аномалия (срез)**: физическая — объект/пространство ведёт себя неправильно (левитация, искажённая геометрия).
 - **Подача сюжетных сцен**: без катсцен, без потери контроля — события происходят вокруг игрока, пока он свободно двигается/смотрит.
 
-## Что уже написано (перенести файлы в Source/DARK/Public и /Private)
+## Что уже написано (лежит в Source/DARK/, модуль плоский, без Public/Private)
 - `IInteractable` — интерфейс взаимодействия: `CanInteract`, `OnInteract` (только сервер), `GetInteractionPrompt`.
 - `UInteractionComponent` — компонент на игроке: трейс взгляда на локальном клиенте, `Server_Interact` RPC с полной ревалидацией дистанции на сервере (клиенту не доверяем).
 - `AInteractableDoor` — дверь: реплицируемый `bIsOpen`, `bIsLocked` для будущих загадок с ключом/кодом.
 - `ACarryableItem` — переносимый предмет: реплицируемый `CurrentHolder`, привязка к сокету руки, `ForceDrop()` под сценарий потери сознания.
 - `ADarcGameMode` / `ADarcGameState` (`EMissionPhase`: Preparation/InProgress/Completed/Failed) / `ADarcPlayerState` (`bIsAlive`, `DeathCount`).
 - Везде оставлены точки расширения `BlueprintNativeEvent`/`BlueprintImplementableEvent` — контентная настройка (анимация, звук, конкретный текст) делается в Blueprint, не хардкодится в C++.
-- Важно: везде стоит заглушка `YOURPROJECT_API` — заменить на `DARK_API`.
+- Макрос экспорта — `DARK_API` (реальное имя модуля проекта, уже подставлено во всех файлах).
+- Обрати внимание: в модуле уже есть сгенерённые шаблоном классы `ADARKGameMode`, `ADARKCharacter`, `ADARKPlayerController`, `ADARKCameraManager` (из стартового UE-темплейта Horror/Shooter variant) — наши классы называются иначе (`ADarcGameMode` и т.д.) и не конфликтуют, но при выборе GameMode по умолчанию для уровней смотри, какой из них реально выставлен в Project Settings / World Settings.
 
 ## Что дальше (по приоритету)
 1. **Первый выезд полностью спроектирован** — см. `docs/DARC_vyezd_1_design.md` ("Плановое списание"). Использовать как конкретный сценарий при написании Task System, не абстрактно.
