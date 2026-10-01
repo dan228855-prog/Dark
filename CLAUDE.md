@@ -37,7 +37,8 @@
 - Обрати внимание: в модуле уже есть сгенерённые шаблоном классы `ADARKGameMode`, `ADARKCharacter`, `ADARKPlayerController`, `ADARKCameraManager` (из стартового UE-темплейта Horror/Shooter variant) — наши классы называются иначе (`ADarcGameMode` и т.д.) и не конфликтуют, но при выборе GameMode по умолчанию для уровней смотри, какой из них реально выставлен в Project Settings / World Settings.
 
 - WorldMemory (`UDarcWorldMemorySubsystem`, GameInstanceSubsystem), RareEventManager (`URareEventManagerComponent` на GameState, таблица `FDarcRareEventRow`, якоря `ADarcRareEventAnchor`), Task System (`UTaskManagerComponent` на GameState, ассет выезда `UDarcMissionDefinition`), комнаты `ADarcRoomVolume`. Написаны по ТЗ, но ещё не компилировались — настройка в редакторе и чеклист проверки в `docs/SYSTEMS_setup.md`.
-- Электросистема: `UDarcPowerSubsystem`, `ADarcFuseBox`, `ADarcFuseItem`, `ADarcGenerator`, `ADarcPowerInlet`, `UDarcPowerConsumerComponent` (тоже ещё не компилировалась).
+- Электросистема: `UDarcPowerSubsystem`, `ADarcFuseBox`, `ADarcFuseItem`, `ADarcGenerator` (наследник `ADarcHeavyObject`), `ADarcPowerInlet`, `UDarcPowerConsumerComponent`.
+- Срез: `ADarcTerminal` (ввод кода через `UInteractionComponent::SubmitTerminalInput`), `ADarcItemSlot`, `ADarcDataTransferStation`, `ADarcHeavyObject` (кооп/соло перенос), `UDarcGameplayLibrary::GetMissionCode` (код из реплицируемого сида выезда). Всё это тоже ещё не компилировалось.
 - Тексты подсказок двери/предмета — поля `Prompt*` (FText из String Table), не NSLOCTEXT в C++.
 
 ## Источники истины

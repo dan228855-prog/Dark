@@ -49,6 +49,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "Carry", meta = (DefaultToSelf = "Holder"))
     static ACarryableItem* FindItemHeldBy(const AActor* Holder);
 
+    // Сервер: передать предмет новому держателю — игроку или слоту/устройству (nullptr = положить).
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Carry")
+    void ServerTransferTo(AActor* NewHolder, AActor* ByActor);
+
     // Явный сброс предмета (например, если игрок погиб/потерял сознание - см. решение про "дух").
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Carry")
     void ForceDrop();
@@ -65,6 +69,9 @@ protected:
 
     void AttachToHolder(AActor* Holder);
     void DetachFromHolder();
+
+    // Предмет был физическим до того, как его взяли, — вернуть физику при отпускании.
+    bool bRestorePhysicsOnDetach = false;
 
     // Где предмет лежал до того, как его подняли, — для записи перемещения в WorldMemory.
     FTransform PickUpTransform;

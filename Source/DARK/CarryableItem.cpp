@@ -4,6 +4,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "EngineUtils.h"
 
 ACarryableItem::ACarryableItem()
@@ -23,8 +24,13 @@ void ACarryableItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 bool ACarryableItem::CanInteract_Implementation(AActor* Interactor) const
 {
-    // Поднять может либо никем не занятый предмет, либо свой собственный (чтобы положить обратно).
-    return CurrentHolder == nullptr || CurrentHolder == Interactor;
+    // Свой предмет можно положить обратно.
+    if (CurrentHolder == Interactor)
+    {
+        return true;
+    }
+    // Поднять можно только свободный предмет и только пустыми руками — два предмета сразу не носим.
+    return CurrentHolder == nullptr && FindItemHeldBy(Interactor) == nullptr;
 }
 
 void ACarryableItem::OnInteract_Implementation(AActor* Interactor)
@@ -36,13 +42,32 @@ void ACarryableItem::OnInteract_Implementation(AActor* Interactor)
         return;
     }
 
-    if (CurrentHolder == nullptr)
+    if (CurrentHolder == nullptr && FindItemHeldBy(Interactor) == nullptr)
+    {
+        ServerTransferTo(Interactor, Interactor);
+    }
+}
+
+void ACarryableItem::ServerTransferTo(AActor* NewHolder, AActor* ByActor)
+{
+    if (!HasAuthority() || NewHolder == CurrentHolder)
+    {
+        return;
+    }
+    if (!NewHolder)
+    {
+        ServerRelease(ByActor);
+        return;
+    }
+
+    // Исходное место запоминаем, только когда предмет поднимают с пола.
+    if (!CurrentHolder)
     {
         PickUpTransform = GetActorTransform();
-        CurrentHolder = Interactor;
-        AttachToHolder(Interactor);
-        OnRep_Holder(); // на сервере OnRep не срабатывает сам - дергаем вручную для консистентности
     }
+
+    CurrentHolder = NewHolder;
+    OnRep_Holder(); // на сервере OnRep не срабатывает сам - дергаем вручную для консистентности
 }
 
 void ACarryableItem::ServerRelease(AActor* ByActor)
@@ -76,6 +101,18 @@ void ACarryableItem::ForceDrop()
 
 void ACarryableItem::AttachToHolder(AActor* Holder)
 {
+    // Пока предмет в руке или в слоте — без физики и без коллизии: иначе физическое тело
+    // оторвётся от руки, а трейс взгляда упрётся в предмет вместо слота под ним.
+    if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()))
+    {
+        if (Body->IsSimulatingPhysics())
+        {
+            bRestorePhysicsOnDetach = true;
+            Body->SetSimulatePhysics(false);
+        }
+    }
+    SetActorEnableCollision(false);
+
     if (ACharacter* Character = Cast<ACharacter>(Holder))
     {
         AttachToComponent(
@@ -84,11 +121,26 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
             CarrySocketName
         );
     }
+    else if (Holder && Holder->GetRootComponent())
+    {
+        // Слот/устройство: предмет встаёт в корень держателя (точка вставки).
+        AttachToComponent(Holder->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+    }
 }
 
 void ACarryableItem::DetachFromHolder()
 {
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+    SetActorEnableCollision(true);
+
+    if (bRestorePhysicsOnDetach)
+    {
+        bRestorePhysicsOnDetach = false;
+        if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()))
+        {
+            Body->SetSimulatePhysics(true);
+        }
+    }
 }
 
 void ACarryableItem::OnRep_Holder()

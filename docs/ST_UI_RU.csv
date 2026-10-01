@@ -11,7 +11,23 @@ Mission_Failed,Провалено
 Fuse_Insert,Вставить предохранитель
 Breaker_On,Включить рубильник
 Breaker_Off,Выключить рубильник
-Generator_Start,Запустить генератор
-Generator_Stop,Заглушить генератор
-Inlet_Connect,Подключить генератор
-Inlet_Disconnect,Отключить генератор
+Inlet_Connect,Подключить и запустить генератор
+Inlet_Disconnect,Заглушить и отключить генератор
+Terminal_Use,Использовать терминал
+Terminal_Busy,Терминал занят
+Terminal_NoPower,Нет питания
+Slot_Insert,Вставить
+Slot_Remove,Извлечь
+Transfer_Start,Запустить передачу
+Screen_NoPower,NO POWER
+Screen_StorageNotReady,EXTERNAL STORAGE NOT READY
+Screen_TransferReady,TRANSFER READY
+Screen_Transferring,TRANSFER IN PROGRESS
+Screen_CheckingData,CHECKING DATA...
+Screen_TransferComplete,TRANSFER COMPLETE
+Screen_EnterCode,ВВЕДИТЕ КОД ДОСТУПА
+Screen_AccessDenied,ДОСТУП ЗАПРЕЩЁН
+Screen_AccessGranted,ДОСТУП РАЗРЕШЁН
+Heavy_Grab,Взяться
+Heavy_Release,Отпустить
+Heavy_ReattachCable,Закрепить кабель

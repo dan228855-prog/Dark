@@ -11,7 +11,23 @@ Mission_Failed,Failed
 Fuse_Insert,Insert fuse
 Breaker_On,Switch breaker on
 Breaker_Off,Switch breaker off
-Generator_Start,Start generator
-Generator_Stop,Stop generator
-Inlet_Connect,Connect generator
-Inlet_Disconnect,Disconnect generator
+Inlet_Connect,Connect and start generator
+Inlet_Disconnect,Stop and disconnect generator
+Terminal_Use,Use terminal
+Terminal_Busy,Terminal in use
+Terminal_NoPower,No power
+Slot_Insert,Insert
+Slot_Remove,Remove
+Transfer_Start,Start transfer
+Screen_NoPower,NO POWER
+Screen_StorageNotReady,EXTERNAL STORAGE NOT READY
+Screen_TransferReady,TRANSFER READY
+Screen_Transferring,TRANSFER IN PROGRESS
+Screen_CheckingData,CHECKING DATA...
+Screen_TransferComplete,TRANSFER COMPLETE
+Screen_EnterCode,ENTER ACCESS CODE
+Screen_AccessDenied,ACCESS DENIED
+Screen_AccessGranted,ACCESS GRANTED
+Heavy_Grab,Grab
+Heavy_Release,Let go
+Heavy_ReattachCable,Reattach cable

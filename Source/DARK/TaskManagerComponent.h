@@ -79,6 +79,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Tasks")
 	UDarcMissionDefinition* GetCurrentMission() const { return CurrentMission; }
 
+	/** Сид выезда — реплицируется, чтобы клиенты могли вывести те же коды/детали, что и сервер. */
+	UFUNCTION(BlueprintPure, Category = "Tasks")
+	int32 GetMissionSeed() const { return MissionSeed; }
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -101,6 +105,9 @@ protected:
 
 	UPROPERTY(Replicated)
 	TObjectPtr<UDarcMissionDefinition> CurrentMission;
+
+	UPROPERTY(Replicated)
+	int32 MissionSeed = 0;
 
 	bool bMissionRunning = false;
 

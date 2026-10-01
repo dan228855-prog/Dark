@@ -7,6 +7,8 @@
 #include "Components/ActorComponent.h"
 #include "InteractionComponent.generated.h"
 
+class ADarcTerminal;
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DARK_API UInteractionComponent : public UActorComponent
 {
@@ -27,6 +29,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Interaction")
 	AActor* FocusedActor = nullptr;
 
+	/** Отправить набранный в окне терминала текст (код/команду). Вызывать из UI на локальном клиенте. */
+	UFUNCTION(BlueprintCallable, Category = "Interaction|Terminal")
+	void SubmitTerminalInput(ADarcTerminal* Terminal, const FString& Input);
+
+	/** Закрыть окно терминала (освободить его для других). */
+	UFUNCTION(BlueprintCallable, Category = "Interaction|Terminal")
+	void LeaveTerminal(ADarcTerminal* Terminal);
+
 protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -38,4 +48,12 @@ protected:
 	void Server_Interact(AActor* TargetActor);
 	void Server_Interact_Implementation(AActor* TargetActor);
 	bool Server_Interact_Validate(AActor* TargetActor);
+
+	// Терминалу клиент не владеет, поэтому Server RPC идёт через свою пешку (этот компонент).
+	// Сам терминал перепроверяет, что игрок — его текущий пользователь и стоит рядом.
+	UFUNCTION(Server, Reliable)
+	void Server_SubmitTerminalInput(ADarcTerminal* Terminal, const FString& Input);
+
+	UFUNCTION(Server, Reliable)
+	void Server_LeaveTerminal(ADarcTerminal* Terminal);
 };

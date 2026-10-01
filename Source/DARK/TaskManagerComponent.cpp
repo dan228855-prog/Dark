@@ -25,6 +25,7 @@ void UTaskManagerComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UTaskManagerComponent, Tasks);
 	DOREPLIFETIME(UTaskManagerComponent, CurrentMission);
+	DOREPLIFETIME(UTaskManagerComponent, MissionSeed);
 }
 
 void UTaskManagerComponent::OnRep_Tasks()
@@ -87,7 +88,7 @@ void UTaskManagerComponent::StartMission(UDarcMissionDefinition* Mission, int32 
 		State.Definition = Def;
 	}
 
-	const int32 MissionSeed = Seed != 0 ? Seed : FMath::RandRange(1, MAX_int32 - 1);
+	MissionSeed = Seed != 0 ? Seed : FMath::RandRange(1, MAX_int32 - 1);
 
 	if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
 	{

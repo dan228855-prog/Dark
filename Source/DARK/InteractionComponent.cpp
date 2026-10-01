@@ -1,6 +1,8 @@
 // InteractionComponent.cpp
 #include "InteractionComponent.h"
 #include "Interactable.h"
+#include "DarcTerminal.h"
+#include "GameFramework/PlayerState.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
 
@@ -90,5 +92,39 @@ void UInteractionComponent::Server_Interact_Implementation(AActor* TargetActor)
 	if (IInteractable::Execute_CanInteract(TargetActor, Owner))
 	{
 		IInteractable::Execute_OnInteract(TargetActor, Owner);
+	}
+}
+
+void UInteractionComponent::SubmitTerminalInput(ADarcTerminal* Terminal, const FString& Input)
+{
+	if (Terminal)
+	{
+		Server_SubmitTerminalInput(Terminal, Input);
+	}
+}
+
+void UInteractionComponent::LeaveTerminal(ADarcTerminal* Terminal)
+{
+	if (Terminal)
+	{
+		Server_LeaveTerminal(Terminal);
+	}
+}
+
+void UInteractionComponent::Server_SubmitTerminalInput_Implementation(ADarcTerminal* Terminal, const FString& Input)
+{
+	const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (Terminal && OwnerPawn)
+	{
+		Terminal->ServerHandleInput(OwnerPawn->GetPlayerState(), Input);
+	}
+}
+
+void UInteractionComponent::Server_LeaveTerminal_Implementation(ADarcTerminal* Terminal)
+{
+	const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (Terminal && OwnerPawn)
+	{
+		Terminal->ServerReleaseUser(OwnerPawn->GetPlayerState());
 	}
 }

@@ -33,7 +33,8 @@ void ADarcPowerInlet::ValidateConnection()
 {
 	if (HasAuthority() && ConnectedGenerator && !IsInCableRange(ConnectedGenerator))
 	{
-		ConnectedGenerator = nullptr; // кабель выдернулся
+		// Кабель выдернулся — генератор продолжает работать вхолостую, сервер теряет питание.
+		ConnectedGenerator = nullptr;
 		OnRep_Connected();
 	}
 }
@@ -48,6 +49,8 @@ void ADarcPowerInlet::OnInteract_Implementation(AActor* Interactor)
 	// Только сервер.
 	if (ConnectedGenerator)
 	{
+		// Отключить = заглушить и отсоединить.
+		ConnectedGenerator->SetRunning(false);
 		ConnectedGenerator = nullptr;
 	}
 	else
@@ -65,6 +68,10 @@ void ADarcPowerInlet::OnInteract_Implementation(AActor* Interactor)
 			}
 		}
 		ConnectedGenerator = Best;
+		if (Best)
+		{
+			Best->SetRunning(true); // «подключить и запустить» — одно действие
+		}
 	}
 
 	if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
