@@ -1,0 +1,15 @@
+---,TaskId,Title,ParentTaskId,Rule,Prerequisites,bRequired,bHiddenUntilActive,bFailsMission,CampaignFactOnComplete
+GetAccessCard,GetAccessCard,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_GetAccessCard"")",None,Manual,(),True,False,False,None
+OpenCatalog,OpenCatalog,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_OpenCatalog"")",None,Manual,(GetAccessCard),True,False,False,None
+EnterServerRoom,EnterServerRoom,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_EnterServerRoom"")",None,AnyChild,(OpenCatalog),True,False,False,None
+ServerDoorCard,ServerDoorCard,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_ServerDoorCard"")",EnterServerRoom,Manual,(),True,False,False,None
+ServerDoorKeypad,ServerDoorKeypad,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_ServerDoorKeypad"")",EnterServerRoom,Manual,(),True,False,False,None
+PowerServer,PowerServer,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_PowerServer"")",None,AnyChild,(OpenCatalog),True,False,False,None
+PowerViaPanel,PowerViaPanel,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_PowerViaPanel"")",PowerServer,Manual,(),True,False,False,None
+PowerViaGenerator,PowerViaGenerator,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_PowerViaGenerator"")",PowerServer,Manual,(),True,False,False,None
+MoveServerRack,MoveServerRack,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_MoveServerRack"")",None,Manual,(EnterServerRoom),True,False,False,None
+ConnectInterface,ConnectInterface,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_ConnectInterface"")",None,Manual,"(EnterServerRoom,PowerServer)",True,False,False,None
+CopyArchive,CopyArchive,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_CopyArchive"")",None,Manual,(ConnectInterface),True,False,False,Slice.ArchiveCopied
+TakeDrive,TakeDrive,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_TakeDrive"")",None,Manual,(CopyArchive),True,False,False,None
+DeliverDrive,DeliverDrive,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_DeliverDrive"")",None,Manual,(TakeDrive),True,False,False,None
+TakeExtraFile,TakeExtraFile,"LOCTABLE(""/Game/Localization/ST_UI.ST_UI"", ""Task_TakeExtraFile"")",None,Manual,(CopyArchive),False,True,False,Slice.ExtraFileTaken

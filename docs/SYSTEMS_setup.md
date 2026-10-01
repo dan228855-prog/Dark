@@ -175,6 +175,74 @@ ID строки = ID события. Поля по ТЗ:
 - Если тянуть резко или в разные стороны, кабель отсоединяется, все отпускают. Кабель закрепляют повторным E по объекту.
 - Генератор — то же самое, но без хрупкого кабеля.
 
+## Готовые данные среза (импорт из CSV)
+
+Таблицы не нужно набивать руками, они лежат в `docs/data/`:
+
+| Файл | Куда импортировать | Тип строки |
+|---|---|---|
+| `DT_Mission_Slice_Tasks.csv` | DataTable `DT_Mission_Slice_Tasks` | `DarcTaskDefinition` |
+| `DT_RareEvents.csv` | DataTable `DT_RareEvents` | `DarcRareEventRow` |
+
+1. **String Table.** Сначала импортировать `ST_UI` по пути **`/Game/Localization/ST_UI`**. Тексты задач в CSV ссылаются на неё через `LOCTABLE(...)` по этому пути. Если String Table лежит в другом месте, найди и замени путь в CSV.
+2. **Импорт таблиц.** Перетащить CSV в Content Browser → выбрать *DataTable* и тип строки из таблицы выше.
+3. **Ассет выезда.** Создать Data Asset `DA_Mission_Slice` (`DarcMissionDefinition`):
+   - `Task Table` = `DT_Mission_Slice_Tasks`;
+   - `Level Index` = 1, `Allow Strong Rare Events` = нет;
+   - `Campaign Facts On Success` = `Base.ArchiveTerminal`.
+4. **Таблица событий.** В `BP_DarcGameState` → `RareEventManager` → `Event Table` = `DT_RareEvents`.
+5. **Сцену с тяжёлой стойкой режем?** Удалить строку `MoveServerRack` из таблицы задач.
+
+Что в таблице событий:
+- **Срез (уровень 1).** Сигнал из отключённого динамика, четыре варианта, за выезд максимум один: Морзе (основной, самый частый), обрывок голоса, щелчок, радиосигнал. Плюс исчезающая комната, левитирующая кружка (видит только один игрок) и свет в окне при отъезде (всегда).
+- **Эхо памяти.** Дверь закрылась, стул сдвинут. Со 2-го уровня.
+- **10 событий документа.** С уровней 2–5 по таблице черновика выше.
+
+⚠ Морзе — это звук. Морзе для «БЕГИ ПОКА ЕСТЬ ВОЗМОЖНОСТЬ» и для «RUN WHILE YOU CAN» звучит по-разному, поэтому понадобятся два звуковых файла. UE переключает их по языку через локализацию ассетов в Localization Dashboard.
+
+## NPC, карта доступа, база
+
+### NPC (`DarcNpc`)
+Охранник и куратор — один класс без ИИ-поведения. Реплики (`Lines`) — массивы `текст из String Table + пауза перед + длительность`. Субтитры приходят HUD-у через `BP_DarcGameState → On Subtitle` (кто, что, сколько держать). Подписаться в HUD один раз.
+
+- **Охранник КПП:**
+  - `Greeting Lines` = `Guard_Greeting`;
+  - `Item To Give` = карта доступа (поставить рядом, до выдачи она скрыта), `Task Id On Give` = `GetAccessCard`, `Give Lines` = `Guard_GiveCard`;
+  - `Accepted Class` = класс носителя, `Before Receive Lines` = `Guard_Finished`;
+  - `Receive Lines` = `Guard_Good` → (пауза 1.5 с) `Guard_GoBack`, `Task Id On Receive` = `DeliverDrive`.
+- **Куратор на базе:**
+  - `Accepted Class` = носитель, `Receive Lines` = `Curator_GotIt` → `Curator_Good` → (пауза 2 с) `Curator_NextLater`;
+  - `Idle Lines` = `Curator_OldSite`;
+  - в событии `On Item Received`: если есть факт `Slice.ExtraFileTaken` → `Say Lines` с `Curator_ExtraFile`.
+
+### Карта доступа и двери
+- **Карта.** Blueprint от `CarryableItem`. На обороте вывести `Get Mission Code("CatalogCode")`.
+- **Дверь серверной.** `Is Locked` = да.
+- **Считыватель (`DarcCardReader`) у двери.**
+  - `Accepted Class` = карта;
+  - `Door To Unlock` = дверь серверной;
+  - `Task Id On Access` = `ServerDoorCard`.
+- **Кодовая панель.** Это `DarcTerminal` без питания:
+  - `Code Key` = свой ключ, например `ServerDoorCode`;
+  - `Door To Unlock` = дверь серверной;
+  - `Task Id On Unlock` = `ServerDoorKeypad`.
+  - Где взять код — решаешь в уровне: записка, надпись на стене, подсказка в каталоге.
+- **Запертую дверь можно «дёрнуть».** Будет звук в событии `On Locked Attempt`.
+
+### База (`DarcBaseUnlock`)
+- Поставить у части базы, которая открывается по прогрессу.
+- `Required Fact` — какой факт её открывает. Архивный терминал открывается фактом `Base.ArchiveTerminal`: его выдаёт успешный срез.
+- Показ — в событии `On Unlock State Changed`. Можно указать дверь, которую отпирает.
+
+### «Дух» (`DarcSpiritCharacter`)
+- Гибель: опасность на сервере вызывает `BP_DarcGameMode → Kill Player` (контроллер, причина).
+- После гибели:
+  - предмет из рук падает;
+  - тело остаётся, рэгдолл делается в событии `On Player Died`;
+  - игрок становится невидимым летающим духом.
+- Ввод духа: создать Blueprint от `DarcSpiritCharacter` и привязать клавиши к `Try Flicker`, `Try Toggle Breaker`, `Try Push`. Указать этот Blueprint в `BP_DarcGameMode → Spirit Class`.
+- Сила духа растёт со смертями за кампанию и номером уровня: перезарядка короче, толчок сильнее.
+
 ## Что проверить после сборки (критерии готовности)
 
 1. Соло: запустить выезд, выполнить задачи по цепочке, фаза доходит до *Completed*.

@@ -39,6 +39,9 @@
 - WorldMemory (`UDarcWorldMemorySubsystem`, GameInstanceSubsystem), RareEventManager (`URareEventManagerComponent` на GameState, таблица `FDarcRareEventRow`, якоря `ADarcRareEventAnchor`), Task System (`UTaskManagerComponent` на GameState, ассет выезда `UDarcMissionDefinition`), комнаты `ADarcRoomVolume`. Написаны по ТЗ, но ещё не компилировались — настройка в редакторе и чеклист проверки в `docs/SYSTEMS_setup.md`.
 - Электросистема: `UDarcPowerSubsystem`, `ADarcFuseBox`, `ADarcFuseItem`, `ADarcGenerator` (наследник `ADarcHeavyObject`), `ADarcPowerInlet`, `UDarcPowerConsumerComponent`.
 - Срез: `ADarcTerminal` (ввод кода через `UInteractionComponent::SubmitTerminalInput`), `ADarcItemSlot`, `ADarcDataTransferStation`, `ADarcHeavyObject` (кооп/соло перенос), `UDarcGameplayLibrary::GetMissionCode` (код из реплицируемого сида выезда). Всё это тоже ещё не компилировалось.
+- Смерть/дух: `ADarcGameMode::KillPlayer`, `ADarcSpiritCharacter`; смерти за кампанию — в WorldMemory.
+- NPC/доступ/база: `ADarcNpc` (реплики через `ADarcGameState::Say` → `OnSubtitle`), `ADarcCardReader`, `ADarcBaseUnlock` (по фактам кампании).
+- Данные среза для импорта: `docs/data/*.csv` (задачи, редкие события), строки — `docs/ST_UI_*.csv`.
 - Тексты подсказок двери/предмета — поля `Prompt*` (FText из String Table), не NSLOCTEXT в C++.
 
 ## Источники истины

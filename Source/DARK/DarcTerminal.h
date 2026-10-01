@@ -18,6 +18,7 @@
 
 class APlayerState;
 class UDarcPowerConsumerComponent;
+class AInteractableDoor;
 
 UENUM(BlueprintType)
 enum class EDarcTerminalState : uint8
@@ -54,6 +55,10 @@ public:
 	/** Задача при правильном коде. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Tasks")
 	FName TaskIdOnUnlock;
+
+	/** Необязательно: дверь, которую отпирает правильный код (кодовая панель у двери). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal")
+	TObjectPtr<AInteractableDoor> DoorToUnlock;
 
 	/** Команды после разблокировки → задачи (например "copy_extra" → TakeExtraFile). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Tasks")

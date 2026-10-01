@@ -31,3 +31,45 @@ Screen_AccessGranted,ACCESS GRANTED
 Heavy_Grab,Grab
 Heavy_Release,Let go
 Heavy_ReattachCable,Reattach cable
+Task_GetAccessCard,Get an access card from the guard
+Task_OpenCatalog,Open the data catalog on the workstation
+Task_EnterServerRoom,Get into the server sector
+Task_ServerDoorCard,Open the door with the access card
+Task_ServerDoorKeypad,Open the door with a code
+Task_PowerServer,Restore power to the server
+Task_PowerViaPanel,Through the fuse panel
+Task_PowerViaGenerator,From the portable generator
+Task_MoveServerRack,Move the server rack to the work station
+Task_ConnectInterface,Connect the interface module
+Task_CopyArchive,Copy the archive
+Task_TakeDrive,Remove the drive
+Task_DeliverDrive,Hand the drive to the guard
+Task_TakeExtraFile,Copy the unlisted file
+Task_RestoreCorridorLight,Restore the corridor lights
+Speaker_Guard,Guard
+Speaker_Curator,Curator
+Speaker_DARC,D.A.R.C.
+Guard_Greeting,New workers again?
+Guard_GiveCard,Your access card.
+Guard_Finished,Finished?
+Guard_Good,Good.
+Guard_GoBack,Then head back.
+Curator_GotIt,Got it?
+Curator_Good,Good.
+Curator_NextLater,You will get the next assignment later.
+Curator_OldSite,Old site. Something is always breaking there.
+Curator_ExtraFile,Attach the additional archive file to the report.
+Curator_Maintenance,Scheduled network maintenance was carried out at the site.
+Brief_Slice,Recover the archive from the site server before its scheduled decommissioning.
+Brief_NoQuestions,Your task today is the usual. Do not ask unnecessary questions.
+File_Corrupted_1,IT'S
+File_Corrupted_2,NOT
+File_Corrupted_3,THAT
+File_Corrupted_4,SIMPLE
+File_VerifyNote,Data must be verified before transfer.
+File_MainStorage,The main storage is in the server sector. The server is powered down.
+Morse_Message,RUN WHILE YOU CAN
+Npc_Talk,Talk
+Npc_HandOver,Hand over
+Card_Swipe,Swipe card
+Screen_CatalogTitle,SITE DATA CATALOG

@@ -31,3 +31,45 @@ Screen_AccessGranted,ДОСТУП РАЗРЕШЁН
 Heavy_Grab,Взяться
 Heavy_Release,Отпустить
 Heavy_ReattachCable,Закрепить кабель
+Task_GetAccessCard,Получить карту доступа у охранника
+Task_OpenCatalog,Открыть каталог данных на рабочем компьютере
+Task_EnterServerRoom,Попасть в серверный сектор
+Task_ServerDoorCard,Открыть дверь картой доступа
+Task_ServerDoorKeypad,Открыть дверь кодом
+Task_PowerServer,Подать питание на сервер
+Task_PowerViaPanel,Через электрощит
+Task_PowerViaGenerator,От переносного генератора
+Task_MoveServerRack,Перекатить серверную стойку к рабочей точке
+Task_ConnectInterface,Подключить интерфейсный модуль
+Task_CopyArchive,Скопировать архив
+Task_TakeDrive,Извлечь носитель
+Task_DeliverDrive,Передать носитель охраннику
+Task_TakeExtraFile,Скопировать неучтённый файл
+Task_RestoreCorridorLight,Восстановить свет в коридоре
+Speaker_Guard,Охранник
+Speaker_Curator,Куратор
+Speaker_DARC,D.A.R.C.
+Guard_Greeting,Опять новые работники?
+Guard_GiveCard,Ваша карта доступа.
+Guard_Finished,Закончили?
+Guard_Good,Хорошо.
+Guard_GoBack,Тогда возвращайтесь.
+Curator_GotIt,Получили?
+Curator_Good,Хорошо.
+Curator_NextLater,Следующее задание получите позже.
+Curator_OldSite,Старый объект. Там постоянно что-нибудь ломается.
+Curator_ExtraFile,Дополнительный файл из архива приобщите к отчёту.
+Curator_Maintenance,На объекте проводилось плановое обслуживание сети.
+Brief_Slice,Восстановить архив с сервера объекта до его планового списания.
+Brief_NoQuestions,Сегодня твоя задача — как обычно. Не задавай лишних вопросов.
+File_Corrupted_1,ВСЕ
+File_Corrupted_2,НЕ
+File_Corrupted_3,ТАК
+File_Corrupted_4,ПРОСТО
+File_VerifyNote,Данные необходимо проверить перед передачей.
+File_MainStorage,Основной носитель находится в серверном секторе. Сервер обесточен.
+Morse_Message,БЕГИ ПОКА ЕСТЬ ВОЗМОЖНОСТЬ
+Npc_Talk,Поговорить
+Npc_HandOver,Отдать
+Card_Swipe,Приложить карту
+Screen_CatalogTitle,КАТАЛОГ ДАННЫХ ОБЪЕКТА

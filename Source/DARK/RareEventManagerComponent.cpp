@@ -79,6 +79,7 @@ void URareEventManagerComponent::BeginMission(int32 LevelIndex, bool bAllowStron
 	StrongFiredThisMission = 0;
 	LastEventTime = -1.f;
 	LastFireTimeById.Reset();
+	GroupsFiredThisMission.Reset();
 	// Отдельный поток случайности от сида выезда — выезд можно воспроизвести.
 	Random.Initialize(Seed ^ 0x0EFA);
 
@@ -139,18 +140,15 @@ void URareEventManagerComponent::Evaluate(const FDarcRareEventEvalContext& Conte
 		return;
 	}
 
-	// Глобальная пауза: события должны оставаться редкими.
-	if (LastEventTime >= 0.f && Now() - LastEventTime < MinSecondsBetweenEvents)
-	{
-		return;
-	}
+	// Глобальная пауза: события должны оставаться редкими (сценарные строки её не ждут).
+	const bool bInGlobalPause = LastEventTime >= 0.f && Now() - LastEventTime < MinSecondsBetweenEvents;
 
 	// Собираем кандидатов, прошедших условия и бросок шанса.
 	TArray<TPair<FName, const FDarcRareEventRow*>> Candidates;
 	EventTable->ForeachRow<FDarcRareEventRow>(TEXT("RareEventManager"),
 		[&](const FName& Key, const FDarcRareEventRow& Row)
 		{
-			if (Row.Trigger == Context.Trigger && CanFire(Key, Row, Context)
+			if (Row.Trigger == Context.Trigger && (Row.bScripted || !bInGlobalPause) && CanFire(Key, Row, Context)
 				&& Random.FRand() < Row.Chance * ChanceMultiplier)
 			{
 				Candidates.Emplace(Key, &Row);
@@ -212,6 +210,11 @@ bool URareEventManagerComponent::CanFire(FName EventId, const FDarcRareEventRow&
 	}
 
 	if (CurrentLevel < Row.MinLevel || CurrentLevel > Row.MaxLevel)
+	{
+		return false;
+	}
+
+	if (!Row.ExclusiveGroup.IsNone() && GroupsFiredThisMission.Contains(Row.ExclusiveGroup))
 	{
 		return false;
 	}
@@ -314,8 +317,15 @@ bool URareEventManagerComponent::Fire(FName EventId, const FDarcRareEventRow& Ro
 	Payload.Seed = Random.RandHelper(MAX_int32);
 
 	// Учёт — до доставки, чтобы повторный вход в Evaluate (из записи в память) уже видел лимиты.
-	LastEventTime = Now();
-	LastFireTimeById.Add(EventId, LastEventTime);
+	if (!Row.bScripted)
+	{
+		LastEventTime = Now();
+	}
+	LastFireTimeById.Add(EventId, Now());
+	if (!Row.ExclusiveGroup.IsNone())
+	{
+		GroupsFiredThisMission.Add(Row.ExclusiveGroup);
+	}
 	if (Row.FearLevel == EDarcFearLevel::Strong)
 	{
 		StrongFiredThisMission++;

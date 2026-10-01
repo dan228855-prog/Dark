@@ -4,6 +4,8 @@
 #include "RareEventManagerComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/PrimitiveComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 
 ADarcGameState::ADarcGameState()
 {
@@ -43,4 +45,27 @@ void ADarcGameState::Multicast_PushObject_Implementation(AActor* Target, FVector
             Body->AddImpulse(Impulse, NAME_None, true);
         }
     }
+}
+
+void ADarcGameState::Say(const FText& Speaker, const FText& Line, float Duration, FVector Location, float Radius)
+{
+    if (HasAuthority() && !Line.IsEmpty())
+    {
+        Multicast_Subtitle(Speaker, Line, Duration, Location, Radius);
+    }
+}
+
+void ADarcGameState::Multicast_Subtitle_Implementation(const FText& Speaker, const FText& Line, float Duration, FVector_NetQuantize Location, float Radius)
+{
+    // Фильтр по дистанции — на клиенте: реплика не секретная, а так не нужен список адресатов.
+    if (Radius > 0.f)
+    {
+        const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+        const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+        if (!Pawn || FVector::Dist(Pawn->GetActorLocation(), Location) > Radius)
+        {
+            return;
+        }
+    }
+    OnSubtitle.Broadcast(Speaker, Line, Duration);
 }

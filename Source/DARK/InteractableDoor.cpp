@@ -13,13 +13,14 @@ void AInteractableDoor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AInteractableDoor, bIsOpen);
+    DOREPLIFETIME(AInteractableDoor, bIsLocked);
 }
 
 bool AInteractableDoor::CanInteract_Implementation(AActor* Interactor) const
 {
-    // Запертую дверь так просто не открыть - альтернативные способы
-    // (ключ, код, отключение системы) реализуются отдельно и меняют bIsLocked.
-    return !bIsLocked;
+    // Взаимодействовать можно и с запертой: игрок видит «Заперто» и может дёрнуть ручку.
+    // Открыть её — только альтернативными способами (ключ, код, отключение системы), они меняют bIsLocked.
+    return true;
 }
 
 void AInteractableDoor::OnInteract_Implementation(AActor* Interactor)
@@ -27,6 +28,11 @@ void AInteractableDoor::OnInteract_Implementation(AActor* Interactor)
     // Этот код выполняется ТОЛЬКО на сервере (вызывается из InteractionComponent::Server_Interact).
     if (bIsLocked)
     {
+        Multicast_LockedAttempt(); // дёрнули ручку — звук «заперто» у всех рядом
+        if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+        {
+            Memory->RecordInteraction(GetMemoryId(), TEXT("LockedAttempt"), Interactor);
+        }
         return;
     }
 
@@ -49,6 +55,14 @@ void AInteractableDoor::SetDoorOpen(bool bNewIsOpen, AActor* ByActor)
     }
 }
 
+void AInteractableDoor::SetLocked(bool bNewLocked)
+{
+    if (HasAuthority())
+    {
+        bIsLocked = bNewLocked;
+    }
+}
+
 FText AInteractableDoor::GetInteractionPrompt_Implementation() const
 {
     return bIsLocked ? PromptLocked : (bIsOpen ? PromptClose : PromptOpen);
@@ -59,4 +73,9 @@ void AInteractableDoor::OnRep_IsOpen()
     // Вызывается на клиентах при получении новой реплики bIsOpen,
     // и вручную на сервере из SetDoorOpen.
     OnDoorStateChanged(bIsOpen);
+}
+
+void AInteractableDoor::Multicast_LockedAttempt_Implementation()
+{
+    OnLockedAttempt();
 }

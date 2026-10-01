@@ -156,6 +156,20 @@ struct FDarcRareEventRow : public FTableRowBase
 	/** Перенос в кампанию: если задан, после события в постоянное состояние добавляется этот факт. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RareEvent")
 	FName CampaignFactOnFire;
+
+	/**
+	 * Группа взаимоисключающих вариантов: за выезд срабатывает не больше одного события группы
+	 * (например, варианты сигнала из динамика: Морзе / обрывок голоса / щелчок / радиосигнал).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RareEvent")
+	FName ExclusiveGroup;
+
+	/**
+	 * Сценарное событие уровня (свет в окне при отъезде и т.п.): не ждёт общей паузы между
+	 * событиями и не сдвигает её. Лимит сильных событий на него всё равно действует.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RareEvent")
+	bool bScripted = false;
 };
 
 /**

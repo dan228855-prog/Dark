@@ -77,7 +77,7 @@ void UTaskManagerComponent::StartMission(UDarcMissionDefinition* Mission, int32 
 
 	CurrentMission = Mission;
 	Tasks.Reset();
-	for (const FDarcTaskDefinition& Def : Mission->Tasks)
+	for (const FDarcTaskDefinition& Def : Mission->GatherTasks())
 	{
 		if (Def.TaskId.IsNone() || FindTask(Def.TaskId))
 		{
@@ -158,6 +158,10 @@ void UTaskManagerComponent::FlushMemoryRecords()
 		for (const TPair<FName, TWeakObjectPtr<AActor>>& Record : Records)
 		{
 			Memory->RecordTaskCompleted(Record.Key);
+			if (const FDarcTaskState* Task = FindTask(Record.Key))
+			{
+				Memory->AddCampaignFact(Task->Definition.CampaignFactOnComplete);
+			}
 			if (AActor* ByActor = Record.Value.Get())
 			{
 				Memory->RecordInteraction(Record.Key, TEXT("TaskCompleted"), ByActor);
@@ -377,12 +381,22 @@ void UTaskManagerComponent::FinishMission(bool bSucceeded)
 	}
 	bMissionRunning = false;
 
+	// Сначала дописываем последние выполненные задачи в память — редкие события ещё
+	// активны и могут на них отреагировать; потом события с триггером «конец выезда».
+	FlushMemoryRecords();
 	if (URareEventManagerComponent* RareEvents = URareEventManagerComponent::GetRareEventManager(this))
 	{
 		RareEvents->EndMission();
 	}
 	if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
 	{
+		if (bSucceeded && CurrentMission)
+		{
+			for (const FName& Fact : CurrentMission->CampaignFactsOnSuccess)
+			{
+				Memory->AddCampaignFact(Fact);
+			}
+		}
 		Memory->EndMission(bSucceeded);
 	}
 	if (ADarcGameState* GameState = Cast<ADarcGameState>(GetOwner()))

@@ -20,9 +20,13 @@ public:
     UPROPERTY(ReplicatedUsing = OnRep_IsOpen, BlueprintReadOnly, Category = "Door")
     bool bIsOpen = false;
 
-    // Заперта ли дверь (нужен ключ/код/альтернативный способ).
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
+    // Заперта ли дверь (нужен ключ/код/альтернативный способ). Реплицируется: подсказка
+    // «Заперто» и CanInteract считаются на клиенте. Менять — только на сервере (SetLocked).
+    UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Door")
     bool bIsLocked = false;
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Door")
+    void SetLocked(bool bNewLocked);
 
     // ID двери для WorldMemory. Если пусто — берётся имя актора в уровне (оно стабильно
     // для расставленных вручную дверей). Процедурный генератор обязан задавать его явно.
@@ -61,4 +65,11 @@ protected:
 
     UFUNCTION(BlueprintImplementableEvent, Category = "Door")
     void OnDoorStateChanged(bool bNewIsOpen);
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_LockedAttempt();
+
+    // Дёрнули запертую дверь — звук ручки/замка (Blueprint).
+    UFUNCTION(BlueprintImplementableEvent, Category = "Door")
+    void OnLockedAttempt();
 };

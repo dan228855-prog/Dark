@@ -10,6 +10,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Engine/DataTable.h"
 #include "DarcTaskTypes.generated.h"
 
 UENUM(BlueprintType)
@@ -30,9 +31,9 @@ enum class EDarcTaskRule : uint8
 	AnyChild    UMETA(DisplayName = "Когда выполнена любая подзадача (несколько путей)")
 };
 
-/** Описание задачи в ассете выезда. */
+/** Описание задачи. Может жить в ассете выезда или строкой DataTable (импорт из CSV). */
 USTRUCT(BlueprintType)
-struct FDarcTaskDefinition
+struct FDarcTaskDefinition : public FTableRowBase
 {
 	GENERATED_BODY()
 
@@ -68,6 +69,10 @@ struct FDarcTaskDefinition
 	/** Провал этой задачи проваливает весь выезд. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
 	bool bFailsMission = false;
+
+	/** Факт кампании при выполнении (например "Slice.ExtraFileTaken") — последствия на будущие выезды. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Task")
+	FName CampaignFactOnComplete;
 };
 
 /** Состояние задачи в рантайме — реплицируется всем клиентам. */
@@ -111,4 +116,34 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mission")
 	TArray<FDarcTaskDefinition> Tasks;
+
+	/**
+	 * Задачи из таблицы (DataTable со строками DarcTaskDefinition, можно импортировать из CSV).
+	 * Добавляются к списку Tasks. Если TaskId в строке пуст — берётся имя строки.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mission")
+	TObjectPtr<UDataTable> TaskTable;
+
+	/** Факты кампании при успешном выезде (например "Base.ArchiveTerminal" — открыть улучшение базы). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mission")
+	TArray<FName> CampaignFactsOnSuccess;
+
+	/** Все задачи выезда: список + таблица. */
+	TArray<FDarcTaskDefinition> GatherTasks() const
+	{
+		TArray<FDarcTaskDefinition> Result = Tasks;
+		if (TaskTable)
+		{
+			TaskTable->ForeachRow<FDarcTaskDefinition>(TEXT("DarcMissionDefinition"),
+				[&Result](const FName& Key, const FDarcTaskDefinition& Row)
+				{
+					FDarcTaskDefinition& Added = Result.Add_GetRef(Row);
+					if (Added.TaskId.IsNone())
+					{
+						Added.TaskId = Key;
+					}
+				});
+		}
+		return Result;
+	}
 };

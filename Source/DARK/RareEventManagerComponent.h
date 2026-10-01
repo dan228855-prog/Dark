@@ -114,6 +114,7 @@ protected:
 	int32 StrongFiredThisMission = 0;
 	float LastEventTime = -1.f;
 	TMap<FName, float> LastFireTimeById;
+	TSet<FName> GroupsFiredThisMission;
 	FRandomStream Random;
 
 	FTimerHandle EvaluationTimer;

@@ -2,6 +2,7 @@
 #include "DarcTerminal.h"
 #include "DarcPowerConsumerComponent.h"
 #include "DarcPlayerState.h"
+#include "InteractableDoor.h"
 #include "DarcGameplayLibrary.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
@@ -198,6 +199,10 @@ void ADarcTerminal::ForceUnlock(AActor* ByActor)
 	}
 
 	bUnlocked = true;
+	if (DoorToUnlock)
+	{
+		DoorToUnlock->SetLocked(false);
+	}
 	if (State != EDarcTerminalState::NoPower)
 	{
 		SetState(EDarcTerminalState::Unlocked);
