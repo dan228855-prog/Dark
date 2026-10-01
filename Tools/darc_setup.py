@@ -343,11 +343,15 @@ def main():
         write_inventory()
         slow.enter_progress_frame(1, "Готово")
 
-    unreal.EditorDialog.show_message(
-        "D.A.R.C. — настройка завершена",
-        "\n".join(report) + "\n\nДальше: запушь docs/asset_inventory.csv в GitHub (или пришли Claude), "
-        "потом открой карту L_Slice и нажми Play.",
-        unreal.AppMsgType.OK)
+    log("[DARC] DONE")
+    try:
+        unreal.EditorDialog.show_message(
+            "D.A.R.C. — настройка завершена",
+            "\n".join(report) + "\n\nДальше: запушь docs/asset_inventory.csv в GitHub (или пришли Claude), "
+            "потом открой карту L_Slice и нажми Play.",
+            unreal.AppMsgType.OK)
+    except Exception:
+        pass  # запуск без окна (из командной строки) — отчёт уже в логе
 
 
 main()
