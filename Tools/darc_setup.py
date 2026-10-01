@@ -60,12 +60,39 @@ def clean_name(name):
 def ensure_map():
     if eal.does_asset_exist(MAP_PATH):
         say("Карта уже есть: " + MAP_PATH)
-        return
-    les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
-    if les.new_level(MAP_PATH):
-        say("Создана пустая карта среза: " + MAP_PATH)
     else:
-        say("!! Не удалось создать карту " + MAP_PATH)
+        les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+        if les.new_level(MAP_PATH):
+            say("Создана пустая карта среза: " + MAP_PATH)
+        else:
+            say("!! Не удалось создать карту " + MAP_PATH)
+            return
+    ensure_slice_builder()
+
+
+def ensure_slice_builder():
+    """На карте должен стоять актёр DarcSliceBuilder — именно он на Play строит всю
+    геометрию и игровые объекты среза (DarcSliceBuilder.cpp, PostInitializeComponents).
+    new_level() создаёт СОВСЕМ пустую карту без него, а UCLASS(NotPlaceable) не даёт
+    поставить его руками через Place Actors — поэтому без этого шага срез на Play
+    оставался буквально пустым: только игрок и свет, ни одной стены (баг, из-за
+    которого экран казался «тёмным» — на самом деле просто нечему было освещать)."""
+    # load_level безопасно вызвать даже если эта карта уже открыта — просто перечитает её.
+    les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+    les.load_level(MAP_PATH)
+
+    actor_subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    for actor in actor_subsystem.get_all_level_actors():
+        if isinstance(actor, unreal.DarcSliceBuilder):
+            say("DarcSliceBuilder уже стоит на карте.")
+            return
+
+    builder = actor_subsystem.spawn_actor_from_class(unreal.DarcSliceBuilder, unreal.Vector(0.0, 0.0, 0.0))
+    if builder:
+        say("Добавлен DarcSliceBuilder на карту L_Slice (без него срез был пустым).")
+        unreal.EditorLevelLibrary.save_current_level()
+    else:
+        say("!! Не удалось добавить DarcSliceBuilder на карту — срез останется пустым.")
 
 
 # ---------------------------------------------------------------------------
@@ -174,12 +201,14 @@ def build_materials():
     sets = {}
     for data in textures:
         name = str(data.asset_name)
-        lowered = name.lower()
+        # Разрешение (_4k и т.п.) часто стоит ПОСЛЕ роли (..._diff_4k) - срезаем его
+        # заранее, иначе роль-паттерн с якорем $ не находит совпадение.
+        base = re.sub(r"_(1k|2k|4k|8k)$", "", name, flags=re.I)
+        lowered = base.lower()
         for role, pattern in TEX_ROLES:
             m = re.search(r"_" + pattern, lowered)
             if m:
-                set_name = name[: m.start()]
-                set_name = re.sub(r"_(1k|2k|4k|8k)$", "", set_name, flags=re.I)
+                set_name = base[: m.start()]
                 set_name = re.sub(r"^T_", "", set_name)
                 sets.setdefault(set_name, {})[role] = str(data.package_name)
                 break

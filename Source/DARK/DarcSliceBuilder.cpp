@@ -39,6 +39,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
+#include "Engine/PostProcessVolume.h"
+#include "GameFramework/PlayerStart.h"
 #include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/TargetPoint.h"
@@ -182,7 +184,11 @@ void ADarcSliceBuilder::BuildEnvironment()
 		Sun->SetMobility(EComponentMobility::Movable);
 		if (UDirectionalLightComponent* SunLight = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
-			SunLight->SetIntensity(1.5f);
+			// Яркость в люксах (проект использует физические единицы, см. DefaultEngine.ini
+			// r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange=True) — старое значение
+			// 1.5 было на порядок темнее стандартного солнца шаблона (~10) и с низким углом
+			// давало почти чёрный экран даже снаружи.
+			SunLight->SetIntensity(20.f);
 			SunLight->SetLightColor(FLinearColor(1.f, 0.62f, 0.4f));
 			SunLight->SetAtmosphereSunLight(true);
 		}
@@ -200,13 +206,32 @@ void ADarcSliceBuilder::BuildEnvironment()
 		USkyLightComponent* Light = SkyLight->GetLightComponent();
 		Light->SetMobility(EComponentMobility::Movable);
 		Light->bRealTimeCapture = true;
-		Light->SetIntensity(0.6f);
+		Light->SetIntensity(3.f);
 		Light->RecaptureSky();
 	}
 
 	if (AExponentialHeightFog* Fog = GetWorld()->SpawnActor<AExponentialHeightFog>(FVector(0.f, 0.f, -100.f), FRotator::ZeroRotator, Params))
 	{
 		Fog->GetComponent()->SetFogDensity(0.035f); // «лёгкий туман»
+	}
+
+	// Без своего PostProcessVolume экспозиция считается автоматически и может «зажать»
+	// картинку темнее, чем задумано (особенно пока в кадре в основном серые коробки).
+	// ВАЖНО: НЕ переключаем на AEM_Manual — в этом режиме яркость считается по
+	// Aperture/ISO/ShutterSpeed камеры (как у настоящего фотоаппарата), а не по свету
+	// в сцене; без ручной калибровки этих параметров экран гарантированно останется
+	// тёмным, что и произошло при первой попытке. Вместо этого просто зажимаем
+	// автоэкспозицию в узком ярком диапазоне (EV100) и чуть добавляем общую яркость —
+	// движок по-прежнему сам считает экспозицию по сцене, но не может уйти в черноту.
+	if (APostProcessVolume* ExposureVolume = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Params))
+	{
+		ExposureVolume->bUnbound = true;
+		ExposureVolume->Settings.bOverride_AutoExposureMinBrightness = true;
+		ExposureVolume->Settings.AutoExposureMinBrightness = 0.f;
+		ExposureVolume->Settings.bOverride_AutoExposureMaxBrightness = true;
+		ExposureVolume->Settings.AutoExposureMaxBrightness = 2.f;
+		ExposureVolume->Settings.bOverride_AutoExposureBias = true;
+		ExposureVolume->Settings.AutoExposureBias = 2.f;
 	}
 }
 
@@ -292,6 +317,20 @@ void ADarcSliceBuilder::BuildGeometry()
 		MugMesh->SetSimulatePhysics(true);
 		Mug->Tags.Add(TEXT("LevitationMug"));
 	}
+
+	// Точки появления игроков (до 5, кооп) — GetPlayerSpawn() существовал, но его никто не
+	// вызывал, поэтому на карте не было ни одного PlayerStart и движок спавнил игрока в
+	// (0,0,0) по умолчанию — мимо пола, отсюда ощущение «падения» в пустоту. Ставим сами
+	// APlayerStart по тем же координатам, что и раньше планировалось.
+	for (int32 Index = 0; Index < 5; ++Index)
+	{
+		const FTransform SpawnTransform = GetPlayerSpawn(Index);
+		if (APlayerStart* Start = GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), SpawnTransform, Params))
+		{
+			Start->SetReplicates(false);
+			Start->PlayerStartTag = *FString::Printf(TEXT("DarcSliceStart%d"), Index);
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -336,6 +375,7 @@ AInteractableDoor* ADarcSliceBuilder::SpawnDoor(const FVector2D& WallPoint, bool
 
 ADarcPowerLamp* ADarcSliceBuilder::SpawnLamp(const FVector& Location, FName CircuitId)
 {
+	using namespace DarcSlice;
 	ADarcPowerLamp* Lamp = SpawnDeferred<ADarcPowerLamp>(Location);
 	Lamp->Power->CircuitId = CircuitId;
 	Lamp->VisualSpec = Vis(TEXT("Lamp"), FVector(120.f, 25.f, 8.f));
