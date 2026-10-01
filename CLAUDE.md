@@ -37,6 +37,7 @@
 - Обрати внимание: в модуле уже есть сгенерённые шаблоном классы `ADARKGameMode`, `ADARKCharacter`, `ADARKPlayerController`, `ADARKCameraManager` (из стартового UE-темплейта Horror/Shooter variant) — наши классы называются иначе (`ADarcGameMode` и т.д.) и не конфликтуют, но при выборе GameMode по умолчанию для уровней смотри, какой из них реально выставлен в Project Settings / World Settings.
 
 - WorldMemory (`UDarcWorldMemorySubsystem`, GameInstanceSubsystem), RareEventManager (`URareEventManagerComponent` на GameState, таблица `FDarcRareEventRow`, якоря `ADarcRareEventAnchor`), Task System (`UTaskManagerComponent` на GameState, ассет выезда `UDarcMissionDefinition`), комнаты `ADarcRoomVolume`. Написаны по ТЗ, но ещё не компилировались — настройка в редакторе и чеклист проверки в `docs/SYSTEMS_setup.md`.
+- Электросистема: `UDarcPowerSubsystem`, `ADarcFuseBox`, `ADarcFuseItem`, `ADarcGenerator`, `ADarcPowerInlet`, `UDarcPowerConsumerComponent` (тоже ещё не компилировалась).
 - Тексты подсказок двери/предмета — поля `Prompt*` (FText из String Table), не NSLOCTEXT в C++.
 
 ## Источники истины
@@ -45,7 +46,7 @@
 - Решение автора от 01.10.2026: на Уровне 2 — несколько роботов целиком вместо одного робота из 5 частей.
 
 ## Что дальше (по приоритету)
-1. **Первый выезд полностью спроектирован** — см. `docs/DARC_vyezd_1_design.md` ("Плановое списание"). Использовать как конкретный сценарий при написании Task System, не абстрактно.
+1. **Вертикальный срез — `docs/DARC_vertical_slice.md`** (решение автора 01.10.2026: сначала срез «по максимуму», потом уровни 1–7). Срез объединяет «Первую работу» (мастер-документ, разд. 112) и «Плановое списание» (`docs/DARC_vyezd_1_design.md`); аномалии из всех источников — часть всегда, часть вариантами через RareEventManager. Там же список кода, который ещё нужен для среза.
 2. **WorldMemory + RareEventManager + Task System** — полное ТЗ уже готово в `docs/PROMPT_dlya_silnoy_modeli.txt`. Прочитать целиком перед началом работы над любой из этих трёх систем.
 3. Дальше — по `docs/plan_razrabotki.md` (полный роадмап всех этапов разработки).
 

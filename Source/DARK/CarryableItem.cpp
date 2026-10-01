@@ -4,6 +4,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "EngineUtils.h"
 
 ACarryableItem::ACarryableItem()
 {
@@ -104,4 +105,21 @@ void ACarryableItem::OnRep_Holder()
     }
 
     OnHolderChanged(CurrentHolder);
+}
+
+ACarryableItem* ACarryableItem::FindItemHeldBy(const AActor* Holder)
+{
+    if (!Holder || !Holder->GetWorld())
+    {
+        return nullptr;
+    }
+
+    for (TActorIterator<ACarryableItem> It(Holder->GetWorld()); It; ++It)
+    {
+        if (It->CurrentHolder == Holder)
+        {
+            return *It;
+        }
+    }
+    return nullptr;
 }

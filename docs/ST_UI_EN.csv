@@ -8,3 +8,10 @@ Mission_Preparation,Preparation
 Mission_InProgress,In progress
 Mission_Completed,Completed
 Mission_Failed,Failed
+Fuse_Insert,Insert fuse
+Breaker_On,Switch breaker on
+Breaker_Off,Switch breaker off
+Generator_Start,Start generator
+Generator_Stop,Stop generator
+Inlet_Connect,Connect generator
+Inlet_Disconnect,Disconnect generator

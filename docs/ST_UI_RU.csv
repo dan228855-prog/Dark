@@ -8,3 +8,10 @@ Mission_Preparation,Подготовка
 Mission_InProgress,Выполняется
 Mission_Completed,Завершено
 Mission_Failed,Провалено
+Fuse_Insert,Вставить предохранитель
+Breaker_On,Включить рубильник
+Breaker_Off,Выключить рубильник
+Generator_Start,Запустить генератор
+Generator_Stop,Заглушить генератор
+Inlet_Connect,Подключить генератор
+Inlet_Disconnect,Отключить генератор

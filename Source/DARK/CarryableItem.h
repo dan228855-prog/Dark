@@ -45,6 +45,10 @@ public:
     virtual void OnInteract_Implementation(AActor* Interactor) override;
     virtual FText GetInteractionPrompt_Implementation() const override;
 
+    // Что сейчас держит этот игрок (nullptr — ничего). Для механик «вставить то, что в руках».
+    UFUNCTION(BlueprintPure, Category = "Carry", meta = (DefaultToSelf = "Holder"))
+    static ACarryableItem* FindItemHeldBy(const AActor* Holder);
+
     // Явный сброс предмета (например, если игрок погиб/потерял сознание - см. решение про "дух").
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Carry")
     void ForceDrop();
