@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "DarcRareEventTypes.h"
 #include "DarcPlayerState.generated.h"
 
 UCLASS()
@@ -20,8 +21,13 @@ public:
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
     int32 DeathCount = 0;
 
-    UFUNCTION(BlueprintCallable, Category = "Player")
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Player")
     void SetAlive(bool bNewIsAlive);
+
+    // Доставка редкого события только этому игроку («ты тоже это видел?»).
+    // PlayerState принадлежит контроллеру игрока, поэтому Client RPC уходит ровно на его машину.
+    UFUNCTION(Client, Reliable)
+    void Client_ReceiveRareEvent(const FDarcRareEventPayload& Payload);
 
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

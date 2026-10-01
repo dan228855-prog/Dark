@@ -1,6 +1,14 @@
 // DarcGameState.cpp
 #include "DarcGameState.h"
+#include "TaskManagerComponent.h"
+#include "RareEventManagerComponent.h"
 #include "Net/UnrealNetwork.h"
+
+ADarcGameState::ADarcGameState()
+{
+    TaskManager = CreateDefaultSubobject<UTaskManagerComponent>(TEXT("TaskManager"));
+    RareEventManager = CreateDefaultSubobject<URareEventManagerComponent>(TEXT("RareEventManager"));
+}
 
 void ADarcGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -10,7 +18,10 @@ void ADarcGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void ADarcGameState::SetMissionPhase(EMissionPhase NewPhase)
 {
-    // Вызывать только на сервере.
+    if (!HasAuthority() || MissionPhase == NewPhase)
+    {
+        return;
+    }
     MissionPhase = NewPhase;
     OnRep_MissionPhase();
 }

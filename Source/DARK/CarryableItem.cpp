@@ -1,5 +1,6 @@
 // CarryableItem.cpp
 #include "CarryableItem.h"
+#include "DarcWorldMemorySubsystem.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -7,6 +8,9 @@
 ACarryableItem::ACarryableItem()
 {
     bReplicates = true;
+    // Позиция и привязка реплицируются с сервера. Без этого после «положить»
+    // каждый клиент оставлял бы предмет там, где посчитал сам, и позиции расходились бы.
+    SetReplicateMovement(true);
     PrimaryActorTick.bCanEverTick = false;
 }
 
@@ -27,32 +31,46 @@ void ACarryableItem::OnInteract_Implementation(AActor* Interactor)
     // Выполняется только на сервере.
     if (CurrentHolder == Interactor)
     {
-        DetachFromHolder();
-        CurrentHolder = nullptr;
-    }
-    else if (CurrentHolder == nullptr)
-    {
-        CurrentHolder = Interactor;
-        AttachToHolder(Interactor);
+        ServerRelease(Interactor);
+        return;
     }
 
-    OnRep_Holder(); // на сервере OnRep не срабатывает сам - дергаем вручную для консистентности
+    if (CurrentHolder == nullptr)
+    {
+        PickUpTransform = GetActorTransform();
+        CurrentHolder = Interactor;
+        AttachToHolder(Interactor);
+        OnRep_Holder(); // на сервере OnRep не срабатывает сам - дергаем вручную для консистентности
+    }
+}
+
+void ACarryableItem::ServerRelease(AActor* ByActor)
+{
+    if (!HasAuthority() || !CurrentHolder)
+    {
+        return;
+    }
+
+    DetachFromHolder();
+    CurrentHolder = nullptr;
+    OnRep_Holder();
+
+    if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+    {
+        Memory->RecordItemMoved(GetMemoryId(), PickUpTransform, GetActorTransform(), ByActor);
+    }
 }
 
 FText ACarryableItem::GetInteractionPrompt_Implementation() const
 {
-    return CurrentHolder ? NSLOCTEXT("Carry", "Drop", "Положить") : NSLOCTEXT("Carry", "PickUp", "Поднять");
+    return CurrentHolder ? PromptDrop : PromptPickUp;
 }
 
 void ACarryableItem::ForceDrop()
 {
     // Публичный метод для сценариев вроде "игрок потерял сознание - предмет падает".
-    if (CurrentHolder)
-    {
-        DetachFromHolder();
-        CurrentHolder = nullptr;
-        OnRep_Holder();
-    }
+    // Только сервер: владение предметом — серверное состояние.
+    ServerRelease(CurrentHolder);
 }
 
 void ACarryableItem::AttachToHolder(AActor* Holder)

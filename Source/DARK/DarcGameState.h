@@ -15,17 +15,31 @@ enum class EMissionPhase : uint8
     Failed      UMETA(DisplayName = "Провалено")
 };
 
+class UTaskManagerComponent;
+class URareEventManagerComponent;
+
 UCLASS()
 class DARK_API ADarcGameState : public AGameStateBase
 {
     GENERATED_BODY()
 
 public:
+    ADarcGameState();
+
+    // Задачи выезда — общие для команды, реплицируются всем.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mission")
+    TObjectPtr<UTaskManagerComponent> TaskManager;
+
+    // Редкие события. Таблицу событий (EventTable) назначить в Blueprint-наследнике GameState.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mission")
+    TObjectPtr<URareEventManagerComponent> RareEventManager;
+
     // Текущая фаза выезда - реплицируется всем, используется и UI, и логикой задач.
     UPROPERTY(ReplicatedUsing = OnRep_MissionPhase, BlueprintReadOnly, Category = "Mission")
     EMissionPhase MissionPhase = EMissionPhase::Preparation;
 
-    UFUNCTION(BlueprintCallable, Category = "Mission")
+    // Меняет только сервер. Обычно вызывается из TaskManager, а не напрямую.
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Mission")
     void SetMissionPhase(EMissionPhase NewPhase);
 
 protected:

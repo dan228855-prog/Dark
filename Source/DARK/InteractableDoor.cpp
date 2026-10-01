@@ -1,5 +1,6 @@
 // InteractableDoor.cpp
 #include "InteractableDoor.h"
+#include "DarcWorldMemorySubsystem.h"
 #include "Net/UnrealNetwork.h"
 
 AInteractableDoor::AInteractableDoor()
@@ -29,20 +30,33 @@ void AInteractableDoor::OnInteract_Implementation(AActor* Interactor)
         return;
     }
 
-    bIsOpen = !bIsOpen;
+    SetDoorOpen(!bIsOpen, Interactor);
+}
+
+void AInteractableDoor::SetDoorOpen(bool bNewIsOpen, AActor* ByActor)
+{
+    if (!HasAuthority() || bIsOpen == bNewIsOpen)
+    {
+        return;
+    }
+
+    bIsOpen = bNewIsOpen;
     OnRep_IsOpen(); // на сервере OnRep не вызывается автоматически - дергаем сами для консистентности
+
+    if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+    {
+        Memory->RecordDoorState(GetMemoryId(), bIsOpen, ByActor);
+    }
 }
 
 FText AInteractableDoor::GetInteractionPrompt_Implementation() const
 {
-    return bIsLocked
-        ? NSLOCTEXT("Door", "Locked", "Заперто")
-        : (bIsOpen ? NSLOCTEXT("Door", "Close", "Закрыть дверь") : NSLOCTEXT("Door", "Open", "Открыть дверь"));
+    return bIsLocked ? PromptLocked : (bIsOpen ? PromptClose : PromptOpen);
 }
 
 void AInteractableDoor::OnRep_IsOpen()
 {
     // Вызывается на клиентах при получении новой реплики bIsOpen,
-    // и вручную на сервере из OnInteract_Implementation.
+    // и вручную на сервере из SetDoorOpen.
     OnDoorStateChanged(bIsOpen);
 }

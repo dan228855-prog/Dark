@@ -24,6 +24,30 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
     bool bIsLocked = false;
 
+    // ID двери для WorldMemory. Если пусто — берётся имя актора в уровне (оно стабильно
+    // для расставленных вручную дверей). Процедурный генератор обязан задавать его явно.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door")
+    FName MemoryId;
+
+    // Тексты подсказок. В редакторе выбрать строки из String Table (ST_UI: Door_Open / Door_Close / Door_Locked).
+    // В C++ текст для игрока не хардкодим — правило проекта (RU + EN через локализацию).
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Text")
+    FText PromptOpen;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Text")
+    FText PromptClose;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Text")
+    FText PromptLocked;
+
+    UFUNCTION(BlueprintPure, Category = "Door")
+    FName GetMemoryId() const { return MemoryId.IsNone() ? GetFName() : MemoryId; }
+
+    // Серверная смена состояния не игроком: события, «эхо» WorldMemory, электрозамки.
+    // ByActor = nullptr означает «это сделал мир, а не игрок».
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Door")
+    void SetDoorOpen(bool bNewIsOpen, AActor* ByActor = nullptr);
+
     // --- IInteractable ---
     virtual bool CanInteract_Implementation(AActor* Interactor) const override;
     virtual void OnInteract_Implementation(AActor* Interactor) override;

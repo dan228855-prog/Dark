@@ -25,13 +25,28 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FName CarrySocketName = TEXT("hand_r_socket");
 
+    // ID предмета для WorldMemory. Если пусто — имя актора в уровне.
+    // Процедурный генератор и заспавненные в рантайме предметы обязаны задавать его явно.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Carry")
+    FName MemoryId;
+
+    // Тексты подсказок — из String Table (ST_UI: Carry_PickUp / Carry_Drop), не из C++.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Carry|Text")
+    FText PromptPickUp;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Carry|Text")
+    FText PromptDrop;
+
+    UFUNCTION(BlueprintPure, Category = "Carry")
+    FName GetMemoryId() const { return MemoryId.IsNone() ? GetFName() : MemoryId; }
+
     // Игрок вызывает это же взаимодействие и на подбор, и на выброс (переключение).
     virtual bool CanInteract_Implementation(AActor* Interactor) const override;
     virtual void OnInteract_Implementation(AActor* Interactor) override;
     virtual FText GetInteractionPrompt_Implementation() const override;
 
     // Явный сброс предмета (например, если игрок погиб/потерял сознание - см. решение про "дух").
-    UFUNCTION(BlueprintCallable, Category = "Carry")
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Carry")
     void ForceDrop();
 
 protected:
@@ -46,4 +61,10 @@ protected:
 
     void AttachToHolder(AActor* Holder);
     void DetachFromHolder();
+
+    // Где предмет лежал до того, как его подняли, — для записи перемещения в WorldMemory.
+    FTransform PickUpTransform;
+
+    // Отпустить предмет на сервере и записать перемещение в память мира.
+    void ServerRelease(AActor* ByActor);
 };
