@@ -121,4 +121,8 @@ void AInteractableDoor::BeginPlay()
 {
     Super::BeginPlay();
     VisualSpec.ApplyTo(Panel); // модель — у каждой машины сама
+    if (bIsOpen && bNativeSwing)
+    {
+        SetActorTickEnabled(true); // дверь, открытая с самого начала, — довернуть створку
+    }
 }

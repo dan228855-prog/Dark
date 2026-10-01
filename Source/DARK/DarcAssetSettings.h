@@ -44,6 +44,15 @@ struct DARK_API FDarcVisualSpec
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
 	FVector Offset = FVector::ZeroVector;
 
+	/**
+	 * Взять модель у актора карты (разметка тегами): та же модель, материалы, место и масштаб;
+	 * сам актор карты скрывается. Он загружен с картой у каждого игрока — по сети идёт только ссылка.
+	 * Если у него нет статической модели (скелетный NPC, TargetPoint) — он остаётся видимым,
+	 * а компонент становится невидимым «телом» по его габаритам (для взгляда и E).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	TObjectPtr<AActor> CopyFrom;
+
 	void ApplyTo(UStaticMeshComponent* Component) const;
 };
 
@@ -95,6 +104,9 @@ public:
 	 * если слот пуст — серый куб такого размера. MaterialSlot — необязательный материал.
 	 */
 	static void ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot = NAME_None);
+
+	/** Модель/место/масштаб — как у актора карты (см. FDarcVisualSpec::CopyFrom). */
+	static void ApplyCopy(UStaticMeshComponent* Component, AActor* Source);
 
 	/** Случайный из вариантов слота: Slot, Slot_1 … Slot_8. nullptr — ни одного. */
 	static USoundBase* FindSoundVariant(FName Slot);

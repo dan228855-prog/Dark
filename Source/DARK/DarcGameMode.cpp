@@ -15,6 +15,7 @@
 #include "DarcHUD.h"
 #include "DarcPlayerController.h"
 #include "DarcSliceBuilder.h"
+#include "DarcMarkupSubsystem.h"
 #include "RareEventManagerComponent.h"
 #include "Engine/DataTable.h"
 #include "EngineUtils.h"
@@ -53,9 +54,9 @@ void ADarcGameMode::InitGame(const FString& MapName, const FString& Options, FSt
         bSliceBuilt = true;
         return;
     }
-    if (TActorIterator<APlayerStart>(GetWorld()))
+    if (TActorIterator<APlayerStart>(GetWorld()) || UDarcMarkupSubsystem::HasMarkup(GetWorld()))
     {
-        return; // своя карта со своими точками появления — ничего не строим
+        return; // своя карта (точки появления или разметка DARC.*) — ничего не строим
     }
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

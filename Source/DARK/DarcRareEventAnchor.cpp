@@ -81,6 +81,7 @@ void ADarcRareEventAnchor::PlayEventLocally_Implementation(const FDarcRareEventP
 		{
 			if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(Target->GetRootComponent()))
 			{
+				Body->SetMobility(EComponentMobility::Movable); // предмет карты может быть Static
 				Body->SetSimulatePhysics(false); // иначе физика сразу «уронит» его обратно
 			}
 			TargetOriginalLocation = Target->GetActorLocation();

@@ -193,8 +193,45 @@ UAudioComponent* UDarcAssetSettings::PlayLoopAttached(FName Slot, USceneComponen
 		: nullptr;
 }
 
+void UDarcAssetSettings::ApplyCopy(UStaticMeshComponent* Component, AActor* Source)
+{
+	Component->SetMobility(EComponentMobility::Movable);
+	const UStaticMeshComponent* SourceMesh = Source->FindComponentByClass<UStaticMeshComponent>();
+	if (SourceMesh && SourceMesh->GetStaticMesh())
+	{
+		Component->SetStaticMesh(SourceMesh->GetStaticMesh());
+		for (int32 i = 0; i < SourceMesh->GetNumMaterials(); ++i)
+		{
+			Component->SetMaterial(i, SourceMesh->GetMaterial(i));
+		}
+		Component->SetWorldTransform(SourceMesh->GetComponentTransform(), false, nullptr, ETeleportType::TeleportPhysics);
+		Source->SetActorHiddenInGame(true);
+		Source->SetActorEnableCollision(false);
+		return;
+	}
+
+	// Модели нет — невидимая коробка по габаритам исходного актора (если они есть).
+	FVector Origin, Extent;
+	Source->GetActorBounds(false, Origin, Extent);
+	if (Extent.IsNearlyZero())
+	{
+		Component->SetVisibility(false);
+		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		return;
+	}
+	Component->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
+	Component->SetWorldScale3D(Extent / 50.f);
+	Component->SetWorldLocation(Origin, false, nullptr, ETeleportType::TeleportPhysics);
+	Component->SetHiddenInGame(true);
+}
+
 void FDarcVisualSpec::ApplyTo(UStaticMeshComponent* Component) const
 {
+	if (Component && CopyFrom)
+	{
+		UDarcAssetSettings::ApplyCopy(Component, CopyFrom);
+		return;
+	}
 	if (!Component || Size.IsNearlyZero())
 	{
 		return;
