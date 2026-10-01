@@ -491,8 +491,6 @@ void ADarcSliceBuilder::BuildGameplay()
 	{
 		const FVector Loc(1150.f, -500.f, 60.f);
 		ADarcGenerator* Generator = SpawnDeferred<ADarcGenerator>(Loc);
-		Generator->PromptGrab = Txt(TEXT("Heavy_Grab"));
-		Generator->PromptRelease = Txt(TEXT("Heavy_Release"));
 		Generator->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
 		Generator->VisualSpec = Vis(TEXT("Generator"), FVector(110.f, 70.f, 90.f));
 		Finish(Generator, Loc);
@@ -504,8 +502,6 @@ void ADarcSliceBuilder::BuildGameplay()
 		const FVector CabinetLoc(1800.f, 650.f, 100.f);
 		ADarcHeavyObject* Cabinet = SpawnDeferred<ADarcHeavyObject>(CabinetLoc);
 		Cabinet->bHasFragileCable = false;
-		Cabinet->PromptGrab = Txt(TEXT("Heavy_Grab"));
-		Cabinet->PromptRelease = Txt(TEXT("Heavy_Release"));
 		Cabinet->VisualSpec = Vis(TEXT("Cabinet"), FVector(120.f, 60.f, 200.f));
 		Finish(Cabinet, CabinetLoc);
 
@@ -639,8 +635,6 @@ void ADarcSliceBuilder::BuildGameplay()
 		ADarcHeavyObject* Rack = SpawnDeferred<ADarcHeavyObject>(RackLoc);
 		Rack->DeliveryTarget = WorkPoint;
 		Rack->TaskIdOnDelivered = TEXT("MoveServerRack");
-		Rack->PromptGrab = Txt(TEXT("Heavy_Grab"));
-		Rack->PromptRelease = Txt(TEXT("Heavy_Release"));
 		Rack->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
 		Rack->VisualSpec = Vis(TEXT("ServerRack"), FVector(70.f, 90.f, 200.f));
 		Finish(Rack, RackLoc);

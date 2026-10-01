@@ -6,6 +6,7 @@
 #include "DarcSpiritCharacter.h"
 #include "Interactable.h"
 #include "InteractionComponent.h"
+#include "DarcGrabComponent.h"
 #include "TaskManagerComponent.h"
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -81,6 +82,19 @@ void ADarcHUD::DrawHUD()
 				DrawTextLine(FText::Format(UDarcGameplayLibrary::UIText(TEXT("HUD_PromptFormat")), Prompt),
 					W * 0.5f, H * 0.5f + 28.f, FLinearColor::White, 1.1f, true);
 			}
+		}
+	}
+
+	// --- Захват (ЛКМ) ---
+	if (const UDarcGrabComponent* Grab = Pawn ? Pawn->FindComponentByClass<UDarcGrabComponent>() : nullptr)
+	{
+		if (Grab->IsHolding())
+		{
+			DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_Holding")), W * 0.5f, H * 0.5f + 52.f, FLinearColor(0.85f, 0.9f, 1.f, 0.85f), 0.9f, true);
+		}
+		else if (Grab->FocusedGrabbable)
+		{
+			DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_Grab")), W * 0.5f, H * 0.5f + 52.f, FLinearColor(0.85f, 0.9f, 1.f, 0.85f), 0.9f, true);
 		}
 	}
 

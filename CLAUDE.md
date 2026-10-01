@@ -45,6 +45,7 @@
 - Строки: **источник (RU) — `Content/Localization/ST_UI.csv`**, регистрируется кодом при старте модуля (`LOCTABLE_FROMFILE_GAME("ST_UI", ...)` в `DARK.cpp`); из C++ — `UDarcGameplayLibrary::UIText(Key)`. Английский перевод — `docs/ST_UI_EN.csv` (в Localization Dashboard). `/Content/Localization/` — единственная часть Content в git.
 - Срез играбелен без редактора: на пустой карте `ADarcGameMode` создаёт `ADarcSliceBuilder` (серый уровень кодом), `ADarcPlayerController` (клавиши через BindKey, окно терминала на Slate), `ADarcHUD` (Canvas). Модели/материалы/звуки — слоты в `UDarcAssetSettings` (`Config/DefaultGame.ini`), объекты применяют `FDarcVisualSpec` у каждой машины сами.
 - Ассеты автора: `Tools/darc_setup.py` (запуск в редакторе) импортирует `RawAssets/` и пишет `docs/asset_inventory.csv` — по нему заполнять слоты в `DefaultGame.ini`. Инструкция автору — `docs/PC_SETUP.md`.
+- Физический захват: `UDarcGrabComponent` (ЛКМ держать / ПКМ толкнуть; сила игрока ограничена — тяжёлое в коопе тащат вдвоём, в соло сила ×2). `ADarcHeavyObject` — просто физическое тело с массой, хрупким кабелем и доставкой. Шаги/прыжок/приземление — `UDarcFootstepComponent` (локально у каждой машины). Компоненты добавляются персонажу шаблона в `ADarcPlayerController::OnPossess`.
 - Тексты подсказок двери/предмета — поля `Prompt*` (FText из String Table), не NSLOCTEXT в C++.
 
 ## Источники истины

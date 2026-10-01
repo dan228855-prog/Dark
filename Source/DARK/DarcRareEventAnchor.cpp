@@ -60,8 +60,8 @@ void ADarcRareEventAnchor::EndServerEffect()
 	}
 	if (TargetActor && TargetActor->HasAuthority())
 	{
-		TargetActor->AddActorWorldOffset(FVector(FMath::FRandRange(-60.f, 60.f), FMath::FRandRange(60.f, 120.f), 0.f));
-		TargetActor->AddActorWorldRotation(FRotator(0.f, FMath::FRandRange(-25.f, 25.f), 0.f));
+		TargetActor->AddActorWorldOffset(FVector(FMath::FRandRange(-60.f, 60.f), FMath::FRandRange(60.f, 120.f), 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+		TargetActor->AddActorWorldRotation(FRotator(0.f, FMath::FRandRange(-25.f, 25.f), 0.f), false, nullptr, ETeleportType::TeleportPhysics);
 	}
 }
 

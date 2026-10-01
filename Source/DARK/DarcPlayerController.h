@@ -46,10 +46,15 @@ protected:
 	void CopyTemplateInputMappings();
 	void EnsureInteractionComponent(APawn* InPawn);
 
+	/** Сервер: добавить персонажу шаблона нужный ему сетевой компонент, если его нет. */
+	template <class TComponent>
+	void EnsureComponent(APawn* InPawn, const TCHAR* Name);
+
 	void HandleInteract();
 	void HandleToggleTasks();
-	void HandleSpiritFlicker();
-	void HandleSpiritPush();
+	void HandlePrimaryPressed();   // ЛКМ: захват (живой) / мигнуть светом (дух)
+	void HandlePrimaryReleased();  // ЛКМ отпущена: отпустить предмет
+	void HandleSecondary();        // ПКМ: бросить (живой) / толкнуть предмет (дух)
 	void HandleSpiritBreaker();
 
 	void SubmitTerminalText(const FText& Text);

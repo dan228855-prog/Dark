@@ -25,8 +25,10 @@ ADarcPowerLamp::ADarcPowerLamp()
 	Light->SetupAttachment(RootComponent);
 	Light->SetMobility(EComponentMobility::Movable);
 	Light->SetRelativeLocation(FVector(0.f, 0.f, -30.f));
-	Light->SetIntensity(4000.f);
-	Light->SetAttenuationRadius(900.f);
+	// Явные единицы: ~люминесцентный светильник (люмены не зависят от настроек проекта).
+	Light->SetIntensityUnits(ELightUnits::Lumens);
+	Light->SetIntensity(2600.f);
+	Light->SetAttenuationRadius(1300.f);
 	Light->SetLightColor(FLinearColor(0.9f, 0.95f, 1.f)); // холодный люминесцентный
 	Light->SetVisibility(false);
 

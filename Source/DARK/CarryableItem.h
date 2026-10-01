@@ -44,6 +44,13 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FVector HoldOffset = FVector(45.f, 18.f, 30.f);
 
+    // Как предмет виден своему игроку: смещение от камеры (вперёд, вправо, вверх), см, и поворот.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    FVector FirstPersonHoldOffset = FVector(32.f, 16.f, -14.f);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    FRotator FirstPersonHoldRotation = FRotator(0.f, -15.f, 0.f);
+
     // ID предмета для WorldMemory. Если пусто — имя актора в уровне.
     // Процедурный генератор и заспавненные в рантайме предметы обязаны задавать его явно.
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Carry")
@@ -78,6 +85,7 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    virtual void OnRep_AttachmentReplication() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION()

@@ -85,3 +85,5 @@ HUD_TaskDone,[x] {0}
 HUD_TaskFailed,[!] {0}
 HUD_TaskLocked,  - {0}
 HUD_SubtitleFormat,{0}: {1}
+HUD_Grab,[LMB] Grab
+HUD_Holding,"Hold LMB to drag, release to let go, RMB to shove"

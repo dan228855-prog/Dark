@@ -9,7 +9,7 @@ ADarcGenerator::ADarcGenerator()
 {
 	// Хрупкого кабеля у генератора нет — кабель к вводу проверяется по длине в ADarcPowerInlet.
 	bHasFragileCable = false;
-	RequiredCarriers = 2;
+	MassKg = 70.f; // один в коопе не сдвинет, вдвоём — потащат, в соло — медленно волоком
 }
 
 void ADarcGenerator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

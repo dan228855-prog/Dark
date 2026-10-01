@@ -4,6 +4,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DarcAssetSettings.h"
@@ -122,17 +123,33 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
     SetActorEnableCollision(false);
 
     ACharacter* Character = Cast<ACharacter>(Holder);
-    if (Character && Character->GetMesh() && Character->GetMesh()->DoesSocketExist(CarrySocketName))
+    if (Character && Character->IsLocallyControlled())
     {
-        AttachToComponent(
-            Character->GetMesh(),
-            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-            CarrySocketName
-        );
+        // Свой персонаж: модель тела у себя не видна, поэтому держим предмет перед камерой —
+        // «в руке» в нижней правой части экрана. У остальных игроков — в руке модели (ниже).
+        if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
+        {
+            AttachToComponent(Camera, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+            SetActorRelativeLocation(FirstPersonHoldOffset);
+            SetActorRelativeRotation(FirstPersonHoldRotation);
+            return;
+        }
     }
-    else if (Character)
+    if (Character && Character->GetMesh())
     {
-        // Сокета руки нет (серые коробки, персонаж шаблона) — держим перед собой, чтобы было видно.
+        // Первый существующий сокет/кость руки: свой, шаблонный HandGrip_R, кость hand_r.
+        for (const FName Socket : { CarrySocketName, FName(TEXT("HandGrip_R")), FName(TEXT("hand_r")) })
+        {
+            if (!Socket.IsNone() && Character->GetMesh()->DoesSocketExist(Socket))
+            {
+                AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
+                return;
+            }
+        }
+    }
+    if (Character)
+    {
+        // Ни сокета, ни камеры (серые коробки) — держим перед собой, чтобы было видно.
         AttachToComponent(Character->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
         SetActorRelativeLocation(HoldOffset);
     }
@@ -141,6 +158,17 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
         // Слот/устройство: предмет встаёт в корень держателя (точка вставки).
         AttachToComponent(Holder->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
     }
+}
+
+void ACarryableItem::OnRep_AttachmentReplication()
+{
+    // Предмет в руке игрока крепится у каждой машины по-своему (у себя — к камере, у других —
+    // к руке модели), поэтому серверную привязку к персонажу не применяем — это делает OnRep_Holder.
+    if (Cast<APawn>(GetAttachmentReplication().AttachParent) || Cast<APawn>(CurrentHolder))
+    {
+        return;
+    }
+    Super::OnRep_AttachmentReplication();
 }
 
 void ACarryableItem::DetachFromHolder()

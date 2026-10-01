@@ -4,6 +4,8 @@
 #include "DarcSpiritCharacter.h"
 #include "DarcGameplayLibrary.h"
 #include "InteractionComponent.h"
+#include "DarcGrabComponent.h"
+#include "DarcFootstepComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -66,8 +68,9 @@ void ADarcPlayerController::SetupInputComponent()
 	// Свои клавиши — прямой привязкой, без ассетов Input Action.
 	InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ADarcPlayerController::HandleInteract);
 	InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ADarcPlayerController::HandleToggleTasks);
-	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ADarcPlayerController::HandleSpiritFlicker);
-	InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ADarcPlayerController::HandleSpiritPush);
+	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ADarcPlayerController::HandlePrimaryPressed);
+	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Released, this, &ADarcPlayerController::HandlePrimaryReleased);
+	InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ADarcPlayerController::HandleSecondary);
 	InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ADarcPlayerController::HandleSpiritBreaker);
 }
 
@@ -77,18 +80,31 @@ void ADarcPlayerController::OnPossess(APawn* InPawn)
 	EnsureInteractionComponent(InPawn);
 }
 
-void ADarcPlayerController::EnsureInteractionComponent(APawn* InPawn)
+template <class TComponent>
+void ADarcPlayerController::EnsureComponent(APawn* InPawn, const TCHAR* Name)
 {
-	// Сервер: персонажу из шаблона добавляем компонент взаимодействия (реплицируемый —
-	// он появится и у клиента, и тот сможет отправлять через него Server RPC).
-	if (!InPawn || Cast<ADarcSpiritCharacter>(InPawn) || InPawn->FindComponentByClass<UInteractionComponent>())
+	// Реплицируемый компонент, созданный на сервере, появится и у клиентов — через него
+	// клиент шлёт Server RPC, а у остальных игроков он, например, играет шаги.
+	if (!InPawn || InPawn->FindComponentByClass<TComponent>())
 	{
 		return;
 	}
-	UInteractionComponent* Interaction = NewObject<UInteractionComponent>(InPawn, TEXT("Interaction"));
-	Interaction->SetIsReplicated(true);
-	Interaction->RegisterComponent();
-	InPawn->AddInstanceComponent(Interaction);
+	TComponent* Component = NewObject<TComponent>(InPawn, Name);
+	Component->SetIsReplicated(true);
+	Component->RegisterComponent();
+	InPawn->AddInstanceComponent(Component);
+}
+
+void ADarcPlayerController::EnsureInteractionComponent(APawn* InPawn)
+{
+	// Персонажу из шаблона добавляем свои компоненты. «Духу» они не нужны.
+	if (!InPawn || Cast<ADarcSpiritCharacter>(InPawn))
+	{
+		return;
+	}
+	EnsureComponent<UInteractionComponent>(InPawn, TEXT("Interaction"));
+	EnsureComponent<UDarcGrabComponent>(InPawn, TEXT("Grab"));
+	EnsureComponent<UDarcFootstepComponent>(InPawn, TEXT("Footsteps"));
 }
 
 void ADarcPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -114,19 +130,35 @@ void ADarcPlayerController::HandleToggleTasks()
 	bShowTasks = !bShowTasks;
 }
 
-void ADarcPlayerController::HandleSpiritFlicker()
+void ADarcPlayerController::HandlePrimaryPressed()
 {
 	if (ADarcSpiritCharacter* Spirit = Cast<ADarcSpiritCharacter>(GetPawn()))
 	{
 		Spirit->TryFlicker();
 	}
+	else if (UDarcGrabComponent* Grab = GetPawn() ? GetPawn()->FindComponentByClass<UDarcGrabComponent>() : nullptr)
+	{
+		Grab->StartGrab();
+	}
 }
 
-void ADarcPlayerController::HandleSpiritPush()
+void ADarcPlayerController::HandlePrimaryReleased()
+{
+	if (UDarcGrabComponent* Grab = GetPawn() ? GetPawn()->FindComponentByClass<UDarcGrabComponent>() : nullptr)
+	{
+		Grab->StopGrab();
+	}
+}
+
+void ADarcPlayerController::HandleSecondary()
 {
 	if (ADarcSpiritCharacter* Spirit = Cast<ADarcSpiritCharacter>(GetPawn()))
 	{
 		Spirit->TryPush();
+	}
+	else if (UDarcGrabComponent* Grab = GetPawn() ? GetPawn()->FindComponentByClass<UDarcGrabComponent>() : nullptr)
+	{
+		Grab->Throw();
 	}
 }
 

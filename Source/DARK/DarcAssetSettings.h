@@ -13,6 +13,7 @@
 class UStaticMesh;
 class UMaterialInterface;
 class USoundBase;
+class USoundAttenuation;
 class UDataTable;
 class UDarcMissionDefinition;
 class UStaticMeshComponent;
@@ -95,8 +96,17 @@ public:
 	 */
 	static void ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot = NAME_None);
 
-	/** Проиграть звук слота в точке (у этой машины). Пустой слот — тишина. */
-	static void PlaySound(const UObject* WorldContextObject, FName Slot, const FVector& Location);
+	/** Случайный из вариантов слота: Slot, Slot_1 … Slot_8. nullptr — ни одного. */
+	static USoundBase* FindSoundVariant(FName Slot);
+
+	/** Есть ли у слота хоть один звук (сам слот или Slot_1). */
+	static bool HasSound(FName Slot);
+
+	/** Общее объёмное затухание для звуков без своих настроек (nullptr — у звука свои). */
+	static USoundAttenuation* GetDefaultAttenuation(USoundBase* Sound);
+
+	/** Проиграть звук слота в точке (у этой машины), объёмно. Пустой слот — тишина. */
+	static void PlaySound(const UObject* WorldContextObject, FName Slot, const FVector& Location, float Volume = 1.f);
 
 	/** Зацикленный звук на компоненте (гул ламп, генератор). nullptr, если слота нет. */
 	static UAudioComponent* PlayLoopAttached(FName Slot, USceneComponent* AttachTo);
