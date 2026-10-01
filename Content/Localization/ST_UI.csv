@@ -73,3 +73,15 @@ Npc_Talk,Поговорить
 Npc_HandOver,Отдать
 Card_Swipe,Приложить карту
 Screen_CatalogTitle,КАТАЛОГ ДАННЫХ ОБЪЕКТА
+Terminal_InputHint,"Введите код или команду, Enter — отправить, Esc — выйти"
+Screen_ArchiveTitle,АРХИВ ОБЪЕКТА — ОПИСЬ
+Screen_ArchiveList,arc_0001.bin … arc_0416.bin — 416 файлов по описи
+Screen_ExtraFileHint,"arc_0417.bin — НЕ ЗНАЧИТСЯ В ОПИСИ. Введите COPY, чтобы скопировать."
+HUD_PromptFormat,[E] {0}
+HUD_SpiritHint,"Вы погибли. ЛКМ — мигнуть светом, F — рубильник, ПКМ — толкнуть предмет"
+HUD_SpiritCooldown,…силы восстанавливаются…
+HUD_TaskActive,[ ] {0}
+HUD_TaskDone,[x] {0}
+HUD_TaskFailed,[!] {0}
+HUD_TaskLocked,  - {0}
+HUD_SubtitleFormat,{0}: {1}

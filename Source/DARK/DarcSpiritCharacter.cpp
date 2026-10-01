@@ -1,5 +1,6 @@
 // DarcSpiritCharacter.cpp
 #include "DarcSpiritCharacter.h"
+#include "DarcAssetSettings.h"
 #include "DarcFuseBox.h"
 #include "DarcGameState.h"
 #include "DarcPowerConsumerComponent.h"
@@ -10,6 +11,8 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/InputComponent.h"
+#include "InputCoreTypes.h"
 
 ADarcSpiritCharacter::ADarcSpiritCharacter()
 {
@@ -37,6 +40,30 @@ ADarcSpiritCharacter::ADarcSpiritCharacter()
 	Camera->SetupAttachment(GetCapsuleComponent());
 	Camera->bUsePawnControlRotation = true;
 }
+
+void ADarcSpiritCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAxisKey(EKeys::W, this, &ADarcSpiritCharacter::MoveForwardKey);
+	PlayerInputComponent->BindAxisKey(EKeys::S, this, &ADarcSpiritCharacter::MoveBackKey);
+	PlayerInputComponent->BindAxisKey(EKeys::D, this, &ADarcSpiritCharacter::MoveRightKey);
+	PlayerInputComponent->BindAxisKey(EKeys::A, this, &ADarcSpiritCharacter::MoveLeftKey);
+	PlayerInputComponent->BindAxisKey(EKeys::SpaceBar, this, &ADarcSpiritCharacter::MoveUpKey);
+	PlayerInputComponent->BindAxisKey(EKeys::LeftControl, this, &ADarcSpiritCharacter::MoveDownKey);
+	PlayerInputComponent->BindAxisKey(EKeys::MouseX, this, &ADarcSpiritCharacter::LookYaw);
+	PlayerInputComponent->BindAxisKey(EKeys::MouseY, this, &ADarcSpiritCharacter::LookPitch);
+}
+
+// Направление — по взгляду: дух летит туда, куда смотрит.
+void ADarcSpiritCharacter::MoveForwardKey(float Value) { AddMovementInput(GetControlRotation().Vector(), Value); }
+void ADarcSpiritCharacter::MoveBackKey(float Value)    { AddMovementInput(GetControlRotation().Vector(), -Value); }
+void ADarcSpiritCharacter::MoveRightKey(float Value)   { AddMovementInput(FRotationMatrix(GetControlRotation()).GetScaledAxis(EAxis::Y), Value); }
+void ADarcSpiritCharacter::MoveLeftKey(float Value)    { AddMovementInput(FRotationMatrix(GetControlRotation()).GetScaledAxis(EAxis::Y), -Value); }
+void ADarcSpiritCharacter::MoveUpKey(float Value)      { AddMovementInput(FVector::UpVector, Value); }
+void ADarcSpiritCharacter::MoveDownKey(float Value)    { AddMovementInput(FVector::UpVector, -Value); }
+void ADarcSpiritCharacter::LookYaw(float Value)        { AddControllerYawInput(Value); }
+void ADarcSpiritCharacter::LookPitch(float Value)      { AddControllerPitchInput(-Value); }
 
 void ADarcSpiritCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -171,5 +198,9 @@ void ADarcSpiritCharacter::Server_Push_Implementation(AActor* Target, FVector_Ne
 
 void ADarcSpiritCharacter::Client_ActionResult_Implementation(bool bSuccess)
 {
+	if (bSuccess)
+	{
+		UDarcAssetSettings::PlaySound(this, TEXT("SpiritAction"), GetActorLocation());
+	}
 	OnActionResult(bSuccess);
 }

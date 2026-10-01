@@ -19,4 +19,8 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "DARC", meta = (WorldContext = "WorldContextObject"))
 	static FString GetMissionCode(const UObject* WorldContextObject, FName Key, int32 Digits = 4);
+
+	/** Текст для игрока из таблицы строк ST_UI по ключу (единственный путь текста из C++). */
+	UFUNCTION(BlueprintPure, Category = "DARC")
+	static FText UIText(FName Key);
 };

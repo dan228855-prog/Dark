@@ -7,11 +7,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "DarcItemSlot.generated.h"
 
 class ACarryableItem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDarcSlotChanged, ACarryableItem*, Item);
+
+class UStaticMeshComponent;
 
 UCLASS()
 class DARK_API ADarcItemSlot : public AActor, public IInteractable
@@ -20,6 +23,14 @@ class DARK_API ADarcItemSlot : public AActor, public IInteractable
 
 public:
 	ADarcItemSlot();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	/** Какие предметы подходят (класс или его наследники). Пусто — любой переносимый предмет. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Slot")

@@ -2,16 +2,44 @@
 #include "InteractableDoor.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/StaticMeshComponent.h"
+#include "DarcAssetSettings.h"
 
 AInteractableDoor::AInteractableDoor()
 {
     bReplicates = true;
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;           // только для анимации створки
+    PrimaryActorTick.bStartWithTickEnabled = false;
+
+    RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+    Hinge = CreateDefaultSubobject<USceneComponent>(TEXT("Hinge"));
+    Hinge->SetupAttachment(RootComponent);
+    Hinge->SetMobility(EComponentMobility::Movable);
+    Panel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Panel"));
+    Panel->SetupAttachment(Hinge);
+    Panel->SetMobility(EComponentMobility::Movable);
+    Panel->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+}
+
+void AInteractableDoor::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    // Чисто визуально и локально на каждой машине: состояние двери — реплицируемый bIsOpen.
+    const float Target = bIsOpen ? OpenAngle : 0.f;
+    const float Current = Hinge->GetRelativeRotation().Yaw;
+    const float Next = FMath::FixedTurn(Current, Target, SwingSpeed * DeltaSeconds);
+    Hinge->SetRelativeRotation(FRotator(0.f, Next, 0.f));
+    if (FMath::IsNearlyEqual(Next, Target, 0.5f))
+    {
+        SetActorTickEnabled(false);
+    }
 }
 
 void AInteractableDoor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(AInteractableDoor, VisualSpec, COND_InitialOnly);
     DOREPLIFETIME(AInteractableDoor, bIsOpen);
     DOREPLIFETIME(AInteractableDoor, bIsLocked);
 }
@@ -72,10 +100,25 @@ void AInteractableDoor::OnRep_IsOpen()
 {
     // Вызывается на клиентах при получении новой реплики bIsOpen,
     // и вручную на сервере из SetDoorOpen.
+    if (bNativeSwing)
+    {
+        SetActorTickEnabled(true);
+    }
+    if (HasActorBegunPlay())
+    {
+        UDarcAssetSettings::PlaySound(this, bIsOpen ? TEXT("DoorOpen") : TEXT("DoorClose"), GetActorLocation());
+    }
     OnDoorStateChanged(bIsOpen);
 }
 
 void AInteractableDoor::Multicast_LockedAttempt_Implementation()
 {
+    UDarcAssetSettings::PlaySound(this, TEXT("DoorLocked"), GetActorLocation());
     OnLockedAttempt();
+}
+
+void AInteractableDoor::BeginPlay()
+{
+    Super::BeginPlay();
+    VisualSpec.ApplyTo(Panel); // модель — у каждой машины сама
 }

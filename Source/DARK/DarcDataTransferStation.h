@@ -11,6 +11,7 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "DarcPowerSubsystem.h"
+#include "DarcAssetSettings.h"
 #include "DarcDataTransferStation.generated.h"
 
 class ADarcItemSlot;
@@ -28,6 +29,8 @@ enum class EDarcTransferState : uint8
 	Complete        UMETA(DisplayName = "Передача завершена")
 };
 
+class UStaticMeshComponent;
+
 UCLASS()
 class DARK_API ADarcDataTransferStation : public AActor, public IInteractable
 {
@@ -35,6 +38,14 @@ class DARK_API ADarcDataTransferStation : public AActor, public IInteractable
 
 public:
 	ADarcDataTransferStation();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	/** Питание сервера (контур задаётся в компоненте, например "Server"). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transfer")
@@ -131,4 +142,7 @@ protected:
 	bool bWasStarted = false;
 
 	static constexpr float TickInterval = 0.25f;
+
+	/** Последнее показанное состояние — чтобы звук играл на переход, а не на каждый процент. */
+	EDarcTransferState LastShownState = EDarcTransferState::NoPower;
 };

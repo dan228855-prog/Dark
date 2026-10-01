@@ -6,7 +6,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "InteractableDoor.generated.h"
+
+class UStaticMeshComponent;
 
 UCLASS()
 class DARK_API AInteractableDoor : public AActor, public IInteractable
@@ -15,6 +18,29 @@ class DARK_API AInteractableDoor : public AActor, public IInteractable
 
 public:
     AInteractableDoor();
+
+    /** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+    UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+    FDarcVisualSpec VisualSpec;
+
+    // Петля (корень створки) и сама створка. Створка крутится вокруг петли сама,
+    // без Blueprint; в Blueprint можно переопределить подачу через OnDoorStateChanged.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Door")
+    TObjectPtr<USceneComponent> Hinge;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Door")
+    TObjectPtr<UStaticMeshComponent> Panel;
+
+    // Встроенная анимация открытия (поворот створки). Выключить, если анимация своя.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door")
+    bool bNativeSwing = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door")
+    float OpenAngle = 95.f;
+
+    // Градусов в секунду.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door")
+    float SwingSpeed = 160.f;
 
     // Открыта ли дверь. Реплицируется всем клиентам, меняется только сервером.
     UPROPERTY(ReplicatedUsing = OnRep_IsOpen, BlueprintReadOnly, Category = "Door")
@@ -58,6 +84,8 @@ public:
     virtual FText GetInteractionPrompt_Implementation() const override;
 
 protected:
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION()

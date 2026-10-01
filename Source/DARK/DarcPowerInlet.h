@@ -7,9 +7,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "DarcPowerInlet.generated.h"
 
 class ADarcGenerator;
+
+class UStaticMeshComponent;
 
 UCLASS()
 class DARK_API ADarcPowerInlet : public AActor, public IInteractable
@@ -18,6 +21,14 @@ class DARK_API ADarcPowerInlet : public AActor, public IInteractable
 
 public:
 	ADarcPowerInlet();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	/** Какой контур питает ввод. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power")
@@ -48,6 +59,7 @@ public:
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()

@@ -24,5 +24,7 @@ Plugins/**/Intermediate/
 *.rar
 *.7z
 
-# Content пока не храним в git (6+ ГБ, ассеты маркетплейса; нужен Git LFS)
-Content/
+# Content пока не храним в git (6+ ГБ, ассеты маркетплейса; нужен Git LFS).
+# Исключение — текстовые строки локализации (String Table из CSV), они нужны коду.
+/Content/*
+!/Content/Localization/

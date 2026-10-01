@@ -18,6 +18,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "DarcHeavyObject.generated.h"
 
 class UStaticMeshComponent;
@@ -30,6 +31,10 @@ class DARK_API ADarcHeavyObject : public AActor, public IInteractable
 
 public:
 	ADarcHeavyObject();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Heavy")
 	TObjectPtr<UStaticMeshComponent> Body;
@@ -96,6 +101,7 @@ public:
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

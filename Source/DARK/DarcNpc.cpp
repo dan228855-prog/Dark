@@ -1,5 +1,6 @@
 // DarcNpc.cpp
 #include "DarcNpc.h"
+#include "Components/StaticMeshComponent.h"
 #include "CarryableItem.h"
 #include "DarcGameState.h"
 #include "DarcPlayerState.h"
@@ -22,11 +23,16 @@ ADarcNpc::ADarcNpc()
 	GreetZone->SetupAttachment(RootComponent);
 	GreetZone->SetSphereRadius(500.f);
 	GreetZone->SetCollisionProfileName(TEXT("Trigger"));
+	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(RootComponent);
+	Visual->SetMobility(EComponentMobility::Movable);
+	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 }
 
 void ADarcNpc::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcNpc, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcNpc, bSpeaking);
 	DOREPLIFETIME(ADarcNpc, bGaveItem);
 }
@@ -34,6 +40,7 @@ void ADarcNpc::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void ADarcNpc::BeginPlay()
 {
 	Super::BeginPlay();
+	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
 
 	if (HasAuthority())
 	{

@@ -75,6 +75,18 @@ public:
 	AActor* TraceTarget() const;
 
 protected:
+	/** Полёт духа: WASD, Space/Ctrl — вверх/вниз, мышь — обзор. Без ассетов ввода. */
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	void MoveForwardKey(float Value);
+	void MoveBackKey(float Value);
+	void MoveRightKey(float Value);
+	void MoveLeftKey(float Value);
+	void MoveUpKey(float Value);
+	void MoveDownKey(float Value);
+	void LookYaw(float Value);
+	void LookPitch(float Value);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(Server, Reliable)

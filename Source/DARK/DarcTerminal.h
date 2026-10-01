@@ -14,6 +14,7 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "DarcPowerSubsystem.h"
+#include "DarcAssetSettings.h"
 #include "DarcTerminal.generated.h"
 
 class APlayerState;
@@ -28,6 +29,8 @@ enum class EDarcTerminalState : uint8
 	Unlocked UMETA(DisplayName = "Открыт")
 };
 
+class UStaticMeshComponent;
+
 UCLASS()
 class DARK_API ADarcTerminal : public AActor, public IInteractable
 {
@@ -35,6 +38,14 @@ class DARK_API ADarcTerminal : public AActor, public IInteractable
 
 public:
 	ADarcTerminal();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	/** Питание терминала. Если CircuitId у компонента пуст — терминал считается всегда запитанным. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Terminal")
@@ -63,6 +74,25 @@ public:
 	/** Команды после разблокировки → задачи (например "copy_extra" → TakeExtraFile). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Tasks")
 	TMap<FString, FName> CommandTasks;
+
+	/** Заголовок экрана, пока нужен код (String Table, например Screen_EnterCode). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Screen")
+	FText LockedTitle;
+
+	/** Заголовок открытого терминала (например Screen_CatalogTitle). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Screen")
+	FText UnlockedTitle;
+
+	/** Слова «повреждённого вывода»: при каждом показе выводятся в перепутанном порядке. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Screen")
+	TArray<FText> ScrambledWords;
+
+	/** Остальные строки открытого экрана (файлы каталога, подсказки команд). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal|Screen")
+	TArray<FText> ScreenLines;
+
+	/** Строки экрана для показа (перемешанные слова + строки). Локально, у каждого своё «перемешивание». */
+	TArray<FText> GetScreenLines() const;
 
 	/** Дальше этой дистанции пользователь «отходит», и терминал освобождается, см. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Terminal")
@@ -142,5 +172,6 @@ protected:
 	void CheckUserStillNear();
 
 	FTimerHandle UserCheckTimer;
+	bool bLocalWindowOpen = false;
 	bool bUnlocked = false;
 };

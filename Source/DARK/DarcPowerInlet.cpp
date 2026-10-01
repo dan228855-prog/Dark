@@ -1,5 +1,6 @@
 // DarcPowerInlet.cpp
 #include "DarcPowerInlet.h"
+#include "Components/StaticMeshComponent.h"
 #include "DarcGenerator.h"
 #include "DarcPowerSubsystem.h"
 #include "DarcWorldMemorySubsystem.h"
@@ -11,11 +12,16 @@ ADarcPowerInlet::ADarcPowerInlet()
 	bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(RootComponent);
+	Visual->SetMobility(EComponentMobility::Movable);
+	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 }
 
 void ADarcPowerInlet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcPowerInlet, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcPowerInlet, ConnectedGenerator);
 }
 
@@ -94,4 +100,10 @@ void ADarcPowerInlet::OnRep_Connected()
 FText ADarcPowerInlet::GetInteractionPrompt_Implementation() const
 {
 	return ConnectedGenerator ? PromptDisconnect : PromptConnect;
+}
+
+void ADarcPowerInlet::BeginPlay()
+{
+	Super::BeginPlay();
+	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
 }

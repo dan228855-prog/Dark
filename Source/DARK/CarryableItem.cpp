@@ -5,6 +5,8 @@
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "DarcAssetSettings.h"
 #include "EngineUtils.h"
 
 ACarryableItem::ACarryableItem()
@@ -14,11 +16,17 @@ ACarryableItem::ACarryableItem()
     // каждый клиент оставлял бы предмет там, где посчитал сам, и позиции расходились бы.
     SetReplicateMovement(true);
     PrimaryActorTick.bCanEverTick = false;
+
+    Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+    Mesh->SetMobility(EComponentMobility::Movable);
+    Mesh->SetCollisionProfileName(TEXT("PhysicsActor"));
+    RootComponent = Mesh;
 }
 
 void ACarryableItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(ACarryableItem, VisualSpec, COND_InitialOnly);
     DOREPLIFETIME(ACarryableItem, CurrentHolder);
 }
 
@@ -113,13 +121,20 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
     }
     SetActorEnableCollision(false);
 
-    if (ACharacter* Character = Cast<ACharacter>(Holder))
+    ACharacter* Character = Cast<ACharacter>(Holder);
+    if (Character && Character->GetMesh() && Character->GetMesh()->DoesSocketExist(CarrySocketName))
     {
         AttachToComponent(
             Character->GetMesh(),
-            FAttachmentTransformRules::SnapToTargetIncludingScale,
+            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
             CarrySocketName
         );
+    }
+    else if (Character)
+    {
+        // Сокета руки нет (серые коробки, персонаж шаблона) — держим перед собой, чтобы было видно.
+        AttachToComponent(Character->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+        SetActorRelativeLocation(HoldOffset);
     }
     else if (Holder && Holder->GetRootComponent())
     {
@@ -133,7 +148,7 @@ void ACarryableItem::DetachFromHolder()
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
     SetActorEnableCollision(true);
 
-    if (bRestorePhysicsOnDetach)
+    if (bRestorePhysicsOnDetach || bPhysicsWhenFree)
     {
         bRestorePhysicsOnDetach = false;
         if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()))
@@ -156,6 +171,7 @@ void ACarryableItem::OnRep_Holder()
         DetachFromHolder();
     }
 
+    UDarcAssetSettings::PlaySound(this, CurrentHolder ? TEXT("PickUp") : TEXT("Drop"), GetActorLocation());
     OnHolderChanged(CurrentHolder);
 }
 
@@ -174,4 +190,14 @@ ACarryableItem* ACarryableItem::FindItemHeldBy(const AActor* Holder)
         }
     }
     return nullptr;
+}
+
+void ACarryableItem::BeginPlay()
+{
+    Super::BeginPlay();
+    VisualSpec.ApplyTo(Mesh); // модель — у каждой машины сама
+    if (bPhysicsWhenFree && !CurrentHolder && Mesh->GetStaticMesh())
+    {
+        Mesh->SetSimulatePhysics(true);
+    }
 }

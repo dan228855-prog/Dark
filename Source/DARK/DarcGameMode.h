@@ -19,7 +19,10 @@ class DARK_API ADarcGameMode : public AGameModeBase
 public:
     ADarcGameMode();
 
+    virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+    virtual void StartPlay() override;
     virtual void PostLogin(APlayerController* NewPlayer) override;
+    virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
     /** Кем становится погибший. Можно заменить Blueprint-наследником (звук, пост-эффект для духа). */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Death")
@@ -39,4 +42,14 @@ protected:
     void OnPlayerDied(APawn* Body, AController* Victim, AActor* Cause);
 
     bool AnyPlayerAlive() const;
+
+    /** Срез собран кодом (пустая карта) — игроки появляются у КПП. */
+    bool bSliceBuilt = false;
+    int32 SpawnedPlayers = 0;
+
+    void AutoStartMission();
+    void WatchMissionEnd();
+    FTimerHandle StartTimer;
+    FTimerHandle EndWatchTimer;
+    bool bEndLinesSaid = false;
 };

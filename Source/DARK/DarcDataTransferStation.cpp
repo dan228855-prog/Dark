@@ -1,5 +1,7 @@
 // DarcDataTransferStation.cpp
 #include "DarcDataTransferStation.h"
+#include "DarcAssetSettings.h"
+#include "Components/StaticMeshComponent.h"
 #include "DarcItemSlot.h"
 #include "DarcPowerConsumerComponent.h"
 #include "DarcWorldMemorySubsystem.h"
@@ -14,11 +16,16 @@ ADarcDataTransferStation::ADarcDataTransferStation()
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	Power = CreateDefaultSubobject<UDarcPowerConsumerComponent>(TEXT("Power"));
 	Power->CircuitId = TEXT("Server");
+	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(RootComponent);
+	Visual->SetMobility(EComponentMobility::Movable);
+	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 }
 
 void ADarcDataTransferStation::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcDataTransferStation, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcDataTransferStation, State);
 	DOREPLIFETIME(ADarcDataTransferStation, ProgressPercent);
 }
@@ -26,6 +33,7 @@ void ADarcDataTransferStation::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 void ADarcDataTransferStation::BeginPlay()
 {
 	Super::BeginPlay();
+	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
 
 	if (HasAuthority())
 	{
@@ -209,6 +217,14 @@ void ADarcDataTransferStation::FireAnomaly()
 
 void ADarcDataTransferStation::OnRep_Transfer()
 {
+	// Звук смены состояния (у каждой машины один раз на переход, не на каждый процент).
+	if (State != LastShownState && HasActorBegunPlay())
+	{
+		if (State == EDarcTransferState::Transferring) UDarcAssetSettings::PlaySound(this, TEXT("TransferStart"), GetActorLocation());
+		if (State == EDarcTransferState::Checking)     UDarcAssetSettings::PlaySound(this, TEXT("TransferChecking"), GetActorLocation());
+		if (State == EDarcTransferState::Complete)     UDarcAssetSettings::PlaySound(this, TEXT("TransferComplete"), GetActorLocation());
+	}
+	LastShownState = State;
 	OnTransferStateChanged(State, ProgressPercent);
 }
 

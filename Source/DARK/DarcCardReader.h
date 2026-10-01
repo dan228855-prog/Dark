@@ -6,10 +6,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "DarcCardReader.generated.h"
 
 class ACarryableItem;
 class AInteractableDoor;
+
+class UStaticMeshComponent;
 
 UCLASS()
 class DARK_API ADarcCardReader : public AActor, public IInteractable
@@ -18,6 +21,14 @@ class DARK_API ADarcCardReader : public AActor, public IInteractable
 
 public:
 	ADarcCardReader();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	/** Класс карты доступа. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Access")
@@ -38,6 +49,8 @@ public:
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Result(bool bGranted);
 

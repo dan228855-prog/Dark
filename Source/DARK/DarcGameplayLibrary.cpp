@@ -20,3 +20,8 @@ FString UDarcGameplayLibrary::GetMissionCode(const UObject* WorldContextObject, 
 	}
 	return Code;
 }
+
+FText UDarcGameplayLibrary::UIText(FName Key)
+{
+	return FText::FromStringTable(TEXT("ST_UI"), Key.ToString());
+}

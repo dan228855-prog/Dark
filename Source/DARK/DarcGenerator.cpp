@@ -1,7 +1,9 @@
 // DarcGenerator.cpp
 #include "DarcGenerator.h"
+#include "DarcAssetSettings.h"
 #include "DarcPowerSubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/AudioComponent.h"
 
 ADarcGenerator::ADarcGenerator()
 {
@@ -34,5 +36,16 @@ void ADarcGenerator::SetRunning(bool bNewRunning)
 
 void ADarcGenerator::OnRep_Running()
 {
+	// Звук у каждой машины: запуск/остановка + зацикленный гул, пока работает.
+	UDarcAssetSettings::PlaySound(this, bRunning ? TEXT("GeneratorStart") : TEXT("GeneratorStop"), GetActorLocation());
+	if (bRunning && !RunningLoop)
+	{
+		RunningLoop = UDarcAssetSettings::PlayLoopAttached(TEXT("GeneratorLoop"), GetRootComponent());
+	}
+	else if (!bRunning && RunningLoop)
+	{
+		RunningLoop->Stop();
+		RunningLoop = nullptr;
+	}
 	OnRunningChanged(bRunning);
 }

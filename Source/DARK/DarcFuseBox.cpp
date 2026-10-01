@@ -1,5 +1,7 @@
 // DarcFuseBox.cpp
 #include "DarcFuseBox.h"
+#include "DarcAssetSettings.h"
+#include "Components/StaticMeshComponent.h"
 #include "DarcFuseItem.h"
 #include "DarcPowerSubsystem.h"
 #include "DarcWorldMemorySubsystem.h"
@@ -12,11 +14,16 @@ ADarcFuseBox::ADarcFuseBox()
 	bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(RootComponent);
+	Visual->SetMobility(EComponentMobility::Movable);
+	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 }
 
 void ADarcFuseBox::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcFuseBox, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcFuseBox, bHasFuse);
 	DOREPLIFETIME(ADarcFuseBox, bBreakerOn);
 }
@@ -82,6 +89,11 @@ void ADarcFuseBox::HandleBlowFromMistake(AActor* Interactor)
 	if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
 	{
 		Memory->RecordInteraction(CircuitId, TEXT("FuseBlown"), Interactor);
+		if (CollateralCircuits.Num() > 0)
+		{
+			// Последствие для кампании: в следующем брифинге — «плановое обслуживание сети».
+			Memory->AddCampaignFact(TEXT("Slice.BlackoutHappened"));
+		}
 	}
 
 	// Выбиваем соседние контуры: их предохранители сгорают тоже.
@@ -127,11 +139,16 @@ void ADarcFuseBox::NotifyStateChanged()
 
 void ADarcFuseBox::OnRep_State()
 {
+	if (HasActorBegunPlay())
+	{
+		UDarcAssetSettings::PlaySound(this, TEXT("BreakerSwitch"), GetActorLocation());
+	}
 	OnStateChanged();
 }
 
 void ADarcFuseBox::Multicast_FuseBlown_Implementation()
 {
+	UDarcAssetSettings::PlaySound(this, TEXT("FuseBlow"), GetActorLocation());
 	OnFuseBlownFX();
 }
 
@@ -143,4 +160,10 @@ FText ADarcFuseBox::GetInteractionPrompt_Implementation() const
 		return PromptInsertFuse;
 	}
 	return bBreakerOn ? PromptBreakerOff : PromptBreakerOn;
+}
+
+void ADarcFuseBox::BeginPlay()
+{
+	Super::BeginPlay();
+	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
 }

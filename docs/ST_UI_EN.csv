@@ -73,3 +73,15 @@ Npc_Talk,Talk
 Npc_HandOver,Hand over
 Card_Swipe,Swipe card
 Screen_CatalogTitle,SITE DATA CATALOG
+Terminal_InputHint,"Type a code or command, Enter to send, Esc to leave"
+Screen_ArchiveTitle,SITE ARCHIVE — INVENTORY
+Screen_ArchiveList,arc_0001.bin … arc_0416.bin — 416 files listed
+Screen_ExtraFileHint,arc_0417.bin — NOT IN INVENTORY. Type COPY to copy it.
+HUD_PromptFormat,[E] {0}
+HUD_SpiritHint,"You are dead. LMB — flicker lights, F — breaker, RMB — push an object"
+HUD_SpiritCooldown,…gathering strength…
+HUD_TaskActive,[ ] {0}
+HUD_TaskDone,[x] {0}
+HUD_TaskFailed,[!] {0}
+HUD_TaskLocked,  - {0}
+HUD_SubtitleFormat,{0}: {1}

@@ -10,6 +10,8 @@
 #include "DarcHeavyObject.h"
 #include "DarcGenerator.generated.h"
 
+class UAudioComponent;
+
 UCLASS()
 class DARK_API ADarcGenerator : public ADarcHeavyObject
 {
@@ -29,6 +31,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Running();
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> RunningLoop;
 
 	/** Звук запуска/работы/остановки, дым — Blueprint. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Power")

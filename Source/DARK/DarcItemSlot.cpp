@@ -1,5 +1,6 @@
 // DarcItemSlot.cpp
 #include "DarcItemSlot.h"
+#include "Components/StaticMeshComponent.h"
 #include "CarryableItem.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
@@ -11,17 +12,23 @@ ADarcItemSlot::ADarcItemSlot()
 	bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("InsertPoint"));
+	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(RootComponent);
+	Visual->SetMobility(EComponentMobility::Movable);
+	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 }
 
 void ADarcItemSlot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcItemSlot, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcItemSlot, bAllowRemove);
 }
 
 void ADarcItemSlot::BeginPlay()
 {
 	Super::BeginPlay();
+	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
 
 	if (HasAuthority() && InitialItem && !InitialItem->CurrentHolder)
 	{

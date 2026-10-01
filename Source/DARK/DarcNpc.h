@@ -9,6 +9,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "DarcNpc.generated.h"
 
 class ACarryableItem;
@@ -32,6 +33,8 @@ struct FDarcNpcLine
 	float Duration = 3.f;
 };
 
+class UStaticMeshComponent;
+
 UCLASS()
 class DARK_API ADarcNpc : public AActor, public IInteractable
 {
@@ -39,6 +42,14 @@ class DARK_API ADarcNpc : public AActor, public IInteractable
 
 public:
 	ADarcNpc();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	/** Имя говорящего в субтитрах (String Table). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC")

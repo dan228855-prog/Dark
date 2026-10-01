@@ -11,7 +11,10 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "DarcTaskTypes.h"
+#include "DarcAssetSettings.h"
 #include "DarcFuseBox.generated.h"
+
+class UStaticMeshComponent;
 
 UCLASS()
 class DARK_API ADarcFuseBox : public AActor, public IInteractable
@@ -20,6 +23,14 @@ class DARK_API ADarcFuseBox : public AActor, public IInteractable
 
 public:
 	ADarcFuseBox();
+
+	/** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+	FDarcVisualSpec VisualSpec;
+
+	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> Visual;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power")
 	FName CircuitId;
@@ -67,6 +78,7 @@ public:
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()

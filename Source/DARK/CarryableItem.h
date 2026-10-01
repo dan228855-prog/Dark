@@ -6,7 +6,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "DarcAssetSettings.h"
 #include "CarryableItem.generated.h"
+
+class UStaticMeshComponent;
 
 UCLASS()
 class DARK_API ACarryableItem : public AActor, public IInteractable
@@ -16,6 +19,14 @@ class DARK_API ACarryableItem : public AActor, public IInteractable
 public:
     ACarryableItem();
 
+    /** Какая модель у объекта (реплицируется при появлении, применяется у каждого игрока). */
+    UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
+    FDarcVisualSpec VisualSpec;
+
+    // Тело предмета (корень). Модель — из DarcAssetSettings или задаётся в Blueprint.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Carry")
+    TObjectPtr<UStaticMeshComponent> Mesh;
+
     // Кто сейчас держит предмет. nullptr, если предмет лежит на земле.
     // Реплицируется, чтобы все клиенты видели один и тот же предмет "в руке" одного игрока.
     UPROPERTY(ReplicatedUsing = OnRep_Holder, BlueprintReadOnly, Category = "Carry")
@@ -24,6 +35,14 @@ public:
     // Имя сокета на скелете игрока, куда крепится предмет при переноске.
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FName CarrySocketName = TEXT("hand_r_socket");
+
+    // Свободно лежащий предмет — с физикой (падает, его можно толкнуть).
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    bool bPhysicsWhenFree = true;
+
+    // Если сокета нет — где держать предмет относительно персонажа (вперёд, вправо, вверх), см.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    FVector HoldOffset = FVector(45.f, 18.f, 30.f);
 
     // ID предмета для WorldMemory. Если пусто — имя актора в уровне.
     // Процедурный генератор и заспавненные в рантайме предметы обязаны задавать его явно.
@@ -58,6 +77,7 @@ public:
     void ForceDrop();
 
 protected:
+    virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION()

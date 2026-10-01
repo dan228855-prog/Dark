@@ -41,7 +41,10 @@
 - Срез: `ADarcTerminal` (ввод кода через `UInteractionComponent::SubmitTerminalInput`), `ADarcItemSlot`, `ADarcDataTransferStation`, `ADarcHeavyObject` (кооп/соло перенос), `UDarcGameplayLibrary::GetMissionCode` (код из реплицируемого сида выезда). Всё это тоже ещё не компилировалось.
 - Смерть/дух: `ADarcGameMode::KillPlayer`, `ADarcSpiritCharacter`; смерти за кампанию — в WorldMemory.
 - NPC/доступ/база: `ADarcNpc` (реплики через `ADarcGameState::Say` → `OnSubtitle`), `ADarcCardReader`, `ADarcBaseUnlock` (по фактам кампании).
-- Данные среза для импорта: `docs/data/*.csv` (задачи, редкие события), строки — `docs/ST_UI_*.csv`.
+- Данные среза для импорта: `docs/data/*.csv` (задачи, редкие события).
+- Строки: **источник (RU) — `Content/Localization/ST_UI.csv`**, регистрируется кодом при старте модуля (`LOCTABLE_FROMFILE_GAME("ST_UI", ...)` в `DARK.cpp`); из C++ — `UDarcGameplayLibrary::UIText(Key)`. Английский перевод — `docs/ST_UI_EN.csv` (в Localization Dashboard). `/Content/Localization/` — единственная часть Content в git.
+- Срез играбелен без редактора: на пустой карте `ADarcGameMode` создаёт `ADarcSliceBuilder` (серый уровень кодом), `ADarcPlayerController` (клавиши через BindKey, окно терминала на Slate), `ADarcHUD` (Canvas). Модели/материалы/звуки — слоты в `UDarcAssetSettings` (`Config/DefaultGame.ini`), объекты применяют `FDarcVisualSpec` у каждой машины сами.
+- Ассеты автора: `Tools/darc_setup.py` (запуск в редакторе) импортирует `RawAssets/` и пишет `docs/asset_inventory.csv` — по нему заполнять слоты в `DefaultGame.ini`. Инструкция автору — `docs/PC_SETUP.md`.
 - Тексты подсказок двери/предмета — поля `Prompt*` (FText из String Table), не NSLOCTEXT в C++.
 
 ## Источники истины
@@ -62,4 +65,4 @@
 ## Правила кода
 - Сервер всегда авторитетен. Любое действие клиента идёт через Server RPC с ревалидацией на сервере (дистанция, состояние, права) — клиентским данным не доверяем.
 - Комментарии в коде — на русском.
-- Текст для игрока — всегда через String Table (`ST_UI_RU.csv` / `ST_UI_EN.csv` как отправная точка), никогда не строкой в C++/Blueprint напрямую.
+- Текст для игрока — всегда через String Table (`Content/Localization/ST_UI.csv`, перевод `docs/ST_UI_EN.csv`), никогда не строкой в C++/Blueprint напрямую.

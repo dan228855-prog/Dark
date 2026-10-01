@@ -1,8 +1,11 @@
 // DarcTerminal.cpp
 #include "DarcTerminal.h"
+#include "DarcAssetSettings.h"
+#include "Components/StaticMeshComponent.h"
 #include "DarcPowerConsumerComponent.h"
 #include "DarcPlayerState.h"
 #include "InteractableDoor.h"
+#include "DarcPlayerController.h"
 #include "DarcGameplayLibrary.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
@@ -19,11 +22,16 @@ ADarcTerminal::ADarcTerminal()
 	PrimaryActorTick.bCanEverTick = false;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	Power = CreateDefaultSubobject<UDarcPowerConsumerComponent>(TEXT("Power"));
+	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
+	Visual->SetupAttachment(RootComponent);
+	Visual->SetMobility(EComponentMobility::Movable);
+	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 }
 
 void ADarcTerminal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcTerminal, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcTerminal, State);
 	DOREPLIFETIME(ADarcTerminal, CurrentUser);
 }
@@ -31,6 +39,7 @@ void ADarcTerminal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 void ADarcTerminal::BeginPlay()
 {
 	Super::BeginPlay();
+	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
 
 	if (HasAuthority())
 	{
@@ -170,7 +179,13 @@ void ADarcTerminal::ServerHandleInput(APlayerState* FromPlayer, const FString& I
 	if (State == EDarcTerminalState::Unlocked)
 	{
 		bool bAccepted = false;
-		if (const FName* TaskId = CommandTasks.Find(Clean))
+		// Команды без учёта регистра: «copy», «COPY», «Copy» — одно и то же.
+		const FName* TaskId = CommandTasks.Find(Clean);
+		if (!TaskId)
+		{
+			TaskId = CommandTasks.Find(Clean.ToUpper());
+		}
+		if (TaskId)
 		{
 			if (UTaskManagerComponent* Tasks = UTaskManagerComponent::GetTaskManager(this))
 			{
@@ -229,18 +244,67 @@ bool ADarcTerminal::IsLocalPlayerUser() const
 	return PC && PC->IsLocalController() && CurrentUser && PC->PlayerState == CurrentUser;
 }
 
+TArray<FText> ADarcTerminal::GetScreenLines() const
+{
+	TArray<FText> Result;
+	if (ScrambledWords.Num() > 0)
+	{
+		TArray<FText> Words = ScrambledWords;
+		for (int32 i = Words.Num() - 1; i > 0; --i)
+		{
+			Words.Swap(i, FMath::RandRange(0, i));
+		}
+		Result.Add(FText::Join(FText::FromString(TEXT("\n")), Words));
+		Result.Add(FText::GetEmpty());
+	}
+	Result.Append(ScreenLines);
+	return Result;
+}
+
 void ADarcTerminal::OnRep_State()
 {
+	if (bLocalWindowOpen)
+	{
+		if (ADarcPlayerController* PC = ADarcPlayerController::GetLocal(this))
+		{
+			PC->RefreshTerminalUI();
+		}
+	}
 	OnTerminalStateChanged(State);
 }
 
 void ADarcTerminal::OnRep_User()
 {
-	OnUserChanged(CurrentUser, IsLocalPlayerUser());
+	// Окно ввода открывается только на машине того, кто сел за терминал.
+	const bool bLocal = IsLocalPlayerUser();
+	if (bLocal != bLocalWindowOpen)
+	{
+		if (ADarcPlayerController* PC = ADarcPlayerController::GetLocal(this))
+		{
+			if (bLocal)
+			{
+				PC->OpenTerminalUI(this);
+			}
+			else
+			{
+				PC->CloseTerminalUI(false);
+			}
+		}
+		bLocalWindowOpen = bLocal;
+	}
+	OnUserChanged(CurrentUser, bLocal);
 }
 
 void ADarcTerminal::Multicast_InputResult_Implementation(bool bAccepted, const FString& EchoInput)
 {
+	if (bLocalWindowOpen)
+	{
+		if (ADarcPlayerController* PC = ADarcPlayerController::GetLocal(this))
+		{
+			PC->ShowTerminalResult(bAccepted, EchoInput);
+		}
+	}
+	UDarcAssetSettings::PlaySound(this, bAccepted ? TEXT("AccessGranted") : TEXT("AccessDenied"), GetActorLocation());
 	OnInputResult(bAccepted, EchoInput);
 }
 

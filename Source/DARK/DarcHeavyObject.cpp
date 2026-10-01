@@ -1,5 +1,6 @@
 // DarcHeavyObject.cpp
 #include "DarcHeavyObject.h"
+#include "DarcAssetSettings.h"
 #include "CarryableItem.h"
 #include "DarcPlayerState.h"
 #include "DarcWorldMemorySubsystem.h"
@@ -29,6 +30,7 @@ ADarcHeavyObject::ADarcHeavyObject()
 void ADarcHeavyObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ADarcHeavyObject, VisualSpec, COND_InitialOnly);
 	DOREPLIFETIME(ADarcHeavyObject, Carriers);
 	DOREPLIFETIME(ADarcHeavyObject, bCableAttached);
 }
@@ -255,6 +257,10 @@ void ADarcHeavyObject::OnRep_Carriers()
 
 void ADarcHeavyObject::OnRep_Cable()
 {
+	if (HasActorBegunPlay())
+	{
+		UDarcAssetSettings::PlaySound(this, bCableAttached ? TEXT("CableAttach") : TEXT("CableDetach"), GetActorLocation());
+	}
 	OnCableStateChanged(bCableAttached);
 }
 
@@ -273,4 +279,10 @@ FText ADarcHeavyObject::GetInteractionPrompt_Implementation() const
 		}
 	}
 	return PromptGrab;
+}
+
+void ADarcHeavyObject::BeginPlay()
+{
+	Super::BeginPlay();
+	VisualSpec.ApplyTo(Body); // модель — у каждой машины сама
 }
