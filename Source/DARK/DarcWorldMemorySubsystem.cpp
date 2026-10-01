@@ -89,6 +89,7 @@ void UDarcWorldMemorySubsystem::BeginMission(int32 LevelIndex, int32 Seed)
 	CompletedTasks.Reset();
 	MissionRareEvents.Reset();
 	bTeamWasSplit = false;
+	MissionDeaths = 0;
 }
 
 void UDarcWorldMemorySubsystem::EndMission(bool bSucceeded)
@@ -119,6 +120,7 @@ void UDarcWorldMemorySubsystem::ResetCampaign()
 
 	CampaignFacts.Reset();
 	CampaignRareEvents.Reset();
+	CampaignDeaths = 0;
 	LastMissionSummary = FDarcMissionSummary();
 	BeginMission(0, 0);
 }
@@ -269,6 +271,20 @@ void UDarcWorldMemorySubsystem::RecordRareEvent(FName EventId)
 	MissionRareEvents.AddUnique(EventId);
 	CampaignRareEvents.Add(EventId);
 	Broadcast(EDarcMemoryEvent::RareEventFired, EventId, INDEX_NONE);
+}
+
+void UDarcWorldMemorySubsystem::RecordPlayerDeath(AActor* PlayerActor)
+{
+	if (!IsServer())
+	{
+		return;
+	}
+
+	MissionDeaths++;
+	CampaignDeaths++;
+	// Погибший больше не «стоит в комнате» — иначе команда навсегда считалась бы разделённой.
+	PlayerRooms.Remove(GetPlayerIdFromActor(PlayerActor));
+	RecordInteraction(TEXT("Player"), TEXT("Death"), PlayerActor);
 }
 
 void UDarcWorldMemorySubsystem::AddCampaignFact(FName Fact)

@@ -266,14 +266,8 @@ bool URareEventManagerComponent::CheckCondition(const FDarcRareEventConditionDat
 	case EDarcRareEventCondition::EventFiredBefore: return Memory->HasRareEventEverFired(Condition.Name);
 	case EDarcRareEventCondition::MinMissionTime:   return Memory->GetMissionTime() >= Condition.Number;
 	case EDarcRareEventCondition::MinTotalDeaths:
-	{
-		int32 Deaths = 0;
-		for (const ADarcPlayerState* PS : GetPlayers(false))
-		{
-			Deaths += PS->DeathCount;
-		}
-		return Deaths >= FMath::RoundToInt(Condition.Number);
-	}
+		// Смерти за всю кампанию (PlayerState::DeathCount сбрасывается при смене карты).
+		return Memory->GetCampaignDeaths() >= FMath::RoundToInt(Condition.Number);
 	}
 	return false;
 }

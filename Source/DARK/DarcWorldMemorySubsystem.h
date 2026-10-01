@@ -220,6 +220,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "WorldMemory")
 	void RecordRareEvent(FName EventId);
 
+	/** Смерть игрока. Счётчик за кампанию живёт здесь, а не в PlayerState, — тот сбрасывается при смене карты. */
+	UFUNCTION(BlueprintCallable, Category = "WorldMemory")
+	void RecordPlayerDeath(AActor* PlayerActor);
+
 	// ---------- Чтение ----------
 
 	UFUNCTION(BlueprintPure, Category = "WorldMemory")
@@ -280,6 +284,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "WorldMemory|Campaign")
 	bool HasCampaignFact(FName Fact) const { return CampaignFacts.Contains(Fact); }
 
+	/** Смертей команды за всю кампанию — на них завязана эскалация (логи, поведение духа). */
+	UFUNCTION(BlueprintPure, Category = "WorldMemory|Campaign")
+	int32 GetCampaignDeaths() const { return CampaignDeaths; }
+
+	UFUNCTION(BlueprintPure, Category = "WorldMemory")
+	int32 GetMissionDeaths() const { return MissionDeaths; }
+
 	UFUNCTION(BlueprintPure, Category = "WorldMemory|Campaign")
 	FDarcMissionSummary GetLastMissionSummary() const { return LastMissionSummary; }
 
@@ -309,11 +320,13 @@ protected:
 	UPROPERTY() TArray<FName> CompletedTasks;
 	UPROPERTY() TArray<FName> MissionRareEvents;
 	UPROPERTY() bool bTeamWasSplit = false;
+	UPROPERTY() int32 MissionDeaths = 0;
 
 	// --- Campaign-слой ---
 	UPROPERTY() TSet<FName> CampaignFacts;
 	UPROPERTY() TSet<FName> CampaignRareEvents;
 	UPROPERTY() FDarcMissionSummary LastMissionSummary;
+	UPROPERTY() int32 CampaignDeaths = 0;
 
 	/** Ограничение журнала взаимодействий, чтобы память не росла бесконечно. */
 	static constexpr int32 MaxInteractionRecords = 512;

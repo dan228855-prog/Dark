@@ -75,7 +75,7 @@ enum class EDarcRareEventCondition : uint8
 	NoCampaignFact   UMETA(DisplayName = "Нет факта кампании Name"),
 	EventFiredBefore UMETA(DisplayName = "Событие Name уже случалось в кампании"),
 	MinMissionTime   UMETA(DisplayName = "С начала выезда прошло не меньше Number сек"),
-	MinTotalDeaths   UMETA(DisplayName = "Смертей у команды не меньше Number")
+	MinTotalDeaths   UMETA(DisplayName = "Смертей команды за кампанию не меньше Number")
 };
 
 USTRUCT(BlueprintType)

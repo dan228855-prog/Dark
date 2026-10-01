@@ -58,6 +58,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Power")
 	void BurnFuse();
 
+	/** Сервер: «дух» щёлкнул рубильником. Только рубильник — вставлять предохранители дух не может. */
+	void SpiritToggleBreaker(AActor* Spirit);
+
 	// --- IInteractable ---
 	virtual bool CanInteract_Implementation(AActor* Interactor) const override;
 	virtual void OnInteract_Implementation(AActor* Interactor) override;

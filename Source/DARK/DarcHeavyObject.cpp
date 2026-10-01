@@ -177,7 +177,8 @@ void ADarcHeavyObject::Tick(float DeltaSeconds)
 	{
 		APawn* Pawn = Carriers[i];
 		const ADarcPlayerState* PS = Pawn ? Pawn->GetPlayerState<ADarcPlayerState>() : nullptr;
-		const bool bGone = !IsValid(Pawn) || (PS && !PS->bIsAlive)
+		// Без контроллера — это тело погибшего (игрок уже стал «духом»).
+		const bool bGone = !IsValid(Pawn) || !Pawn->GetController() || (PS && !PS->bIsAlive)
 			|| FVector::Dist(Pawn->GetActorLocation(), GetActorLocation()) > BreakDistance * 3.f;
 		if (bGone)
 		{

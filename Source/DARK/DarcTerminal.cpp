@@ -1,6 +1,7 @@
 // DarcTerminal.cpp
 #include "DarcTerminal.h"
 #include "DarcPowerConsumerComponent.h"
+#include "DarcPlayerState.h"
 #include "DarcGameplayLibrary.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
@@ -76,6 +77,11 @@ FString ADarcTerminal::GetExpectedCode() const
 bool ADarcTerminal::IsValidUser(const APlayerState* Player) const
 {
 	if (!Player || Player != CurrentUser || State == EDarcTerminalState::NoPower)
+	{
+		return false;
+	}
+	// Погибший («дух») терминалом не пользуется.
+	if (const ADarcPlayerState* DarcPS = Cast<ADarcPlayerState>(Player); DarcPS && !DarcPS->bIsAlive)
 	{
 		return false;
 	}

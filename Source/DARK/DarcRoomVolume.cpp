@@ -3,6 +3,7 @@
 #include "DarcWorldMemorySubsystem.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Pawn.h"
+#include "DarcPlayerState.h"
 
 ADarcRoomVolume::ADarcRoomVolume()
 {
@@ -36,6 +37,12 @@ void ADarcRoomVolume::HandleBeginOverlap(UPrimitiveComponent* OverlappedComp, AA
 	// Только пешки игроков и только их корневой компонент (капсула), иначе меш
 	// и прочие компоненты дадут повторные срабатывания.
 	if (!Pawn || !Pawn->GetPlayerState() || OtherComp != Pawn->GetRootComponent())
+	{
+		return;
+	}
+
+	// «Дух» погибшего — не участник команды в комнатах (не влияет на разделение и события).
+	if (const ADarcPlayerState* PS = Pawn->GetPlayerState<ADarcPlayerState>(); PS && !PS->bIsAlive)
 	{
 		return;
 	}

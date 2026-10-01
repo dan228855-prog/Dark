@@ -60,6 +60,21 @@ void ADarcFuseBox::OnInteract_Implementation(AActor* Interactor)
 	NotifyStateChanged();
 }
 
+void ADarcFuseBox::SpiritToggleBreaker(AActor* Spirit)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	bBreakerOn = !bBreakerOn;
+	if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+	{
+		Memory->RecordInteraction(CircuitId, bBreakerOn ? TEXT("SpiritBreakerOn") : TEXT("SpiritBreakerOff"), Spirit);
+	}
+	NotifyStateChanged();
+}
+
 void ADarcFuseBox::HandleBlowFromMistake(AActor* Interactor)
 {
 	Multicast_FuseBlown();

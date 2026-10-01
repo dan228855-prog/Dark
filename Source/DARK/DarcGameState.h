@@ -42,6 +42,10 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Mission")
     void SetMissionPhase(EMissionPhase NewPhase);
 
+    // Толчок локального физического предмета (класс C) у всех клиентов — полтергейст духа.
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_PushObject(AActor* Target, FVector Impulse);
+
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
