@@ -18,6 +18,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Engine/NetSerialization.h"
 #include "DarcSpiritCharacter.generated.h"
 
 class UCameraComponent;

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "Engine/NetSerialization.h"
 #include "DarcGameState.generated.h"
 
 UENUM(BlueprintType)
