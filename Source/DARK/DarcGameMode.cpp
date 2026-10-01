@@ -46,6 +46,13 @@ void ADarcGameMode::InitGame(const FString& MapName, const FString& Options, FSt
     {
         return;
     }
+    // Сборщик уже стоит на карте (его ставит Tools/darc_setup.py) — второй не нужен,
+    // иначе геометрия и все игровые объекты задвоятся.
+    if (TActorIterator<ADarcSliceBuilder>(GetWorld()))
+    {
+        bSliceBuilt = true;
+        return;
+    }
     if (TActorIterator<APlayerStart>(GetWorld()))
     {
         return; // своя карта со своими точками появления — ничего не строим
@@ -79,7 +86,8 @@ void ADarcGameMode::StartPlay()
 
 AActor* ADarcGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-    if (!bSliceBuilt)
+    // Сборщик сам ставит точки появления у КПП — обычный выбор их найдёт.
+    if (!bSliceBuilt || TActorIterator<APlayerStart>(GetWorld()))
     {
         return Super::ChoosePlayerStart_Implementation(Player);
     }
