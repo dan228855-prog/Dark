@@ -7,6 +7,7 @@
 #include "Engine/StaticMesh.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Sound/SoundBase.h"
 #include "Sound/SoundAttenuation.h"
 #include "UObject/StrongObjectPtr.h"
@@ -112,9 +113,19 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 
 	if (UMaterialInterface* Material = MaterialSlot.IsNone() ? nullptr : FindMaterial(MaterialSlot))
 	{
+		// Материалы из Tools/darc_setup.py накладывают текстуру «по миру» (для растянутых
+		// серых коробок). У настоящей модели свои UV — выравнивание выключаем, иначе текстура
+		// «поплывёт», когда объект двигается (дверь открывается).
+		UMaterialInterface* Applied = Material;
+		if (Mesh)
+		{
+			UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Material, Component);
+			Instance->SetScalarParameterValue(TEXT("WorldAligned"), 0.f);
+			Applied = Instance;
+		}
 		for (int32 i = 0; i < Component->GetNumMaterials(); ++i)
 		{
-			Component->SetMaterial(i, Material);
+			Component->SetMaterial(i, Applied);
 		}
 	}
 	else if (!Mesh)

@@ -218,41 +218,95 @@ def build_materials():
     for set_name, maps in sets.items():
         if "BaseColor" not in maps:
             continue
-        mat_path = ROOT + "/Imported/Materials/M_" + clean_name(set_name)
+        mat_name = "M_" + clean_name(set_name)
+        mat_path = ROOT + "/Imported/Materials/" + mat_name
         if eal.does_asset_exist(mat_path):
-            continue
-        material = asset_tools.create_asset("M_" + clean_name(set_name), ROOT + "/Imported/Materials",
-                                            unreal.Material, unreal.MaterialFactoryNew())
-        y = 0
-        for role, prop in [("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR),
-                           ("Normal", unreal.MaterialProperty.MP_NORMAL),
-                           ("Roughness", unreal.MaterialProperty.MP_ROUGHNESS),
-                           ("Metallic", unreal.MaterialProperty.MP_METALLIC),
-                           ("AO", unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)]:
-            if role not in maps:
+            material = eal.load_asset(mat_path)
+            # Уже собран новой версией (с выравниванием по миру) — не трогаем.
+            if "WorldAligned" in [str(n) for n in mel.get_scalar_parameter_names(material)]:
                 continue
-            texture = eal.load_asset(maps[role])
-            if role == "Normal":
-                texture.set_editor_property("compression_settings", unreal.TextureCompressionSettings.TC_NORMALMAP)
-                texture.set_editor_property("srgb", False)
-            elif role != "BaseColor":
-                texture.set_editor_property("srgb", False)
-                texture.set_editor_property("compression_settings", unreal.TextureCompressionSettings.TC_MASKS)
-            eal.save_loaded_asset(texture)
-            node = mel.create_material_expression(material, unreal.MaterialExpressionTextureSample, -400, y)
-            node.set_editor_property("texture", texture)
-            if role == "Normal":
-                node.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL)
-            elif role != "BaseColor":
-                node.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
-            output = "RGB" if role in ("BaseColor", "Normal") else "R"
-            mel.connect_material_property(node, output, prop)
-            y += 260
+            mel.delete_all_material_expressions(material)  # старая версия: текстура растягивалась
+        else:
+            material = asset_tools.create_asset(mat_name, ROOT + "/Imported/Materials",
+                                                unreal.Material, unreal.MaterialFactoryNew())
+        build_material_graph(material, maps)
         mel.recompile_material(material)
         eal.save_loaded_asset(material)
         made += 1
     if made:
-        say("Собрано материалов из наборов текстур: %d" % made)
+        say("Собрано/обновлено материалов из наборов текстур: %d" % made)
+
+
+# Текстурные координаты «по миру»: грань смотрит вверх/вниз — проекция XY, вдоль X — YZ,
+# вдоль Y — XZ. Текстура повторяется каждые TileSize см независимо от размера коробки
+# (серые стены — растянутые кубы, обычные UV растягивали текстуру на всю стену).
+# WorldAligned = 0 — обычные UV модели (для настоящих моделей, например двери; это
+# выставляет код игры).
+WORLD_UV_CODE = """float3 n = abs(N);
+float2 w = (n.z >= n.x && n.z >= n.y) ? P.xy : (n.x >= n.y ? P.yz : P.xz);
+w = w / max(Tile, 1.0);
+w.y = -w.y;
+return lerp(UV * UVScale, w, saturate(Aligned));"""
+
+
+def build_material_graph(material, maps):
+    mel = unreal.MaterialEditingLibrary
+    pos = mel.create_material_expression(material, unreal.MaterialExpressionWorldPosition, -1300, -200)
+    nrm = mel.create_material_expression(material, unreal.MaterialExpressionVertexNormalWS, -1300, -60)
+    uv = mel.create_material_expression(material, unreal.MaterialExpressionTextureCoordinate, -1300, 80)
+    tile = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 200)
+    tile.set_editor_property("parameter_name", "TileSize")
+    tile.set_editor_property("default_value", 200.0)
+    aligned = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 320)
+    aligned.set_editor_property("parameter_name", "WorldAligned")
+    aligned.set_editor_property("default_value", 1.0)
+    uv_scale = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 440)
+    uv_scale.set_editor_property("parameter_name", "UVScale")
+    uv_scale.set_editor_property("default_value", 1.0)
+
+    custom = mel.create_material_expression(material, unreal.MaterialExpressionCustom, -900, 0)
+    custom.set_editor_property("code", WORLD_UV_CODE)
+    custom.set_editor_property("output_type", unreal.CustomMaterialOutputType.CMOT_FLOAT2)
+    custom.set_editor_property("description", "DarcWorldUV")
+    inputs = []
+    for name in ["P", "N", "UV", "Tile", "Aligned", "UVScale"]:
+        item = unreal.CustomInput()
+        item.set_editor_property("input_name", name)
+        inputs.append(item)
+    custom.set_editor_property("inputs", inputs)
+    mel.connect_material_expressions(pos, "", custom, "P")
+    mel.connect_material_expressions(nrm, "", custom, "N")
+    mel.connect_material_expressions(uv, "", custom, "UV")
+    mel.connect_material_expressions(tile, "", custom, "Tile")
+    mel.connect_material_expressions(aligned, "", custom, "Aligned")
+    mel.connect_material_expressions(uv_scale, "", custom, "UVScale")
+
+    y = 0
+    for role, prop in [("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR),
+                       ("Normal", unreal.MaterialProperty.MP_NORMAL),
+                       ("Roughness", unreal.MaterialProperty.MP_ROUGHNESS),
+                       ("Metallic", unreal.MaterialProperty.MP_METALLIC),
+                       ("AO", unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)]:
+        if role not in maps:
+            continue
+        texture = eal.load_asset(maps[role])
+        if role == "Normal":
+            texture.set_editor_property("compression_settings", unreal.TextureCompressionSettings.TC_NORMALMAP)
+            texture.set_editor_property("srgb", False)
+        elif role != "BaseColor":
+            texture.set_editor_property("srgb", False)
+            texture.set_editor_property("compression_settings", unreal.TextureCompressionSettings.TC_MASKS)
+        eal.save_loaded_asset(texture)
+        node = mel.create_material_expression(material, unreal.MaterialExpressionTextureSample, -400, y)
+        node.set_editor_property("texture", texture)
+        if role == "Normal":
+            node.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+        elif role != "BaseColor":
+            node.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
+        mel.connect_material_expressions(custom, "", node, "UVs")
+        output = "RGB" if role in ("BaseColor", "Normal") else "R"
+        mel.connect_material_property(node, output, prop)
+        y += 260
 
 
 # ---------------------------------------------------------------------------
