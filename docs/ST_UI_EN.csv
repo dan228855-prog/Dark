@@ -1,0 +1,10 @@
+Key,SourceString
+Door_Open,Open door
+Door_Close,Close door
+Door_Locked,Locked
+Carry_PickUp,Pick up
+Carry_Drop,Drop
+Mission_Preparation,Preparation
+Mission_InProgress,In progress
+Mission_Completed,Completed
+Mission_Failed,Failed

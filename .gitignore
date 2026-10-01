@@ -7,6 +7,7 @@ DerivedDataCache/
 .vscode/
 .idea/
 *.sln
+*.slnx
 *.suo
 *.opensdf
 *.sdf
@@ -22,3 +23,6 @@ Plugins/**/Intermediate/
 *.zip
 *.rar
 *.7z
+
+# Content пока не храним в git (6+ ГБ, ассеты маркетплейса; нужен Git LFS)
+Content/

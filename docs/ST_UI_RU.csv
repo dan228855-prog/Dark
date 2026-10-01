@@ -1,0 +1,10 @@
+Key,SourceString
+Door_Open,Открыть дверь
+Door_Close,Закрыть дверь
+Door_Locked,Заперто
+Carry_PickUp,Поднять
+Carry_Drop,Положить
+Mission_Preparation,Подготовка
+Mission_InProgress,Выполняется
+Mission_Completed,Завершено
+Mission_Failed,Провалено
