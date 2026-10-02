@@ -60,6 +60,12 @@ protected:
 	void SubmitTerminalText(const FText& Text);
 	FText BuildTerminalScreenText() const;
 
+	/** Место, куда вернуть игрока, если он провалится сквозь карту (дыра в коллизии) —
+	    запоминается при каждом OnPossess, обновляется таймером раз в секунду. */
+	void CheckFallSafety();
+	FVector SafeSpawnLocation = FVector::ZeroVector;
+	FTimerHandle FallSafetyTimer;
+
 	TWeakObjectPtr<ADarcTerminal> OpenTerminal;
 	TSharedPtr<SWidget> TerminalWidget;
 	TSharedPtr<SEditableTextBox> TerminalInput;

@@ -13,6 +13,8 @@
 #include "GameFramework/Pawn.h"
 #include "InputCoreTypes.h"
 #include "Components/InputComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "TimerManager.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -78,6 +80,33 @@ void ADarcPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	EnsureInteractionComponent(InPawn);
+
+	// Запоминаем точку появления и следим раз в секунду: если игрок проваливается сквозь
+	// карту (дыра в коллизии где-то в уровне) и падает ниже, чем могло бы быть «ещё пол»,
+	// возвращаем его назад, а не даём падать бесконечно (было: каждый новый Play начинался
+	// там же, где закончилась предыдущая попытка, то есть всё глубже под картой).
+	if (InPawn && HasAuthority())
+	{
+		SafeSpawnLocation = InPawn->GetActorLocation();
+		GetWorldTimerManager().SetTimer(FallSafetyTimer, this, &ADarcPlayerController::CheckFallSafety, 1.f, true);
+	}
+}
+
+void ADarcPlayerController::CheckFallSafety()
+{
+	APawn* MyPawn = GetPawn();
+	if (!MyPawn || !HasAuthority())
+	{
+		return;
+	}
+	if (MyPawn->GetActorLocation().Z < SafeSpawnLocation.Z - 1000.f)
+	{
+		MyPawn->SetActorLocation(SafeSpawnLocation, false, nullptr, ETeleportType::TeleportPhysics);
+		if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(MyPawn->GetRootComponent()))
+		{
+			Body->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		}
+	}
 }
 
 template <class TComponent>
@@ -110,6 +139,7 @@ void ADarcPlayerController::EnsureInteractionComponent(APawn* InPawn)
 void ADarcPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	CloseTerminalUI(false);
+	GetWorldTimerManager().ClearTimer(FallSafetyTimer);
 	Super::EndPlay(EndPlayReason);
 }
 

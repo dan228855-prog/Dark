@@ -223,13 +223,41 @@ void UDarcAssetSettings::EnsurePhysicsCollision(UStaticMeshComponent* Component,
 {
 	const UStaticMesh* Mesh = Component ? Component->GetStaticMesh() : nullptr;
 	const UBodySetup* BodySetup = Mesh ? Mesh->GetBodySetup() : nullptr;
-	if (!Mesh || (BodySetup && BodySetup->AggGeom.GetElementCount() > 0) || Spec.Size.IsNearlyZero())
+	if (!Mesh)
 	{
 		return;
 	}
+	// Простой коллизии физически достаточно, только если она ЕСТЬ и модель её реально
+	// использует. Если у меша выставлен CTF_UseComplexAsSimple, движок при симуляции физики
+	// всегда берёт сложную коллизию, даже когда простые примитивы в AggGeom присутствуют —
+	// проверка "есть элементы" этого не ловит, и предупреждение "ComplexAsSimple" всё равно
+	// вылезает (так было с генератором: симпл-коллизия на меше есть, но помечена как неиспользуемая).
+	const bool bHasSimpleCollision = BodySetup
+		&& BodySetup->AggGeom.GetElementCount() > 0
+		&& BodySetup->CollisionTraceFlag != ECollisionTraceFlag::CTF_UseComplexAsSimple;
+	UE_LOG(LogTemp, Warning, TEXT("DARC DIAG: mesh %s slot %s BodySetup=%d AggGeomElems=%d TraceFlag=%d bHasSimple=%d"),
+		Mesh ? *Mesh->GetName() : TEXT("null"),
+		*Spec.Slot.ToString(),
+		BodySetup != nullptr,
+		BodySetup ? BodySetup->AggGeom.GetElementCount() : -1,
+		BodySetup ? (int32)BodySetup->CollisionTraceFlag : -1,
+		bHasSimpleCollision);
+	if (bHasSimpleCollision)
+	{
+		return;
+	}
+	// Без простой коллизии физику не симулировать — движок тихо откажется (предупреждение
+	// "ComplexAsSimple" в логе, тело просто не падает/не толкается как надо). Подменяем серой
+	// коробкой. Размер берём из спека; если его не задали (Size==0, как у DataDrive) — из
+	// габаритов самой модели, иначе подмена схлопнулась бы в невидимый куб нулевого размера.
+	FVector BoxSize = Spec.Size;
+	if (BoxSize.IsNearlyZero())
+	{
+		BoxSize = Mesh->GetBoundingBox().GetSize().ComponentMax(FVector(10.f));
+	}
 	UE_LOG(LogTemp, Warning, TEXT("DARC: mesh %s (slot %s) has no simple collision - grey box used for physics. Add collision in the mesh editor."),
 		*Mesh->GetName(), *Spec.Slot.ToString());
-	ApplyVisual(Component, NAME_None, Spec.Size, Spec.Material);
+	ApplyVisual(Component, NAME_None, BoxSize, Spec.Material);
 }
 
 void UDarcAssetSettings::ApplyCopy(UStaticMeshComponent* Component, AActor* Source)
