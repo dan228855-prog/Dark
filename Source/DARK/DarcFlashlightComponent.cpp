@@ -192,6 +192,19 @@ void UDarcFlashlightComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	const APawn* Pawn = Cast<APawn>(GetOwner());
 	PlaceInHand(); // один раз: фонарь в руке виден и выключенным
+	if (Housing && Pawn)
+	{
+		// Держится за руку (положение), а смотрит всегда туда же, куда игрок: раньше поворот
+		// считался один раз, пока руки ещё стояли в исходной позе, и фонарь смотрел вверх.
+		FVector AimEyes;
+		FRotator AimView;
+		UDarcGameplayLibrary::GetAimViewPoint(Pawn, AimEyes, AimView);
+		if (!Pawn->IsLocallyControlled())
+		{
+			AimView = Pawn->GetBaseAimRotation();
+		}
+		Housing->SetWorldRotation(FRotationMatrix::MakeFromZ(AimView.Vector()).Rotator());
+	}
 	if (!Spot || !bOn || !Pawn)
 	{
 		return;

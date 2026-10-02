@@ -60,11 +60,17 @@ void UDarcPlayerOutfitComponent::BeginPlay()
 	OutfitFirstPerson->RegisterComponent();
 	Character->AddInstanceComponent(OutfitFirstPerson);
 	OutfitFirstPerson->SetLeaderPoseComponent(Arms);
-	for (const FName Bone : { FName(TEXT("head")), FName(TEXT("neck_01")), FName(TEXT("thigh_l")), FName(TEXT("thigh_r")) })
+	// Голову (с бородой, бровями, кепкой — всё висит на ней) и ноги прячем. Модель повторяет
+	// позу рук шаблона и берёт у них же видимость костей, поэтому прячем и там (руки шаблона
+	// всё равно невидимы; камера держится за сокет head, он от этого не меняется).
+	for (const FName Bone : { FName(TEXT("neck_01")), FName(TEXT("head")), FName(TEXT("thigh_l")), FName(TEXT("thigh_r")) })
 	{
-		if (OutfitFirstPerson->GetBoneIndex(Bone) != INDEX_NONE)
+		for (USkeletalMeshComponent* Target : { OutfitFirstPerson.Get(), Arms })
 		{
-			OutfitFirstPerson->HideBoneByName(Bone, EPhysBodyOp::PBO_None);
+			if (Target && Target->GetBoneIndex(Bone) != INDEX_NONE)
+			{
+				Target->HideBoneByName(Bone, EPhysBodyOp::PBO_None);
+			}
 		}
 	}
 	Arms->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;

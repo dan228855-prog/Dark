@@ -348,6 +348,7 @@ void ADarcSliceBuilder::AddTree(const FVector2D& Location, float Height, float R
 			Tree->SetRootComponent(Mesh);
 			Mesh->SetSkeletalMeshAsset(TreeMesh);
 			Mesh->bNoSkeletonUpdate = true;
+			Mesh->SetVisibleInRayTracing(false); // десятки деревьев переполняли память трассировки лучей
 			Mesh->SetComponentTickEnabled(false);
 			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			Mesh->SetWorldScale3D(FVector(Height / 1300.f * (0.85f + (Hash % 40) / 100.f))); // разброс роста
@@ -990,7 +991,7 @@ ADarcPowerLamp* ADarcSliceBuilder::SpawnLamp(const FVector& Location, FName Circ
 	ADarcPowerLamp* Lamp = SpawnDeferred<ADarcPowerLamp>(Location);
 	Lamp->Power->CircuitId = CircuitId;
 	Lamp->bStreetLight = bStreetLight;
-	Lamp->VisualSpec = bStreetLight ? Vis(TEXT("StreetLamp"), FVector(50.f, 30.f, 15.f)) : Vis(TEXT("Lamp"), FVector(120.f, 25.f, 8.f));
+	Lamp->VisualSpec = bStreetLight ? Vis(TEXT("StreetLamp"), FVector(50.f, 30.f, 15.f)) : Vis(TEXT("Lamp"), FVector(80.f, 17.f, 6.f));
 	Finish(Lamp, Location);
 	return Lamp;
 }
