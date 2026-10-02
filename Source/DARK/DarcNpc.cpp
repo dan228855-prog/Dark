@@ -1,6 +1,10 @@
 // DarcNpc.cpp
 #include "DarcNpc.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
+#include "Animation/AnimationAsset.h"
+#include "DarcAssetSettings.h"
 #include "CarryableItem.h"
 #include "DarcGameState.h"
 #include "DarcPlayerState.h"
@@ -27,6 +31,9 @@ ADarcNpc::ADarcNpc()
 	Visual->SetupAttachment(RootComponent);
 	Visual->SetMobility(EComponentMobility::Movable);
 	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	Body = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Body"));
+	Body->SetupAttachment(RootComponent);
+	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ADarcNpc::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -41,6 +48,7 @@ void ADarcNpc::BeginPlay()
 {
 	Super::BeginPlay();
 	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
+	ApplyCharacterModel();
 
 	if (HasAuthority())
 	{
@@ -52,6 +60,30 @@ void ADarcNpc::BeginPlay()
 			ItemToGive->ServerTransferTo(this, nullptr);
 			ItemToGive->SetActorHiddenInGame(true);
 		}
+	}
+}
+
+void ADarcNpc::ApplyCharacterModel()
+{
+	USkeletalMesh* Mesh = UDarcAssetSettings::FindCharacter(VisualSpec.Slot);
+	if (!Mesh)
+	{
+		return; // нет модели — остаётся коробка
+	}
+	Body->SetSkeletalMesh(Mesh);
+	// Рост — по высоте коробки, ноги — на пол. Модели обычно смотрят вдоль +Y, NPC — вдоль +X.
+	const FBox Bounds = Mesh->GetBounds().GetBox();
+	const float Height = FMath::Max(Bounds.GetSize().Z, 1.f);
+	const float TargetHeight = VisualSpec.Size.Z > 1.f ? VisualSpec.Size.Z : 180.f;
+	const float Scale = FMath::Clamp(TargetHeight / Height, 0.5f, 2.f);
+	Body->SetRelativeScale3D(FVector(Scale));
+	Body->SetRelativeLocation(FVector(0.f, 0.f, -Bounds.Min.Z * Scale));
+	Body->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+	Visual->SetHiddenInGame(true);
+
+	if (UAnimationAsset* Idle = UDarcAssetSettings::FindAnimation(FName(*(VisualSpec.Slot.ToString() + TEXT("_Idle")))))
+	{
+		Body->PlayAnimation(Idle, true);
 	}
 }
 

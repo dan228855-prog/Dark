@@ -224,6 +224,7 @@ void ACarryableItem::BeginPlay()
 {
     Super::BeginPlay();
     VisualSpec.ApplyTo(Mesh); // модель — у каждой машины сама
+    UDarcAssetSettings::EnsurePhysicsCollision(Mesh, VisualSpec);
     if (bPhysicsWhenFree && !CurrentHolder && Mesh->GetStaticMesh())
     {
         Mesh->SetSimulatePhysics(true);

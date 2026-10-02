@@ -34,6 +34,7 @@ struct FDarcNpcLine
 };
 
 class UStaticMeshComponent;
+class USkeletalMeshComponent;
 
 UCLASS()
 class DARK_API ADarcNpc : public AActor, public IInteractable
@@ -50,6 +51,13 @@ public:
 	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<UStaticMeshComponent> Visual;
+
+	/**
+	 * Человек: скелетная модель из слота Characters (тот же слот, что VisualSpec.Slot) и анимация
+	 * <Слот>_Idle. Если модель есть — коробка Visual скрывается, но остаётся «телом» для взгляда и E.
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<USkeletalMeshComponent> Body;
 
 	/** Имя говорящего в субтитрах (String Table). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC")
@@ -118,6 +126,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	void ApplyCharacterModel();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()

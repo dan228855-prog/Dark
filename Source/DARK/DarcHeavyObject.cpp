@@ -31,6 +31,7 @@ void ADarcHeavyObject::BeginPlay()
 {
 	Super::BeginPlay();
 	VisualSpec.ApplyTo(Body); // модель — у каждой машины сама
+	UDarcAssetSettings::EnsurePhysicsCollision(Body, VisualSpec);
 
 	// Масса — после модели (смена модели пересоздаёт физическое тело).
 	Body->SetSimulatePhysics(true);

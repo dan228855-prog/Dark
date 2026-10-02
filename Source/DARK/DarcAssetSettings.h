@@ -13,6 +13,8 @@
 class UStaticMesh;
 class UMaterialInterface;
 class USoundBase;
+class USkeletalMesh;
+class UAnimationAsset;
 class USoundAttenuation;
 class UDataTable;
 class UDarcMissionDefinition;
@@ -68,6 +70,14 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, TSoftObjectPtr<UStaticMesh>> Meshes;
 
+	/** Скелетные модели персонажей по слотам (Guard, ...). Есть — NPC показывается человеком, а не коробкой. */
+	UPROPERTY(Config, EditAnywhere, Category = "Assets")
+	TMap<FName, TSoftObjectPtr<USkeletalMesh>> Characters;
+
+	/** Анимации по слотам: <Персонаж>_Idle (Guard_Idle), ... Скелет должен совпадать с моделью. */
+	UPROPERTY(Config, EditAnywhere, Category = "Assets")
+	TMap<FName, TSoftObjectPtr<UAnimationAsset>> Animations;
+
 	/** Материалы по слотам: Wall, Floor, Ceiling, Ground, ... */
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, TSoftObjectPtr<UMaterialInterface>> Materials;
@@ -97,6 +107,8 @@ public:
 	/** Модель слота или nullptr. Загружается синхронно (срез маленький — допустимо). */
 	static UStaticMesh* FindMesh(FName Slot);
 	static UMaterialInterface* FindMaterial(FName Slot);
+	static USkeletalMesh* FindCharacter(FName Slot);
+	static UAnimationAsset* FindAnimation(FName Slot);
 	static USoundBase* FindSound(FName Slot);
 
 	/**
@@ -104,6 +116,12 @@ public:
 	 * если слот пуст — серый куб такого размера. MaterialSlot — необязательный материал.
 	 */
 	static void ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot = NAME_None);
+
+	/**
+	 * Для физических тел: у модели нет простой коллизии — физика с ней не работает (предмет
+	 * провалится/станет «призраком»). Тогда ставим серую коробку размера Spec.Size и пишем в лог.
+	 */
+	static void EnsurePhysicsCollision(UStaticMeshComponent* Component, const FDarcVisualSpec& Spec);
 
 	/** Модель/место/масштаб — как у актора карты (см. FDarcVisualSpec::CopyFrom). */
 	static void ApplyCopy(UStaticMeshComponent* Component, AActor* Source);

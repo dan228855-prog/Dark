@@ -5,6 +5,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "Engine/SkeletalMesh.h"
+#include "Animation/AnimationAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -33,6 +36,18 @@ UStaticMesh* UDarcAssetSettings::FindMesh(FName Slot)
 UMaterialInterface* UDarcAssetSettings::FindMaterial(FName Slot)
 {
 	const TSoftObjectPtr<UMaterialInterface>* Found = Get()->Materials.Find(Slot);
+	return Found ? Found->LoadSynchronous() : nullptr;
+}
+
+USkeletalMesh* UDarcAssetSettings::FindCharacter(FName Slot)
+{
+	const TSoftObjectPtr<USkeletalMesh>* Found = Get()->Characters.Find(Slot);
+	return Found ? Found->LoadSynchronous() : nullptr;
+}
+
+UAnimationAsset* UDarcAssetSettings::FindAnimation(FName Slot)
+{
+	const TSoftObjectPtr<UAnimationAsset>* Found = Get()->Animations.Find(Slot);
 	return Found ? Found->LoadSynchronous() : nullptr;
 }
 
@@ -202,6 +217,19 @@ UAudioComponent* UDarcAssetSettings::PlayLoopAttached(FName Slot, USceneComponen
 		? UGameplayStatics::SpawnSoundAttached(Sound, AttachTo, NAME_None, FVector::ZeroVector, EAttachLocation::KeepRelativeOffset,
 			false, 1.f, 1.f, 0.f, GetDefaultAttenuation(Sound))
 		: nullptr;
+}
+
+void UDarcAssetSettings::EnsurePhysicsCollision(UStaticMeshComponent* Component, const FDarcVisualSpec& Spec)
+{
+	const UStaticMesh* Mesh = Component ? Component->GetStaticMesh() : nullptr;
+	const UBodySetup* BodySetup = Mesh ? Mesh->GetBodySetup() : nullptr;
+	if (!Mesh || (BodySetup && BodySetup->AggGeom.GetElementCount() > 0) || Spec.Size.IsNearlyZero())
+	{
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("DARC: mesh %s (slot %s) has no simple collision - grey box used for physics. Add collision in the mesh editor."),
+		*Mesh->GetName(), *Spec.Slot.ToString());
+	ApplyVisual(Component, NAME_None, Spec.Size, Spec.Material);
 }
 
 void UDarcAssetSettings::ApplyCopy(UStaticMeshComponent* Component, AActor* Source)
