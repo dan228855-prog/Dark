@@ -25,3 +25,20 @@ FText UDarcGameplayLibrary::UIText(FName Key)
 {
 	return FText::FromStringTable(TEXT("ST_UI"), Key.ToString());
 }
+
+FString UDarcGameplayLibrary::EncodeBinary(const FString& Text, int32 BytesPerLine)
+{
+	const FTCHARToUTF8 Utf8(*Text);
+	FString Out;
+	for (int32 i = 0; i < Utf8.Length(); ++i)
+	{
+		const uint8 Byte = static_cast<uint8>(Utf8.Get()[i]);
+		for (int32 Bit = 7; Bit >= 0; --Bit)
+		{
+			Out.AppendChar((Byte >> Bit) & 1 ? TEXT('1') : TEXT('0'));
+		}
+		const bool bLineEnd = BytesPerLine > 0 && (i + 1) % BytesPerLine == 0;
+		Out.AppendChar(bLineEnd ? TEXT('\n') : TEXT(' '));
+	}
+	return Out.TrimEnd();
+}

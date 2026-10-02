@@ -1,6 +1,7 @@
 // DarcItemSlot.cpp
 #include "DarcItemSlot.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
 #include "CarryableItem.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
@@ -11,11 +12,23 @@ ADarcItemSlot::ADarcItemSlot()
 {
 	bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("InsertPoint"));
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
 	Visual->SetupAttachment(RootComponent);
 	Visual->SetMobility(EComponentMobility::Movable);
 	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+
+	InsertPoint = CreateDefaultSubobject<USceneComponent>(TEXT("InsertPoint"));
+	InsertPoint->SetupAttachment(RootComponent);
+	InsertPoint->ComponentTags.Add(TEXT("InsertPoint"));
+
+	// Только для взгляда (канал Visibility), ни с чем не сталкивается.
+	AimBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AimBox"));
+	AimBox->SetupAttachment(RootComponent);
+	AimBox->SetCollisionProfileName(TEXT("NoCollision"));
+	AimBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	AimBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+	AimBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 }
 
 void ADarcItemSlot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -29,6 +42,13 @@ void ADarcItemSlot::BeginPlay()
 {
 	Super::BeginPlay();
 	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
+
+	// Точка вставки — центр лицевой стороны модели (лицо — локальная +X), зона прицеливания —
+	// габариты модели с запасом. Считаем у каждой машины по фактической модели.
+	const FBox Box = Visual->Bounds.GetBox().TransformBy(GetActorTransform().Inverse());
+	InsertPoint->SetRelativeLocation(FVector(Box.Max.X, Box.GetCenter().Y, Box.GetCenter().Z));
+	AimBox->SetRelativeLocation(Box.GetCenter());
+	AimBox->SetBoxExtent(Box.GetExtent() + FVector(12.f));
 
 	if (HasAuthority() && InitialItem && !InitialItem->CurrentHolder)
 	{

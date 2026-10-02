@@ -69,6 +69,16 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Power")
 	void BurnFuse();
 
+	// --- Видимое состояние (у каждой машины): вставленный предохранитель, рычаг, индикатор ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Power|Visual")
+	TObjectPtr<UStaticMeshComponent> FuseIndicator;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Power|Visual")
+	TObjectPtr<UStaticMeshComponent> Lever;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Power|Visual")
+	TObjectPtr<UStaticMeshComponent> StatusLamp;
+
 	/** Сервер: «дух» щёлкнул рубильником. Только рубильник — вставлять предохранители дух не может. */
 	void SpiritToggleBreaker(AActor* Spirit);
 
@@ -94,6 +104,12 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Power")
 	void OnFuseBlownFX();
+
+	/** Расставить индикаторы по лицевой стороне модели и показать текущее состояние. */
+	void LayoutIndicators();
+	void UpdateIndicators();
+	/** Сервер: сообщение игрокам рядом (субтитр без говорящего). */
+	void TellNearby(const TCHAR* Key) const;
 
 	void HandleBlowFromMistake(AActor* Interactor);
 	void NotifyStateChanged();

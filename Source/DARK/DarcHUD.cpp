@@ -8,6 +8,7 @@
 #include "InteractionComponent.h"
 #include "DarcGrabComponent.h"
 #include "DarcHintComponent.h"
+#include "DarcFlashlightComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "TaskManagerComponent.h"
 #include "CanvasItem.h"
@@ -116,6 +117,15 @@ void ADarcHUD::DrawHUD()
 		else if (Grab->FocusedGrabbable)
 		{
 			DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_Grab")), W * 0.5f, H * 0.5f + 52.f, FLinearColor(0.85f, 0.9f, 1.f, 0.85f), 0.9f, true);
+		}
+	}
+
+	// --- Фонарик: подсказка, пока выключен ---
+	if (const UDarcFlashlightComponent* Flashlight = Pawn ? Pawn->FindComponentByClass<UDarcFlashlightComponent>() : nullptr)
+	{
+		if (!Flashlight->IsOn())
+		{
+			DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_FlashlightHint")), W - 160.f, H - 40.f, FLinearColor(0.8f, 0.8f, 0.8f, 0.6f), 0.85f, false);
 		}
 	}
 

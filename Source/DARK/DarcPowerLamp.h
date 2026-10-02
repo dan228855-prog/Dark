@@ -37,6 +37,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
 	TObjectPtr<UPointLightComponent> Light;
 
+	/** Светящаяся трубка под плафоном: видна, только когда лампа горит (и мигает вместе с ней). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
+	TObjectPtr<UStaticMeshComponent> Glow;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
 	TObjectPtr<UDarcPowerConsumerComponent> Power;
 
@@ -46,6 +50,9 @@ protected:
 
 	UFUNCTION()
 	void HandlePowerChanged(bool bPowered, EDarcPowerSource Source);
+
+	/** Свет и трубка вместе (мигание, питание). */
+	void SetLightVisible(bool bVisible);
 
 	UFUNCTION()
 	void HandleFlicker(float Duration);

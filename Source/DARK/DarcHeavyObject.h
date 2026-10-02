@@ -72,6 +72,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Heavy|Text")
 	FText PromptReattachCable;
 
+	/** Подсказка, когда до розетки не дотянуться (кабель короче расстояния). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Heavy|Text")
+	FText PromptCableTooFar;
+
+	/**
+	 * Розетка, откуда идёт видимый кабель (мировые координаты; ноль — кабеля не видно).
+	 * Кабель — часть механики: дальше CableLength его выдёргивает, вставить обратно можно
+	 * только подкатив объект ближе; доставка засчитывается только с подключённым кабелем.
+	 */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Heavy|Cable")
+	FVector CableAnchor = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Heavy|Cable", meta = (ClampMin = "50"))
+	float CableLength = 450.f;
+
+	/** Точка крепления кабеля на объекте (сзади, у верха) — в мире. */
+	FVector GetCablePlugPoint() const;
+
+	bool HasVisibleCable() const { return bHasFragileCable && !CableAnchor.IsNearlyZero(); }
+
 	/** Сервер: оборвать кабель (рывок, событие). */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Heavy")
 	void DetachCable();
@@ -96,6 +116,17 @@ protected:
 	void ApplyCableDrag();
 	/** Подогнать коробку-тело под модель и поставить модель внутрь неё. */
 	void FitCollisionToVisual();
+
+	virtual void Tick(float DeltaSeconds) override;
+	/** Кабель: отрезки-цилиндры вдоль провисающей кривой (у каждой машины сама). */
+	void BuildCableVisual();
+	void UpdateCableVisual();
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> CableSegments;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> CableSocketVisual;
 
 	FTimerHandle CheckTimer;
 	bool bDelivered = false;

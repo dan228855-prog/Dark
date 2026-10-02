@@ -23,4 +23,8 @@ public:
 	/** Текст для игрока из таблицы строк ST_UI по ключу (единственный путь текста из C++). */
 	UFUNCTION(BlueprintPure, Category = "DARC")
 	static FText UIText(FName Key);
+
+	/** Строка → двоичный код UTF-8: байты по 8 бит через пробел, BytesPerLine байт в строке. */
+	UFUNCTION(BlueprintPure, Category = "DARC")
+	static FString EncodeBinary(const FString& Text, int32 BytesPerLine = 6);
 };

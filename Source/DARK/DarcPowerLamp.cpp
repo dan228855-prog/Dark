@@ -6,6 +6,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 
@@ -27,10 +28,17 @@ ADarcPowerLamp::ADarcPowerLamp()
 	Light->SetRelativeLocation(FVector(0.f, 0.f, -30.f));
 	// Явные единицы: ~люминесцентный светильник (люмены не зависят от настроек проекта).
 	Light->SetIntensityUnits(ELightUnits::Lumens);
-	Light->SetIntensity(2600.f);
-	Light->SetAttenuationRadius(1300.f);
+	Light->SetIntensity(4000.f);
+	Light->SetAttenuationRadius(1500.f);
 	Light->SetLightColor(FLinearColor(0.9f, 0.95f, 1.f)); // холодный люминесцентный
 	Light->SetVisibility(false);
+
+	Glow = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Glow"));
+	Glow->SetupAttachment(RootComponent);
+	Glow->SetMobility(EComponentMobility::Movable);
+	Glow->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Glow->SetCastShadow(false);
+	Glow->SetVisibility(false);
 
 	Power = CreateDefaultSubobject<UDarcPowerConsumerComponent>(TEXT("Power"));
 }
@@ -39,6 +47,22 @@ void ADarcPowerLamp::BeginPlay()
 {
 	Super::BeginPlay();
 	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
+	Visual->SetCastShadow(false); // плафон не должен затенять собственный свет
+
+	// Трубка: цилиндр вдоль длинной стороны плафона, чуть ниже его низа; свет — под трубкой.
+	{
+		const FBox Box = Visual->Bounds.GetBox().TransformBy(GetActorTransform().Inverse());
+		const FVector Size = Box.GetSize();
+		const bool bAlongX = Size.X >= Size.Y;
+		const float Length = FMath::Max(bAlongX ? Size.X : Size.Y, 20.f) * 0.85f;
+		Glow->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")));
+		Glow->SetRelativeLocation(FVector(Box.GetCenter().X, Box.GetCenter().Y, Box.Min.Z - 3.f));
+		Glow->SetRelativeRotation(bStreetLight ? FRotator::ZeroRotator : (bAlongX ? FRotator(90.f, 0.f, 0.f) : FRotator(0.f, 0.f, 90.f)));
+		Glow->SetRelativeScale3D(bStreetLight ? FVector(0.16f, 0.16f, 0.06f) : FVector(0.045f, 0.045f, Length / 100.f));
+		const FLinearColor GlowColor = bStreetLight ? FLinearColor(1.f, 0.6f, 0.25f) : FLinearColor(0.85f, 0.92f, 1.f);
+		Glow->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(Glow, GlowColor, 12.f));
+		Light->SetRelativeLocation(FVector(Box.GetCenter().X, Box.GetCenter().Y, Box.Min.Z - 15.f));
+	}
 	if (bStreetLight)
 	{
 		Light->SetLightColor(FLinearColor(1.f, 0.55f, 0.25f));
@@ -58,9 +82,15 @@ void ADarcPowerLamp::HandlePowerChanged(bool bPowered, EDarcPowerSource Source)
 	ApplyLit(bPowered);
 }
 
+void ADarcPowerLamp::SetLightVisible(bool bVisible)
+{
+	Light->SetVisibility(bVisible);
+	Glow->SetVisibility(bVisible);
+}
+
 void ADarcPowerLamp::ApplyLit(bool bLit)
 {
-	Light->SetVisibility(bLit);
+	SetLightVisible(bLit);
 
 	if (bLit && !Hum)
 	{
@@ -93,7 +123,7 @@ void ADarcPowerLamp::FlickerStep()
 		return;
 	}
 	// Неровное мигание: чаще горит, иногда гаснет.
-	Light->SetVisibility(FMath::FRand() > 0.45f);
+	SetLightVisible(FMath::FRand() > 0.45f);
 }
 
 void ADarcPowerLamp::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

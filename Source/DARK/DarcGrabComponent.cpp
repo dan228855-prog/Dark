@@ -132,6 +132,10 @@ void UDarcGrabComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	{
 		ApplyTether(DeltaTime);
 	}
+	else if (SavedMaxWalkSpeed >= 0.f)
+	{
+		RestoreWalkSpeed(); // отпустили — обычная скорость
+	}
 }
 
 void UDarcGrabComponent::ApplyTether(float DeltaTime)
@@ -144,26 +148,51 @@ void UDarcGrabComponent::ApplyTether(float DeltaTime)
 		return;
 	}
 
+	// Тяжесть: чем массивнее предмет, тем медленнее идёт тот, кто его держит.
+	if (SavedMaxWalkSpeed < 0.f)
+	{
+		SavedMaxWalkSpeed = Movement->MaxWalkSpeed;
+	}
+	const float Heaviness = FMath::Clamp(Body->IsSimulatingPhysics() ? Body->GetMass() / HeavyMassKg : 0.f, 0.f, 1.f);
+	Movement->MaxWalkSpeed = SavedMaxWalkSpeed * FMath::Lerp(1.f, HeavyWalkSpeedFactor, Heaviness);
+
 	// Ближайшая к игроку точка предмета (по габаритам) — по горизонтали.
 	const FVector PawnLocation = Character->GetActorLocation();
 	const FVector Closest = Body->Bounds.GetBox().GetClosestPointTo(PawnLocation);
 	FVector Away = PawnLocation - Closest;
 	Away.Z = 0.f;
 	const float Distance = Away.Size();
-	if (Distance <= TetherLength || Distance < KINDA_SMALL_NUMBER)
+	const float SoftStart = TetherLength * FMath::Clamp(TetherSoftStart, 0.f, 0.95f);
+	if (Distance <= SoftStart || Distance < KINDA_SMALL_NUMBER)
 	{
 		return;
 	}
 	Away /= Distance;
 
-	// Скорость «от предмета» гасим — к предмету и вбок идти можно.
+	// Сопротивление нарастает от SoftStart до полной длины: движение «от предмета» гасится
+	// всё сильнее (плавно, как натягивающийся трос), к предмету и вбок — свободно.
+	const float Tension = FMath::SmoothStep(0.f, 1.f, (Distance - SoftStart) / FMath::Max(TetherLength - SoftStart, 1.f));
 	const float Outward = FVector::DotProduct(Movement->Velocity, Away);
 	if (Outward > 0.f)
 	{
-		Movement->Velocity -= Away * Outward;
+		Movement->Velocity -= Away * Outward * Tension;
 	}
-	// Вышли за длину (кадр, лаг, схватили издалека) — плавно, не быстрее 3 м/с, возвращаем на границу.
-	Character->AddActorWorldOffset(-Away * FMath::Min(Distance - TetherLength, 300.f * DeltaTime), true);
+	// Дальше полной длины (кадр, лаг, схватили издалека) — мягко подтягивает обратно.
+	if (Distance > TetherLength)
+	{
+		Character->AddActorWorldOffset(-Away * FMath::Min(Distance - TetherLength, 200.f * DeltaTime), true);
+	}
+}
+
+void UDarcGrabComponent::RestoreWalkSpeed()
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	UCharacterMovementComponent* Movement = Character ? Character->GetCharacterMovement() : nullptr;
+	if (Movement && SavedMaxWalkSpeed >= 0.f)
+	{
+		Movement->MaxWalkSpeed = SavedMaxWalkSpeed;
+	}
+	SavedMaxWalkSpeed = -1.f;
 }
 
 // ---------------------------------------------------------------------------

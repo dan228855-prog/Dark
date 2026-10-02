@@ -120,6 +120,7 @@ void AInteractableDoor::Multicast_LockedAttempt_Implementation()
 void AInteractableDoor::BeginPlay()
 {
     Super::BeginPlay();
+    VisualSpec.bLocalUV = true; // створка поворачивается — текстура привязана к ней
     VisualSpec.ApplyTo(Panel); // модель — у каждой машины сама
     if (bIsOpen && bNativeSwing)
     {

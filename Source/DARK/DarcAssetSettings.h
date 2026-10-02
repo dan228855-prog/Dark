@@ -55,6 +55,14 @@ struct DARK_API FDarcVisualSpec
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
 	TObjectPtr<AActor> CopyFrom;
 
+	/**
+	 * Текстура привязана к самой коробке, а не к миру. Ставят объекты, которые двигаются
+	 * (стойка, генератор, предметы, двери): иначе при движении текстура «плывёт» по ним.
+	 * Локально у каждой машины, по сети не передаётся.
+	 */
+	UPROPERTY(NotReplicated, Transient)
+	bool bLocalUV = false;
+
 	void ApplyTo(UStaticMeshComponent* Component) const;
 };
 
@@ -89,6 +97,13 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, float> MaterialTiling;
 
+	/**
+	 * Доворот модели слота вокруг вертикали, градусы: если «лицо» модели смотрит не туда
+	 * (монитор боком, щиток к стене) — 90 / -90 / 180. Лицо объекта — локальная +X.
+	 */
+	UPROPERTY(Config, EditAnywhere, Category = "Assets")
+	TMap<FName, float> MeshYaw;
+
 	/** Звуки по слотам: DoorOpen, DoorClose, DoorLocked, FuseBlow, Breaker, GeneratorLoop, LampHum, Morse_RU, ... */
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, TSoftObjectPtr<USoundBase>> Sounds;
@@ -115,13 +130,15 @@ public:
 	static UStaticMesh* FindMesh(FName Slot);
 	static UMaterialInterface* FindMaterial(FName Slot);
 	static USkeletalMesh* FindCharacter(FName Slot);
+	/** Один из вариантов Slot, Slot_1 … Slot_8 — выбирается по Seed (у всех машин одинаково). */
+	static USkeletalMesh* FindCharacterVariant(FName Slot, uint32 Seed);
 
 	/**
 	 * Материал слота для серых коробок с нужным повтором текстуры (MaterialTiling).
 	 * Пишет в лог, если материал собран старой версией Tools/darc_setup.py (без наложения
 	 * по миру — тогда текстура растягивается на всю коробку).
 	 */
-	static UMaterialInterface* GetTiledMaterial(FName Slot, UObject* Outer);
+	static UMaterialInterface* GetTiledMaterial(FName Slot, UObject* Outer, bool bLocalUV = false);
 	static UAnimationAsset* FindAnimation(FName Slot);
 	static USoundBase* FindSound(FName Slot);
 
@@ -129,13 +146,20 @@ public:
 	 * Поставить в компонент модель слота, вписав её в коробку BoxSize (см);
 	 * если слот пуст — серый куб такого размера. MaterialSlot — необязательный материал.
 	 */
-	static void ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot = NAME_None);
+	static void ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot = NAME_None, bool bLocalUV = false);
 
 	/**
 	 * Для физических тел: у модели нет простой коллизии — физика с ней не работает (предмет
 	 * провалится/станет «призраком»). Тогда ставим серую коробку размера Spec.Size и пишем в лог.
 	 */
 	static void EnsurePhysicsCollision(UStaticMeshComponent* Component, const FDarcVisualSpec& Spec);
+
+	/**
+	 * Цветной материал для простых фигур. Glow > 0 — светится (материал слота Emissive,
+	 * его создаёт Tools/darc_setup.py: M_DarcEmissive с параметрами Color и Intensity);
+	 * без него — обычный цвет. Для индикаторов, ламп, окон, огней.
+	 */
+	static UMaterialInterface* MakeColorMaterial(UObject* Outer, const FLinearColor& Color, float Glow = 0.f);
 
 	/** Модель/место/масштаб — как у актора карты (см. FDarcVisualSpec::CopyFrom). */
 	static void ApplyCopy(UStaticMeshComponent* Component, AActor* Source);

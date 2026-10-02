@@ -15,6 +15,7 @@ class ACarryableItem;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDarcSlotChanged, ACarryableItem*, Item);
 
 class UStaticMeshComponent;
+class UBoxComponent;
 
 UCLASS()
 class DARK_API ADarcItemSlot : public AActor, public IInteractable
@@ -31,6 +32,14 @@ public:
 	/** Видимая модель (по умолчанию серая коробка, см. DarcAssetSettings). Нужна и для трейса взгляда. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<UStaticMeshComponent> Visual;
+
+	/** Куда встаёт вставленный предмет (центром): лицевая сторона разъёма. Тег InsertPoint. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<USceneComponent> InsertPoint;
+
+	/** Невидимая зона прицеливания вокруг разъёма: мелкий разъём легко «поймать» взглядом. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UBoxComponent> AimBox;
 
 	/** Какие предметы подходят (класс или его наследники). Пусто — любой переносимый предмет. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Slot")

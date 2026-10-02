@@ -16,6 +16,8 @@
 
 class AInteractableDoor;
 class ADarcPowerLamp;
+class UStaticMeshComponent;
+class UPointLightComponent;
 
 UCLASS(NotPlaceable)
 class DARK_API ADarcSliceBuilder : public AActor
@@ -48,6 +50,12 @@ protected:
 	/** Декоративный свет (не от электросистемы — всегда горит). */
 	class UPointLightComponent* AddLight(const FVector& Location, const FLinearColor& Color, float Lumens, float Radius);
 	void AddTree(const FVector2D& Location, float Height, float Radius);
+	/** Пропс (модель слота, вписанная в BoxSize, низом на BottomCenter) + невидимая коробка-коллизия. */
+	UStaticMeshComponent* AddProp(FName MeshSlot, const FVector& BottomCenter, float Yaw, const FVector& BoxSize,
+		bool bCollision = true, FName MaterialSlot = NAME_None);
+	/** Стена этажа (Z0..Z1) с окнами; LitEvery > 0 — каждое n-е окно светится изнутри. */
+	void AddWallWithWindows(const FVector2D& A, const FVector2D& B, float Z0, float Z1, const TArray<float>& WindowCenters,
+		FName MaterialSlot, int32 LitEvery);
 	void ToggleBlinkLights();
 
 	// --- Игровые объекты (только сервер) ---
@@ -67,6 +75,12 @@ protected:
 	/** Красные огни на вышке и тарелке — мигают у каждой машины сами. */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<class UPointLightComponent>> BlinkLights;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> BlinkMeshes;
+
+	/** Фоновый звук (музыка, ночь, гул серверной) — у каждой машины свой. */
+	void StartAmbience();
 
 	FTimerHandle BlinkTimer;
 	bool bBlinkOn = true;

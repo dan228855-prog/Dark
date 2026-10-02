@@ -6,6 +6,8 @@
 #include "InteractionComponent.h"
 #include "DarcGrabComponent.h"
 #include "DarcFootstepComponent.h"
+#include "DarcFlashlightComponent.h"
+#include "DarcPlayerOutfitComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -134,6 +136,8 @@ void ADarcPlayerController::EnsureInteractionComponent(APawn* InPawn)
 	EnsureComponent<UInteractionComponent>(InPawn, TEXT("Interaction"));
 	EnsureComponent<UDarcGrabComponent>(InPawn, TEXT("Grab"));
 	EnsureComponent<UDarcFootstepComponent>(InPawn, TEXT("Footsteps"));
+	EnsureComponent<UDarcFlashlightComponent>(InPawn, TEXT("Flashlight"));
+	EnsureComponent<UDarcPlayerOutfitComponent>(InPawn, TEXT("Outfit"));
 }
 
 void ADarcPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -194,9 +198,14 @@ void ADarcPlayerController::HandleSecondary()
 
 void ADarcPlayerController::HandleSpiritBreaker()
 {
+	// F: у «духа» — рубильник, у живого — фонарик.
 	if (ADarcSpiritCharacter* Spirit = Cast<ADarcSpiritCharacter>(GetPawn()))
 	{
 		Spirit->TryToggleBreaker();
+	}
+	else if (UDarcFlashlightComponent* Flashlight = GetPawn() ? GetPawn()->FindComponentByClass<UDarcFlashlightComponent>() : nullptr)
+	{
+		Flashlight->Toggle();
 	}
 }
 

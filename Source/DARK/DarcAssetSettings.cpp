@@ -39,7 +39,7 @@ UMaterialInterface* UDarcAssetSettings::FindMaterial(FName Slot)
 	return Found ? Found->LoadSynchronous() : nullptr;
 }
 
-UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Outer)
+UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Outer, bool bLocalUV)
 {
 	UMaterialInterface* Material = Slot.IsNone() ? nullptr : FindMaterial(Slot);
 	if (!Material)
@@ -50,7 +50,8 @@ UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Ou
 	if (!Material->GetScalarParameterValue(FHashedMaterialParameterInfo(FName(TEXT("WorldAligned"))), Current))
 	{
 		static TSet<FName> Reported;
-		if (!Reported.Contains(Slot))
+		// Только материалы из Tools/darc_setup.py — у чужих паков такого параметра и не должно быть.
+		if (!Reported.Contains(Slot) && Material->GetPathName().Contains(TEXT("/DARC/Imported/")))
 		{
 			Reported.Add(Slot);
 			UE_LOG(LogTemp, Warning, TEXT("DARC: material %s (slot %s) has no world-aligned UV - texture will stretch. Re-run Tools/darc_setup.py."),
@@ -59,12 +60,19 @@ UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Ou
 		return Material;
 	}
 	const float* Tile = Get()->MaterialTiling.Find(Slot);
-	if (!Tile)
+	if (!Tile && !bLocalUV)
 	{
 		return Material;
 	}
 	UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Material, Outer);
-	Instance->SetScalarParameterValue(TEXT("TileSize"), *Tile);
+	if (Tile)
+	{
+		Instance->SetScalarParameterValue(TEXT("TileSize"), *Tile);
+	}
+	if (bLocalUV)
+	{
+		Instance->SetScalarParameterValue(TEXT("WorldAligned"), 0.f); // UV граней коробки — едут вместе с ней
+	}
 	return Instance;
 }
 
@@ -72,6 +80,23 @@ USkeletalMesh* UDarcAssetSettings::FindCharacter(FName Slot)
 {
 	const TSoftObjectPtr<USkeletalMesh>* Found = Get()->Characters.Find(Slot);
 	return Found ? Found->LoadSynchronous() : nullptr;
+}
+
+USkeletalMesh* UDarcAssetSettings::FindCharacterVariant(FName Slot, uint32 Seed)
+{
+	TArray<const TSoftObjectPtr<USkeletalMesh>*, TInlineAllocator<9>> Found;
+	if (const TSoftObjectPtr<USkeletalMesh>* Base = Get()->Characters.Find(Slot))
+	{
+		Found.Add(Base);
+	}
+	for (int32 i = 1; i <= 8; ++i)
+	{
+		if (const TSoftObjectPtr<USkeletalMesh>* Variant = Get()->Characters.Find(FName(*FString::Printf(TEXT("%s_%d"), *Slot.ToString(), i))))
+		{
+			Found.Add(Variant);
+		}
+	}
+	return Found.Num() > 0 ? Found[Seed % Found.Num()]->LoadSynchronous() : nullptr;
 }
 
 UAnimationAsset* UDarcAssetSettings::FindAnimation(FName Slot)
@@ -86,7 +111,7 @@ USoundBase* UDarcAssetSettings::FindSound(FName Slot)
 	return Found ? Found->LoadSynchronous() : nullptr;
 }
 
-void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot)
+void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot, const FVector& BoxSize, FName MaterialSlot, bool bLocalUV)
 {
 	if (!Component)
 	{
@@ -114,8 +139,19 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 		const bool bBoxAlongY = IsElongated(BoxSize.Y, BoxSize.X);
 		const bool bMeshAlongX = IsElongated(MeshSize.X, MeshSize.Y);
 		const bool bMeshAlongY = IsElongated(MeshSize.Y, MeshSize.X);
-		const bool bSwap = !bIsRoot && Component->GetRelativeRotation().IsNearlyZero()
+		bool bSwap = !bIsRoot && Component->GetRelativeRotation().IsNearlyZero()
 			&& ((bBoxAlongX && bMeshAlongY) || (bBoxAlongY && bMeshAlongX));
+		FRotator FitRotation = bSwap ? FRotator(0.f, 90.f, 0.f) : Component->GetRelativeRotation();
+
+		// Явный поворот модели из настроек (MeshYaw): «лицо» чужой модели может смотреть куда
+		// угодно — монитор боком, щиток к стене. Тогда автоповорот не нужен, а коробка
+		// вписывается с учётом этого поворота.
+		if (const float* ExtraYaw = bIsRoot ? nullptr : Get()->MeshYaw.Find(Slot))
+		{
+			const float Quarter = FMath::Fmod(FMath::Abs(*ExtraYaw), 180.f);
+			bSwap = FMath::IsNearlyEqual(Quarter, 90.f, 1.f);
+			FitRotation = FRotator(0.f, *ExtraYaw, 0.f);
+		}
 		const FVector Target = bSwap ? FVector(BoxSize.Y, BoxSize.X, BoxSize.Z) : BoxSize; // в осях модели
 
 		// Вписывание: общий масштаб — по самому большому размеру коробки (модель получает
@@ -136,7 +172,7 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 		if (!bIsRoot)
 		{
 			// Центр модели — в центр коробки, низ — на её «пол».
-			const FRotator Rotation = bSwap ? FRotator(0.f, 90.f, 0.f) : Component->GetRelativeRotation();
+			const FRotator Rotation = FitRotation;
 			const FVector Center = Bounds.GetCenter();
 			const FVector Pivot(-Center.X * Scale3.X, -Center.Y * Scale3.Y, -Bounds.Min.Z * Scale3.Z);
 			Component->SetRelativeRotation(Rotation);
@@ -157,7 +193,7 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 
 	// Материал слота — только серой коробке. У настоящей модели остаются её собственные
 	// материалы (раньше двери перекрашивались в «металлическую пластину» поверх своей текстуры).
-	if (UMaterialInterface* Material = (Mesh || MaterialSlot.IsNone()) ? nullptr : GetTiledMaterial(MaterialSlot, Component))
+	if (UMaterialInterface* Material = (Mesh || MaterialSlot.IsNone()) ? nullptr : GetTiledMaterial(MaterialSlot, Component, bLocalUV))
 	{
 		for (int32 i = 0; i < Component->GetNumMaterials(); ++i)
 		{
@@ -240,6 +276,27 @@ UAudioComponent* UDarcAssetSettings::PlayLoopAttached(FName Slot, USceneComponen
 		: nullptr;
 }
 
+UMaterialInterface* UDarcAssetSettings::MakeColorMaterial(UObject* Outer, const FLinearColor& Color, float Glow)
+{
+	UMaterialInterface* Base = Glow > 0.f ? FindMaterial(TEXT("Emissive")) : nullptr;
+	const bool bEmissive = Base != nullptr;
+	if (!Base)
+	{
+		Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	}
+	if (!Base)
+	{
+		return nullptr;
+	}
+	UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Base, Outer);
+	Instance->SetVectorParameterValue(TEXT("Color"), Color);
+	if (bEmissive)
+	{
+		Instance->SetScalarParameterValue(TEXT("Intensity"), Glow);
+	}
+	return Instance;
+}
+
 void UDarcAssetSettings::EnsurePhysicsCollision(UStaticMeshComponent* Component, const FDarcVisualSpec& Spec)
 {
 	const UStaticMesh* Mesh = Component ? Component->GetStaticMesh() : nullptr;
@@ -317,7 +374,7 @@ void FDarcVisualSpec::ApplyTo(UStaticMeshComponent* Component) const
 	{
 		return;
 	}
-	UDarcAssetSettings::ApplyVisual(Component, Slot, Size, Material);
+	UDarcAssetSettings::ApplyVisual(Component, Slot, Size, Material, bLocalUV);
 	if (!Offset.IsNearlyZero())
 	{
 		Component->AddRelativeLocation(Offset);

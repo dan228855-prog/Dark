@@ -51,6 +51,13 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FRotator FirstPersonHoldRotation = FRotator(0.f, -15.f, 0.f);
 
+    // В руке от первого лица (сокет HandGrip_R рук): смещение и поворот относительно хвата.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    FVector FirstPersonGripOffset = FVector(2.f, 0.f, 2.f);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    FRotator FirstPersonGripRotation = FRotator::ZeroRotator;
+
     // ID предмета для WorldMemory. Если пусто — имя актора в уровне.
     // Процедурный генератор и заспавненные в рантайме предметы обязаны задавать его явно.
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Carry")

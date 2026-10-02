@@ -249,12 +249,17 @@ TArray<FText> ADarcTerminal::GetScreenLines() const
 	TArray<FText> Result;
 	if (ScrambledWords.Num() > 0)
 	{
+		// Слова перемешаны по сиду выезда (у всех игроков одинаково, не меняется при обновлении
+		// экрана) и показаны не текстом, а двоичным кодом UTF-8: прочитать можно, только
+		// расшифровав байты. Сама фраза на экране не появляется.
+		const UTaskManagerComponent* Tasks = UTaskManagerComponent::GetTaskManager(this);
+		FRandomStream Stream(Tasks ? Tasks->GetMissionSeed() ^ 0x5EED : 0x5EED);
 		TArray<FText> Words = ScrambledWords;
 		for (int32 i = Words.Num() - 1; i > 0; --i)
 		{
-			Words.Swap(i, FMath::RandRange(0, i));
+			Words.Swap(i, Stream.RandRange(0, i));
 		}
-		Result.Add(FText::Join(FText::FromString(TEXT("\n")), Words));
+		Result.Add(FText::FromString(UDarcGameplayLibrary::EncodeBinary(FText::Join(FText::FromString(TEXT(" ")), Words).ToString(), 6)));
 		Result.Add(FText::GetEmpty());
 	}
 	Result.Append(ScreenLines);

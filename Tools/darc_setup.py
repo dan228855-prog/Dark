@@ -244,12 +244,12 @@ def import_raw_assets():
 
 # Наборы текстур Poly Haven / ambientCG: имя_набора + суффикс карты.
 TEX_ROLES = [
-    ("BaseColor", r"(diff|diffuse|albedo|basecolor|base_color|color|col)$"),
-    ("Normal", r"(nor|normal|nrm|nor_gl|normal_gl|normalgl|nor_dx|normaldx)$"),
-    ("Roughness", r"(rough|roughness|rgh)$"),
+    ("BaseColor", r"(diff|diffuse|albedo|basecolor|base_color|color|col|bc)$"),
+    ("Normal", r"(nor|normal|nrm|nor_gl|normal_gl|normalgl|nor_dx|normaldx|n)$"),
+    ("Roughness", r"(rough|roughness|rgh|r)$"),
     ("Gloss", r"(gloss|glossiness)$"),
     ("AO", r"(ao|ambientocclusion|occlusion)$"),
-    ("Metallic", r"(metal|metallic|metalness)$"),
+    ("Metallic", r"(metal|metallic|metalness|m)$"),
 ]
 
 
@@ -262,7 +262,8 @@ def build_materials():
         name = str(data.asset_name)
         # Разрешение (_4k и т.п.) часто стоит ПОСЛЕ роли (..._diff_4k) - срезаем его
         # заранее, иначе роль-паттерн с якорем $ не находит совпадение.
-        base = re.sub(r"_(1k|2k|3k|4k|6k|8k)$", "", name, flags=re.I)
+        # Разрешение в конце: _4k или в пикселях — _2048 (набор вида T_Armstrong_BC_2048).
+        base = re.sub(r"_(1k|2k|3k|4k|6k|8k|256|512|1024|2048|4096|8192)$", "", name, flags=re.I)
         base = re.sub(r"_var\d+$", "", base, flags=re.I)  # Poliigon: ..._COL_VAR1_4K
         lowered = base.lower()
         for role, pattern in TEX_ROLES:
@@ -422,6 +423,33 @@ def connect_base_color_with_variation(material, custom, sample, texture, y):
     mel.connect_material_property(final, "", unreal.MaterialProperty.MP_BASE_COLOR)
 
 
+def ensure_emissive_material():
+    """M_DarcEmissive — светящийся материал для индикаторов, трубок ламп, окон, огней
+    (код игры: слот Emissive, параметры Color и Intensity). Без света от материала —
+    только свечение (Unlit), поэтому дёшево и одинаково в любом освещении."""
+    path = ROOT + "/Materials/M_DarcEmissive"
+    if eal.does_asset_exist(path):
+        return
+    if not eal.does_directory_exist(ROOT + "/Materials"):
+        eal.make_directory(ROOT + "/Materials")
+    mel = unreal.MaterialEditingLibrary
+    material = asset_tools.create_asset("M_DarcEmissive", ROOT + "/Materials", unreal.Material, unreal.MaterialFactoryNew())
+    material.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    color = mel.create_material_expression(material, unreal.MaterialExpressionVectorParameter, -500, 0)
+    color.set_editor_property("parameter_name", "Color")
+    color.set_editor_property("default_value", unreal.LinearColor(1.0, 1.0, 1.0, 1.0))
+    intensity = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -500, 200)
+    intensity.set_editor_property("parameter_name", "Intensity")
+    intensity.set_editor_property("default_value", 5.0)
+    mul = mel.create_material_expression(material, unreal.MaterialExpressionMultiply, -250, 80)
+    mel.connect_material_expressions(color, "", mul, "A")
+    mel.connect_material_expressions(intensity, "", mul, "B")
+    mel.connect_material_property(mul, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    mel.recompile_material(material)
+    eal.save_loaded_asset(material)
+    say("Создан светящийся материал " + path)
+
+
 # ---------------------------------------------------------------------------
 # 3. Таблицы и ассет выезда
 # ---------------------------------------------------------------------------
@@ -539,6 +567,7 @@ def main():
         slow.enter_progress_frame(1, "Импорт файлов из RawAssets")
         import_raw_assets()
         build_materials()
+        ensure_emissive_material()
         slow.enter_progress_frame(1, "Таблицы среза")
         tasks = import_table("DT_Mission_Slice_Tasks.csv", "DT_Mission_Slice_Tasks", "/Script/DARK.DarcTaskDefinition")
         import_table("DT_RareEvents.csv", "DT_RareEvents", "/Script/DARK.DarcRareEventRow")

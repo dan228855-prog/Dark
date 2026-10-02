@@ -55,7 +55,7 @@ protected:
 	void HandlePrimaryPressed();   // ЛКМ: захват (живой) / мигнуть светом (дух)
 	void HandlePrimaryReleased();  // ЛКМ отпущена: отпустить предмет
 	void HandleSecondary();        // ПКМ: бросить (живой) / толкнуть предмет (дух)
-	void HandleSpiritBreaker();
+	void HandleSpiritBreaker();    // F: рубильник (дух) / фонарик (живой)
 
 	void SubmitTerminalText(const FText& Text);
 	FText BuildTerminalScreenText() const;

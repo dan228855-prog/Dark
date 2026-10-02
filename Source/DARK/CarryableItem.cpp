@@ -5,6 +5,8 @@
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
+#include "DARKCharacter.h"
+#include "Engine/StaticMesh.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DarcAssetSettings.h"
@@ -125,8 +127,19 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
     ACharacter* Character = Cast<ACharacter>(Holder);
     if (Character && Character->IsLocallyControlled())
     {
-        // Свой персонаж: модель тела у себя не видна, поэтому держим предмет перед камерой —
-        // «в руке» в нижней правой части экрана. У остальных игроков — в руке модели (ниже).
+        // Свой персонаж: модель тела у себя не видна — предмет в руке модели рук от первого
+        // лица (сокет HandGrip_R, как оружие в шаблоне) и рисуется вместе с руками.
+        const ADARKCharacter* FirstPersonCharacter = Cast<ADARKCharacter>(Character);
+        USkeletalMeshComponent* Arms = FirstPersonCharacter ? FirstPersonCharacter->GetFirstPersonMesh() : nullptr;
+        if (Arms && Arms->DoesSocketExist(TEXT("HandGrip_R")))
+        {
+            AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("HandGrip_R"));
+            SetActorRelativeLocation(FirstPersonGripOffset);
+            SetActorRelativeRotation(FirstPersonGripRotation);
+            Mesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+            return;
+        }
+        // Нет рук с сокетом — перед камерой, в нижней правой части экрана.
         if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
         {
             AttachToComponent(Camera, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
@@ -155,8 +168,15 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
     }
     else if (Holder && Holder->GetRootComponent())
     {
-        // Слот/устройство: предмет встаёт в корень держателя (точка вставки).
-        AttachToComponent(Holder->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+        // Слот/устройство: точка вставки (компонент с тегом InsertPoint), иначе корень. Предмет
+        // садится в неё ЦЕНТРОМ модели — раньше садился своей точкой опоры и висел рядом.
+        USceneComponent* Point = Holder->FindComponentByTag<USceneComponent>(TEXT("InsertPoint"));
+        AttachToComponent(Point ? Point : Holder->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+        if (const UStaticMesh* StaticMesh = Mesh->GetStaticMesh())
+        {
+            const FVector Center = StaticMesh->GetBoundingBox().GetCenter() * Mesh->GetRelativeScale3D();
+            SetActorRelativeLocation(-Center);
+        }
     }
 }
 
@@ -173,6 +193,7 @@ void ACarryableItem::OnRep_AttachmentReplication()
 
 void ACarryableItem::DetachFromHolder()
 {
+    Mesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
     SetActorEnableCollision(true);
 
@@ -223,8 +244,17 @@ ACarryableItem* ACarryableItem::FindItemHeldBy(const AActor* Holder)
 void ACarryableItem::BeginPlay()
 {
     Super::BeginPlay();
+    VisualSpec.bLocalUV = true; // предмет двигается — текстура не должна «плыть» по нему
     VisualSpec.ApplyTo(Mesh); // модель — у каждой машины сама
     UDarcAssetSettings::EnsurePhysicsCollision(Mesh, VisualSpec);
+
+    // Мелкий предмет не сталкивается с персонажем: на него не встать, он не «везёт» игрока
+    // и не отлетает от шагов (было: жёсткий диск крутил игрока как скейтборд и улетал).
+    // Взгляд/взаимодействие (Visibility) и столкновения с миром остаются.
+    Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+    Mesh->CanCharacterStepUpOn = ECB_No;
+    Mesh->SetAngularDamping(2.f);
+    Mesh->SetLinearDamping(0.3f);
     if (bPhysicsWhenFree && !CurrentHolder && Mesh->GetStaticMesh())
     {
         Mesh->SetSimulatePhysics(true);
