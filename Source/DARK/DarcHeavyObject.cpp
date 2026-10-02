@@ -5,6 +5,8 @@
 #include "TaskManagerComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "DarcCablePlug.h"
+#include "DarcGameplayLibrary.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
@@ -22,6 +24,10 @@ ADarcHeavyObject::ADarcHeavyObject()
 	Collision->SetBoxExtent(FVector(50.f));
 	RootComponent = Collision;
 
+	CablePort = CreateDefaultSubobject<USceneComponent>(TEXT("CablePort"));
+	CablePort->SetupAttachment(Collision);
+	CablePort->ComponentTags.Add(TEXT("InsertPoint"));
+
 	Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	Body->SetupAttachment(Collision);
 	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -35,6 +41,7 @@ void ADarcHeavyObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ADarcHeavyObject, bCableAttached);
 	DOREPLIFETIME_CONDITION(ADarcHeavyObject, CableAnchor, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(ADarcHeavyObject, CableLength, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(ADarcHeavyObject, PowerPlug, COND_InitialOnly);
 }
 
 void ADarcHeavyObject::BeginPlay()
@@ -44,6 +51,11 @@ void ADarcHeavyObject::BeginPlay()
 	VisualSpec.ApplyTo(Body); // модель — у каждой машины сама
 	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision); // модель с карты могла принести свою коллизию
 	FitCollisionToVisual();
+	{
+		// Порт для вилки — сзади у верха тела.
+		const FVector Extent = Collision->GetUnscaledBoxExtent();
+		CablePort->SetRelativeLocation(FVector(-Extent.X - 2.f, 0.f, Extent.Z * 0.6f));
+	}
 
 	// Масса — после размера тела. Угловое затухание — чтобы не кувыркался от каждого толчка.
 	Collision->SetSimulatePhysics(true);
@@ -86,6 +98,12 @@ void ADarcHeavyObject::FitCollisionToVisual()
 void ADarcHeavyObject::ServerCheck()
 {
 	// Рывок или натяжение сильнее длины кабеля — вилку выдёргивает.
+	// Вилка питания: рывком её выдёргивает.
+	if (IsPowerPlugConnected() && Collision->GetPhysicsLinearVelocity().Size() > BreakSpeed)
+	{
+		PowerPlug->Unplug();
+	}
+
 	if (bHasFragileCable && bCableAttached)
 	{
 		const bool bJerk = Collision->GetPhysicsLinearVelocity().Size() > BreakSpeed;
@@ -97,7 +115,7 @@ void ADarcHeavyObject::ServerCheck()
 	}
 
 	// Доставка (с кабелем — только подключённой).
-	if (!bDelivered && DeliveryTarget && !TaskIdOnDelivered.IsNone() && (!bHasFragileCable || bCableAttached)
+	if (!bDelivered && DeliveryTarget && !TaskIdOnDelivered.IsNone() && (!bHasFragileCable || bCableAttached) && (!PowerPlug || IsPowerPlugConnected())
 		&& FVector::Dist2D(GetActorLocation(), DeliveryTarget->GetActorLocation()) <= DeliveryRadius)
 	{
 		bDelivered = true;
@@ -128,13 +146,39 @@ void ADarcHeavyObject::ApplyCableDrag()
 	Collision->SetLinearDamping(bCableAttached ? 0.2f : 25.f);
 }
 
+bool ADarcHeavyObject::IsPowerPlugConnected() const
+{
+	return PowerPlug && PowerPlug->CurrentHolder == this;
+}
+
 bool ADarcHeavyObject::CanInteract_Implementation(AActor* Interactor) const
 {
+	if (PowerPlug)
+	{
+		// С вилкой в руках — подключить; подключена и руки пусты — вынуть.
+		const ACarryableItem* Held = ACarryableItem::FindItemHeldBy(Interactor);
+		return Held == PowerPlug || (IsPowerPlugConnected() && !Held);
+	}
 	return !bCableAttached; // взаимодействие только чтобы закрепить кабель; тащат — захватом (ЛКМ)
 }
 
 void ADarcHeavyObject::OnInteract_Implementation(AActor* Interactor)
 {
+	if (PowerPlug)
+	{
+		const ACarryableItem* Held = ACarryableItem::FindItemHeldBy(Interactor);
+		if (Held == PowerPlug)
+		{
+			PowerPlug->ServerTransferTo(this, Interactor); // вилка встаёт в порт (CablePort)
+			UDarcAssetSettings::PlaySound(this, TEXT("CableAttach"), GetActorLocation());
+		}
+		else if (IsPowerPlugConnected() && !Held)
+		{
+			PowerPlug->ServerTransferTo(Interactor, Interactor); // вынуть — в руку
+			UDarcAssetSettings::PlaySound(this, TEXT("CableDetach"), GetActorLocation());
+		}
+		return;
+	}
 	if (bCableAttached)
 	{
 		return;
@@ -165,6 +209,10 @@ void ADarcHeavyObject::OnRep_Cable()
 
 FText ADarcHeavyObject::GetInteractionPrompt_Implementation() const
 {
+	if (PowerPlug)
+	{
+		return UDarcGameplayLibrary::UIText(IsPowerPlugConnected() ? TEXT("Heavy_Unplug") : TEXT("Heavy_PlugIn"));
+	}
 	if (HasVisibleCable() && FVector::Dist(CableAnchor, GetCablePlugPoint()) > CableLength * 0.95f && !PromptCableTooFar.IsEmpty())
 	{
 		return PromptCableTooFar;

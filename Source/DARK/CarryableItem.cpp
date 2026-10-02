@@ -131,11 +131,28 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
         // лица (сокет HandGrip_R, как оружие в шаблоне) и рисуется вместе с руками.
         const ADARKCharacter* FirstPersonCharacter = Cast<ADARKCharacter>(Character);
         USkeletalMeshComponent* Arms = FirstPersonCharacter ? FirstPersonCharacter->GetFirstPersonMesh() : nullptr;
-        if (Arms && Arms->DoesSocketExist(TEXT("HandGrip_R")))
+        const UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>();
+        FName Palm = NAME_None;
+        for (const FName Bone : { FName(TEXT("middle_metacarpal_r")), FName(TEXT("hand_r")), FName(TEXT("HandGrip_R")) })
         {
-            AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("HandGrip_R"));
-            SetActorRelativeLocation(FirstPersonGripOffset);
-            SetActorRelativeRotation(FirstPersonGripRotation);
+            if (Arms && Arms->DoesSocketExist(Bone))
+            {
+                Palm = Bone;
+                break;
+            }
+        }
+        if (Arms && Camera && !Palm.IsNone())
+        {
+            // В ладони (кость середины ладони), лицевой стороной (+Z предмета) — к глазам,
+            // длинной стороной поперёк взгляда. Положение считаем один раз в мире от камеры и
+            // запоминаем относительно кости: дальше предмет двигается вместе с рукой.
+            AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Palm);
+            const FVector Forward = Camera->GetForwardVector();
+            const FVector Right = Camera->GetRightVector();
+            const FVector Up = Camera->GetUpVector();
+            const FVector PalmLocation = Arms->GetSocketLocation(Palm);
+            SetActorLocationAndRotation(PalmLocation - Forward * 1.5f - Up * 2.5f + Right * FirstPersonGripOffset.Y,
+                FRotationMatrix::MakeFromZX(-Forward, Right).Rotator());
             SetFirstPersonRendering(true);
             return;
         }

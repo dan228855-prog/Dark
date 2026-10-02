@@ -96,8 +96,8 @@ Name_CardReader,Card reader
 Hint_CardReader,swipe the access card to open the server room
 Name_Keypad,Keypad
 Hint_Keypad,the server room code is on a sign in the storage room
-Name_InterfaceSlot,Interface port
-Hint_InterfaceSlot,insert the interface module
+Name_InterfaceSlot,Rack interface port
+Hint_InterfaceSlot,insert the interface module (E)
 Name_Drive,Archive drive
 Hint_Drive,"after copying, take it out and bring it to the guard"
 Name_DriveSlot,Drive bay
@@ -109,7 +109,7 @@ Hint_Inlet,connect the portable generator here (it is in the storage room)
 Name_Console,Server console
 Hint_Console,works while the server has power
 Name_Rack,Server rack
-Hint_Rack,"drag it onto the yellow marking; keep the power cable plugged in"
+Hint_Rack,"drag it onto the yellow marking, plug in the power cable and insert the module"
 Name_Keycard,Access card
 Hint_Keycard,"opens the server room; the code is on the back"
 Name_Guard,Guard
@@ -119,7 +119,7 @@ Hint_FuseBox,circuit breaker: E to switch on/off
 Name_Fuse,Fuse
 Hint_Fuse,insert into the server room fuse box — switch its breaker off first
 Name_InterfaceModule,Interface module
-Hint_InterfaceModule,insert into the interface port by the server
+Hint_InterfaceModule,insert into the port on the front of the server rack
 Name_Generator,Portable generator
 Hint_Generator,drag it to the power inlet in the server room and connect (fits through doors sideways)
 Name_TechCabinet,Technical cabinet
@@ -133,3 +133,7 @@ Name_FuseBox_Corridor,Corridor fuse box
 Name_FuseBox_Building,Building fuse box
 Hint_FuseBox_NoFuse,"no fuse: switch the breaker off, insert a fuse, switch the breaker on"
 Fuse_InsertBreakerOn,Insert fuse (breaker is ON — it will blow!)
+Name_CablePlug,Rack power cable
+Hint_CablePlug,"pick up the plug (E), bring it to the server rack and plug it in"
+Heavy_PlugIn,Plug in the power cable
+Heavy_Unplug,Unplug the power cable

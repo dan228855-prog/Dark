@@ -296,7 +296,8 @@ def build_materials():
             # Уже собран этой версией и текстуры не менялись — не трогаем.
             params = [str(n) for n in mel.get_scalar_parameter_names(material)]
             textures_changed = any(path.split(".")[0] in changed_textures for path in maps.values())
-            if "MacroVariation" in params and not textures_changed:
+            vector_params = [str(n) for n in mel.get_vector_parameter_names(material)]
+            if "MacroVariation" in params and "BoxSize" in vector_params and not textures_changed:
                 continue
             mel.delete_all_material_expressions(material)  # старая версия: текстура растягивалась
         else:
@@ -313,46 +314,48 @@ def build_materials():
 # Текстурные координаты «по миру»: грань смотрит вверх/вниз — проекция XY, вдоль X — YZ,
 # вдоль Y — XZ. Текстура повторяется каждые TileSize см независимо от размера коробки
 # (серые стены — растянутые кубы, обычные UV растягивали текстуру на всю стену).
-# WorldAligned = 0 — обычные UV модели (для настоящих моделей, например двери; это
-# выставляет код игры).
-WORLD_UV_CODE = """float3 n = abs(N);
-float2 w = (n.z >= n.x && n.z >= n.y) ? P.xy : (n.x >= n.y ? P.yz : P.xz);
+# WorldAligned = 0 — та же проекция, но в осях самой коробки (LocalPosition × BoxSize, см):
+# у движущихся объектов (стойка, предметы) текстура едет вместе с ними и не растягивается.
+WORLD_UV_CODE = """float3 p = Aligned > 0.5 ? P : LP * BoxSize / 100.0;
+float3 n = abs(Aligned > 0.5 ? N : LN);
+float2 w = (n.z >= n.x && n.z >= n.y) ? p.xy : (n.x >= n.y ? p.yz : p.xz);
 w = w / max(Tile, 1.0);
 w.y = -w.y;
-return lerp(UV * UVScale, w, saturate(Aligned));"""
+return w;"""
 
 
 def build_material_graph(material, maps):
     mel = unreal.MaterialEditingLibrary
     pos = mel.create_material_expression(material, unreal.MaterialExpressionWorldPosition, -1300, -200)
     nrm = mel.create_material_expression(material, unreal.MaterialExpressionVertexNormalWS, -1300, -60)
-    uv = mel.create_material_expression(material, unreal.MaterialExpressionTextureCoordinate, -1300, 80)
+    local_pos = mel.create_material_expression(material, unreal.MaterialExpressionLocalPosition, -1300, 80)
+    local_nrm = mel.create_material_expression(material, unreal.MaterialExpressionPreSkinnedNormal, -1300, 140)
+    box_size = mel.create_material_expression(material, unreal.MaterialExpressionVectorParameter, -1300, 560)
+    box_size.set_editor_property("parameter_name", "BoxSize")
+    box_size.set_editor_property("default_value", unreal.LinearColor(100.0, 100.0, 100.0, 0.0))
     tile = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 200)
     tile.set_editor_property("parameter_name", "TileSize")
     tile.set_editor_property("default_value", 200.0)
     aligned = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 320)
     aligned.set_editor_property("parameter_name", "WorldAligned")
     aligned.set_editor_property("default_value", 1.0)
-    uv_scale = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 440)
-    uv_scale.set_editor_property("parameter_name", "UVScale")
-    uv_scale.set_editor_property("default_value", 1.0)
-
     custom = mel.create_material_expression(material, unreal.MaterialExpressionCustom, -900, 0)
     custom.set_editor_property("code", WORLD_UV_CODE)
     custom.set_editor_property("output_type", unreal.CustomMaterialOutputType.CMOT_FLOAT2)
     custom.set_editor_property("description", "DarcWorldUV")
     inputs = []
-    for name in ["P", "N", "UV", "Tile", "Aligned", "UVScale"]:
+    for name in ["P", "N", "LP", "LN", "BoxSize", "Tile", "Aligned"]:
         item = unreal.CustomInput()
         item.set_editor_property("input_name", name)
         inputs.append(item)
     custom.set_editor_property("inputs", inputs)
     mel.connect_material_expressions(pos, "", custom, "P")
     mel.connect_material_expressions(nrm, "", custom, "N")
-    mel.connect_material_expressions(uv, "", custom, "UV")
+    mel.connect_material_expressions(local_pos, "", custom, "LP")
+    mel.connect_material_expressions(local_nrm, "", custom, "LN")
+    mel.connect_material_expressions(box_size, "", custom, "BoxSize")
     mel.connect_material_expressions(tile, "", custom, "Tile")
     mel.connect_material_expressions(aligned, "", custom, "Aligned")
-    mel.connect_material_expressions(uv_scale, "", custom, "UVScale")
 
     y = 0
     for role, prop in [("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR),

@@ -53,7 +53,7 @@ public:
 
     // В руке от первого лица (сокет HandGrip_R рук): смещение и поворот относительно хвата.
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
-    FVector FirstPersonGripOffset = FVector(2.f, 0.f, 2.f);
+    FVector FirstPersonGripOffset = FVector::ZeroVector;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FRotator FirstPersonGripRotation = FRotator::ZeroRotator;

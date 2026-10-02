@@ -22,6 +22,7 @@
 #include "DarcGameplayLibrary.h"
 #include "DarcHintComponent.h"
 #include "DarcBarrierGate.h"
+#include "DarcCablePlug.h"
 #include "Components/AudioComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
@@ -328,7 +329,13 @@ void ADarcSliceBuilder::AddTree(const FVector2D& Location, float Height, float R
 	// Настоящая ель (слоты Characters: Tree, Tree_1 … — скелетные модели Megaplant), если есть.
 	// Скелет не обновляется (bNoSkeletonUpdate) — по цене почти как статичная модель.
 	const uint32 Hash = GetTypeHash(FIntPoint(FMath::RoundToInt(Location.X), FMath::RoundToInt(Location.Y)));
-	if (USkeletalMesh* TreeMesh = UDarcAssetSettings::FindCharacterVariant(TEXT("Tree"), Hash))
+	// Разнообразие: примерно каждое третье — из второго набора (сосна, сухостой, лещина).
+	USkeletalMesh* TreeMesh = (Hash % 3 == 0) ? UDarcAssetSettings::FindCharacterVariant(TEXT("TreeAlt"), Hash / 3) : nullptr;
+	if (!TreeMesh)
+	{
+		TreeMesh = UDarcAssetSettings::FindCharacterVariant(TEXT("Tree"), Hash);
+	}
+	if (TreeMesh)
 	{
 		FActorSpawnParameters Params;
 		Params.Owner = this;
@@ -343,7 +350,7 @@ void ADarcSliceBuilder::AddTree(const FVector2D& Location, float Height, float R
 			Mesh->bNoSkeletonUpdate = true;
 			Mesh->SetComponentTickEnabled(false);
 			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Mesh->SetWorldScale3D(FVector(Height / 1400.f)); // разброс роста
+			Mesh->SetWorldScale3D(FVector(Height / 1300.f * (0.85f + (Hash % 40) / 100.f))); // разброс роста
 			Mesh->RegisterComponent();
 			Mesh->SetWorldLocationAndRotation(FVector(Location, 0.f), Yaw);
 		}
@@ -1202,16 +1209,45 @@ void ADarcSliceBuilder::BuildGameplay()
 	{
 		const FRotator FaceWest(0.f, 180.f, 0.f);
 
-		// Разъёмы — на лицевой панели сервера (станция: центр X 3320, глубина 80 → лицо X 3280),
-		// а не в воздухе перед ним.
-		const FVector InterfaceLoc(3277.f, 35.f, 110.f);
-		ADarcItemSlot* InterfaceSlot = SpawnDeferred<ADarcItemSlot>(InterfaceLoc, FaceWest);
+		// Вилка питания стойки: лежит у розетки на северной стене, НЕ подключена. Игрок
+		// приносит её (E) к стойке и подключает (E по стойке). Провод виден, у него своя длина.
+		const FVector SocketLoc(3000.f, 788.f, 40.f);
+		const FVector PlugLoc(3000.f, 740.f, 10.f);
+		ADarcCablePlug* Plug = SpawnDeferred<ADarcCablePlug>(PlugLoc);
+		Plug->MemoryId = TEXT("ServerRackPlug");
+		Plug->SocketLocation = SocketLoc;
+		Plug->CableLength = 500.f;
+		Plug->PromptPickUp = Txt(TEXT("Carry_PickUp"));
+		Plug->PromptDrop = Txt(TEXT("Carry_Drop"));
+		Plug->VisualSpec = Vis(TEXT("CablePlug"), FVector(9.f, 5.f, 4.f));
+		Finish(Plug, PlugLoc);
+		AddHint(Plug, TEXT("Name_CablePlug"), TEXT("Hint_CablePlug"));
+
+		// Тяжёлая серверная стойка: перетащить на разметку у станции, подключить кабель
+		// и вставить в её разъём интерфейсный модуль.
+		ATargetPoint* WorkPoint = GetWorld()->SpawnActor<ATargetPoint>(FVector(3150.f, 450.f, 0.f), FRotator::ZeroRotator);
+		const FVector RackLoc(2800.f, 550.f, 100.f);
+		ADarcHeavyObject* Rack = SpawnDeferred<ADarcHeavyObject>(RackLoc);
+		Rack->DeliveryTarget = WorkPoint;
+		Rack->TaskIdOnDelivered = TEXT("MoveServerRack");
+		Rack->bHasFragileCable = false; // кабель — отдельная вилка (PowerPlug)
+		Rack->PowerPlug = Plug;
+		Rack->MassKg = 120.f;
+		Rack->VisualSpec = Vis(TEXT("ServerRack"), FVector(70.f, 90.f, 200.f), TEXT("ServerMaterial"));
+		Finish(Rack, RackLoc);
+		AddHint(Rack, TEXT("Name_Rack"), TEXT("Hint_Rack"));
+
+		// Разъём интерфейса — на лицевой стороне самой стойки (её +X), закреплён за ней и
+		// ездит вместе с ней. Раньше был на неподвижной станции — модуль искали «в стойке».
+		const FVector InterfaceLoc(RackLoc.X + 37.f, RackLoc.Y, 130.f);
+		ADarcItemSlot* InterfaceSlot = SpawnDeferred<ADarcItemSlot>(InterfaceLoc, FRotator::ZeroRotator);
 		InterfaceSlot->AcceptedClass = ADarcInterfaceModule::StaticClass();
 		InterfaceSlot->TaskIdOnInsert = TEXT("ConnectInterface");
 		InterfaceSlot->PromptInsert = Txt(TEXT("Slot_Insert"));
 		InterfaceSlot->PromptRemove = Txt(TEXT("Slot_Remove"));
 		InterfaceSlot->VisualSpec = Vis(TEXT("Socket"), FVector(6.f, 30.f, 14.f));
-		Finish(InterfaceSlot, InterfaceLoc, FaceWest);
+		Finish(InterfaceSlot, InterfaceLoc, FRotator::ZeroRotator);
+		InterfaceSlot->AttachToActor(Rack, FAttachmentTransformRules::KeepWorldTransform);
 		AddHint(InterfaceSlot, TEXT("Name_InterfaceSlot"), TEXT("Hint_InterfaceSlot"));
 
 		const FVector DriveLoc(3277.f, -35.f, 110.f);
@@ -1268,21 +1304,6 @@ void ADarcSliceBuilder::BuildGameplay()
 		Finish(Console, ConsoleLoc, FaceWest);
 		AddHint(Console, TEXT("Name_Console"), TEXT("Hint_Console"));
 
-		// Тяжёлая стойка: перекатить к рабочей точке у станции.
-		ATargetPoint* WorkPoint = GetWorld()->SpawnActor<ATargetPoint>(FVector(3150.f, 450.f, 0.f), FRotator::ZeroRotator);
-		const FVector RackLoc(2800.f, 550.f, 100.f);
-		ADarcHeavyObject* Rack = SpawnDeferred<ADarcHeavyObject>(RackLoc);
-		Rack->DeliveryTarget = WorkPoint;
-		Rack->TaskIdOnDelivered = TEXT("MoveServerRack");
-		Rack->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
-		Rack->PromptCableTooFar = Txt(TEXT("Heavy_CableTooFar"));
-		Rack->MassKg = 120.f;
-		// Кабель питания от розетки на северной стене: видно провод, дальше длины его выдёргивает.
-		Rack->CableAnchor = FVector(3000.f, 788.f, 40.f);
-		Rack->CableLength = 450.f;
-		Rack->VisualSpec = Vis(TEXT("ServerRack"), FVector(70.f, 90.f, 200.f), TEXT("ServerMaterial"));
-		Finish(Rack, RackLoc);
-		AddHint(Rack, TEXT("Name_Rack"), TEXT("Hint_Rack"));
 	}
 
 	// --- КПП: охранник с картой доступа ---

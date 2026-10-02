@@ -39,7 +39,7 @@ UMaterialInterface* UDarcAssetSettings::FindMaterial(FName Slot)
 	return Found ? Found->LoadSynchronous() : nullptr;
 }
 
-UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Outer, bool bLocalUV)
+UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Outer, bool bLocalUV, const FVector& BoxSize)
 {
 	UMaterialInterface* Material = Slot.IsNone() ? nullptr : FindMaterial(Slot);
 	if (!Material)
@@ -60,7 +60,8 @@ UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Ou
 		return Material;
 	}
 	const float* Tile = Get()->MaterialTiling.Find(Slot);
-	if (!Tile && !bLocalUV)
+	const float* Macro = Get()->MaterialMacroVariation.Find(Slot);
+	if (!Tile && !Macro && !bLocalUV)
 	{
 		return Material;
 	}
@@ -69,9 +70,16 @@ UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Ou
 	{
 		Instance->SetScalarParameterValue(TEXT("TileSize"), *Tile);
 	}
+	if (Macro)
+	{
+		Instance->SetScalarParameterValue(TEXT("MacroVariation"), *Macro);
+	}
 	if (bLocalUV)
 	{
-		Instance->SetScalarParameterValue(TEXT("WorldAligned"), 0.f); // UV граней коробки — едут вместе с ней
+		// Проекция в осях самой коробки в сантиметрах (BoxSize): текстура едет вместе с
+		// объектом и не растягивается по длинным граням (было: UV куба 0..1 на грань).
+		Instance->SetScalarParameterValue(TEXT("WorldAligned"), 0.f);
+		Instance->SetVectorParameterValue(TEXT("BoxSize"), FLinearColor(BoxSize.X, BoxSize.Y, BoxSize.Z, 0.f));
 	}
 	return Instance;
 }
@@ -146,11 +154,15 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 		// Явный поворот модели из настроек (MeshYaw): «лицо» чужой модели может смотреть куда
 		// угодно — монитор боком, щиток к стене. Тогда автоповорот не нужен, а коробка
 		// вписывается с учётом этого поворота.
-		if (const float* ExtraYaw = bIsRoot ? nullptr : Get()->MeshYaw.Find(Slot))
+		// Полный доворот (MeshRotation: лампа «вверх ногами» — Roll 180) и/или по вертикали (MeshYaw).
+		const FRotator* ExtraRotation = bIsRoot ? nullptr : Get()->MeshRotation.Find(Slot);
+		const float* ExtraYaw = bIsRoot ? nullptr : Get()->MeshYaw.Find(Slot);
+		if (ExtraRotation || ExtraYaw)
 		{
-			const float Quarter = FMath::Fmod(FMath::Abs(*ExtraYaw), 180.f);
+			FitRotation = ExtraRotation ? *ExtraRotation : FRotator::ZeroRotator;
+			FitRotation.Yaw += ExtraYaw ? *ExtraYaw : 0.f;
+			const float Quarter = FMath::Fmod(FMath::Abs(FitRotation.Yaw), 180.f);
 			bSwap = FMath::IsNearlyEqual(Quarter, 90.f, 1.f);
-			FitRotation = FRotator(0.f, *ExtraYaw, 0.f);
 		}
 		const FVector Target = bSwap ? FVector(BoxSize.Y, BoxSize.X, BoxSize.Z) : BoxSize; // в осях модели
 
@@ -171,12 +183,11 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 
 		if (!bIsRoot)
 		{
-			// Центр модели — в центр коробки, низ — на её «пол».
-			const FRotator Rotation = FitRotation;
-			const FVector Center = Bounds.GetCenter();
-			const FVector Pivot(-Center.X * Scale3.X, -Center.Y * Scale3.Y, -Bounds.Min.Z * Scale3.Z);
-			Component->SetRelativeRotation(Rotation);
-			Component->SetRelativeLocation(Rotation.RotateVector(Pivot));
+			// Центр модели — в центр коробки, низ — на её «пол». Считаем по уже повёрнутым и
+			// отмасштабированным габаритам: так работает любой доворот, в том числе «вверх ногами».
+			const FBox Placed = Bounds.TransformBy(FTransform(FitRotation, FVector::ZeroVector, Scale3));
+			Component->SetRelativeRotation(FitRotation);
+			Component->SetRelativeLocation(FVector(-Placed.GetCenter().X, -Placed.GetCenter().Y, -Placed.Min.Z));
 		}
 	}
 	else
@@ -193,7 +204,7 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 
 	// Материал слота — только серой коробке. У настоящей модели остаются её собственные
 	// материалы (раньше двери перекрашивались в «металлическую пластину» поверх своей текстуры).
-	if (UMaterialInterface* Material = (Mesh || MaterialSlot.IsNone()) ? nullptr : GetTiledMaterial(MaterialSlot, Component, bLocalUV))
+	if (UMaterialInterface* Material = (Mesh || MaterialSlot.IsNone()) ? nullptr : GetTiledMaterial(MaterialSlot, Component, bLocalUV, BoxSize))
 	{
 		for (int32 i = 0; i < Component->GetNumMaterials(); ++i)
 		{

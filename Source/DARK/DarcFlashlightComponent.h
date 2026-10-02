@@ -66,5 +66,9 @@ protected:
 	TObjectPtr<UStaticMeshComponent> Lens;
 
 	void BuildHousing();
+	/** Вложить фонарь в левую руку (первый кадр, когда поза рук уже посчитана). */
+	void PlaceInHand();
+	bool bPlacedInHand = false;
+	bool bPlacedForLocal = false;
 	void UpdateLensGlow();
 };

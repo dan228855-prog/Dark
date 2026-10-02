@@ -10,6 +10,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
+#include "DARKCharacter.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -70,26 +71,8 @@ void UDarcFlashlightComponent::BuildHousing()
 	Housing = MakePart(TEXT("FlashlightHousing"), TEXT("Cylinder"));
 	Lens = MakePart(TEXT("FlashlightLens"), TEXT("Cylinder"));
 	Housing->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(Housing, FLinearColor(0.03f, 0.03f, 0.035f)));
-
-	if (Character->IsLocallyControlled())
-	{
-		// У себя: у камеры, слева внизу, лучом вперёд — рисуется вместе с руками.
-		UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>();
-		USceneComponent* Parent = Camera ? static_cast<USceneComponent*>(Camera) : Character->GetRootComponent();
-		Housing->SetupAttachment(Parent);
-		Housing->SetRelativeLocationAndRotation(FVector(38.f, -17.f, -16.f), FRotator(-90.f, 0.f, 0.f)); // ось цилиндра — вперёд
-		Housing->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
-		Lens->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
-	}
-	else
-	{
-		// У других: в левой руке модели (кость hand_l), иначе у груди.
-		USkeletalMeshComponent* Body = Character->GetMesh();
-		const bool bHand = Body && Body->DoesSocketExist(TEXT("hand_l"));
-		Housing->SetupAttachment(bHand ? static_cast<USceneComponent*>(Body) : Character->GetRootComponent(), bHand ? FName(TEXT("hand_l")) : NAME_None);
-		Housing->SetRelativeLocationAndRotation(bHand ? FVector(0.f, 8.f, 0.f) : FVector(25.f, -20.f, 40.f), FRotator(-90.f, 0.f, 0.f));
-	}
 	Housing->SetRelativeScale3D(FVector(0.045f, 0.045f, 0.2f)); // Ø4.5 × 20 см
+	Housing->SetupAttachment(Character->GetRootComponent()); // в руку — в PlaceInHand (поза рук готова к первому кадру)
 	Housing->RegisterComponent();
 	Character->AddInstanceComponent(Housing);
 
@@ -100,6 +83,49 @@ void UDarcFlashlightComponent::BuildHousing()
 	Lens->RegisterComponent();
 	Character->AddInstanceComponent(Lens);
 	UpdateLensGlow();
+}
+
+void UDarcFlashlightComponent::PlaceInHand()
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	// Перекладываем, если сменилось «свой / чужой» (у клиента управление пешкой приходит
+	// по сети чуть позже её появления).
+	if (!Character || !Housing || (bPlacedInHand && bPlacedForLocal == Character->IsLocallyControlled()))
+	{
+		return;
+	}
+	bPlacedInHand = true;
+	bPlacedForLocal = Character->IsLocallyControlled();
+
+	// Своему игроку — в левую руку рук от первого лица (рисуется вместе с ними); остальным —
+	// в левую руку модели тела. Корпус — лучом по взгляду; положение считаем один раз и
+	// дальше оно держится за кость руки.
+	const ADARKCharacter* FirstPersonCharacter = Cast<ADARKCharacter>(Character);
+	USkeletalMeshComponent* Hand = Character->IsLocallyControlled() && FirstPersonCharacter
+		? FirstPersonCharacter->GetFirstPersonMesh() : Character->GetMesh();
+	const FName Bone(TEXT("hand_l"));
+	FVector Eyes;
+	FRotator View;
+	UDarcGameplayLibrary::GetAimViewPoint(Character, Eyes, View);
+	if (Hand && Hand->DoesSocketExist(Bone))
+	{
+		Housing->AttachToComponent(Hand, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Bone);
+		const FRotationMatrix Axes(View);
+		Housing->SetWorldLocationAndRotation(Hand->GetSocketLocation(Bone) + Axes.GetUnitAxis(EAxis::X) * 4.f + Axes.GetUnitAxis(EAxis::Z) * 1.5f,
+			FRotationMatrix::MakeFromZ(View.Vector()).Rotator());
+	}
+	else
+	{
+		// Нет руки — слева внизу у камеры.
+		const FRotationMatrix Axes(View);
+		Housing->SetWorldLocationAndRotation(Eyes + Axes.GetUnitAxis(EAxis::X) * 38.f - Axes.GetUnitAxis(EAxis::Y) * 17.f - Axes.GetUnitAxis(EAxis::Z) * 16.f,
+			FRotationMatrix::MakeFromZ(View.Vector()).Rotator());
+		Housing->AttachToComponent(Character->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+	}
+	const bool bFirstPerson = Character->IsLocallyControlled();
+	Housing->SetFirstPersonPrimitiveType(bFirstPerson ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::None);
+	Lens->SetFirstPersonPrimitiveType(bFirstPerson ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::None);
+	Housing->SetOwnerNoSee(false);
 }
 
 void UDarcFlashlightComponent::UpdateLensGlow()
@@ -165,12 +191,15 @@ void UDarcFlashlightComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	const APawn* Pawn = Cast<APawn>(GetOwner());
+	PlaceInHand(); // один раз: фонарь в руке виден и выключенным
 	if (!Spot || !bOn || !Pawn)
 	{
 		return;
 	}
-	// Из глаз по направлению взгляда (у других игроков — по реплицированному взгляду), чуть
-	// правее и ниже — как фонарь в руке; заодно не слепит собственную модель.
+	PlaceInHand();
+
+	// Свет — из линзы фонаря в руке, по направлению взгляда (у других игроков — по
+	// реплицированному взгляду).
 	FVector Eyes;
 	FRotator View;
 	UDarcGameplayLibrary::GetAimViewPoint(Pawn, Eyes, View);
@@ -178,8 +207,7 @@ void UDarcFlashlightComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	{
 		View = Pawn->GetBaseAimRotation();
 	}
-	const FRotationMatrix Axes(View);
-	const FVector Origin = Eyes + Axes.GetUnitAxis(EAxis::X) * 25.f + Axes.GetUnitAxis(EAxis::Y) * -15.f - Axes.GetUnitAxis(EAxis::Z) * 12.f;
+	const FVector Origin = Lens ? Lens->GetComponentLocation() + View.Vector() * 2.f : Eyes;
 	Spot->SetWorldLocationAndRotation(Origin, View);
 
 	// В упор — тусклее: свет 900 лм с 20 см давал белое пятно, в котором ничего не видно.

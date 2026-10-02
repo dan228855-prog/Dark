@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "GameFramework/Character.h"
+#include "DARKCharacter.h"
 
 UDarcPlayerOutfitComponent::UDarcPlayerOutfitComponent()
 {
@@ -40,4 +41,32 @@ void UDarcPlayerOutfitComponent::BeginPlay()
 	// Манекен остаётся источником анимации, но не рисуется.
 	Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 	Body->SetVisibility(false, false);
+
+	// Вид от первого лица: та же модель поверх рук шаблона (их анимация — источник позы).
+	// Видна только самому игроку; голова (камера внутри неё) и ноги скрыты.
+	const ADARKCharacter* FirstPersonCharacter = Cast<ADARKCharacter>(Character);
+	USkeletalMeshComponent* Arms = FirstPersonCharacter ? FirstPersonCharacter->GetFirstPersonMesh() : nullptr;
+	if (!Arms)
+	{
+		return;
+	}
+	OutfitFirstPerson = NewObject<USkeletalMeshComponent>(Character, TEXT("OutfitFirstPersonMesh"));
+	OutfitFirstPerson->SetupAttachment(Arms);
+	OutfitFirstPerson->SetSkeletalMeshAsset(Mesh);
+	OutfitFirstPerson->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	OutfitFirstPerson->SetOnlyOwnerSee(true);
+	OutfitFirstPerson->SetCastShadow(false);
+	OutfitFirstPerson->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+	OutfitFirstPerson->RegisterComponent();
+	Character->AddInstanceComponent(OutfitFirstPerson);
+	OutfitFirstPerson->SetLeaderPoseComponent(Arms);
+	for (const FName Bone : { FName(TEXT("head")), FName(TEXT("neck_01")), FName(TEXT("thigh_l")), FName(TEXT("thigh_r")) })
+	{
+		if (OutfitFirstPerson->GetBoneIndex(Bone) != INDEX_NONE)
+		{
+			OutfitFirstPerson->HideBoneByName(Bone, EPhysBodyOp::PBO_None);
+		}
+	}
+	Arms->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	Arms->SetVisibility(false, false); // стандартные руки манекена больше не видны
 }

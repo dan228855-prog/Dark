@@ -92,6 +92,19 @@ public:
 
 	bool HasVisibleCable() const { return bHasFragileCable && !CableAnchor.IsNearlyZero(); }
 
+	/**
+	 * Вилка питания (ADarcCablePlug), которую нужно принести и подключить к объекту (E).
+	 * Если задана — доставка засчитывается только с подключённой вилкой, рывок её выдёргивает.
+	 */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Heavy|Cable")
+	TObjectPtr<class ADarcCablePlug> PowerPlug;
+
+	/** Куда встаёт вилка (сзади у верха); тег InsertPoint. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Heavy|Cable")
+	TObjectPtr<USceneComponent> CablePort;
+
+	bool IsPowerPlugConnected() const;
+
 	/** Сервер: оборвать кабель (рывок, событие). */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Heavy")
 	void DetachCable();

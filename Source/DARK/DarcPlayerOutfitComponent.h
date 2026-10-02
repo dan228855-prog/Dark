@@ -23,4 +23,8 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<USkeletalMeshComponent> Outfit;
+
+	/** Та же модель для вида от первого лица (только у самого игрока). */
+	UPROPERTY(Transient)
+	TObjectPtr<USkeletalMeshComponent> OutfitFirstPerson;
 };

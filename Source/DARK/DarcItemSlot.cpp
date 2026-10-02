@@ -17,6 +17,9 @@ ADarcItemSlot::ADarcItemSlot()
 	Visual->SetupAttachment(RootComponent);
 	Visual->SetMobility(EComponentMobility::Movable);
 	Visual->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	// Только для взгляда: разъём может быть закреплён на физическом объекте (стойке) —
+	// физическая коллизия разъёма толкала бы его собственного «носителя».
+	Visual->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 	InsertPoint = CreateDefaultSubobject<USceneComponent>(TEXT("InsertPoint"));
 	InsertPoint->SetupAttachment(RootComponent);

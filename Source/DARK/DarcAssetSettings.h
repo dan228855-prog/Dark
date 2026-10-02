@@ -104,6 +104,14 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, float> MeshYaw;
 
+	/** Полный доворот модели слота (например, лампа висит «вверх ногами» — Roll 180). Складывается с MeshYaw. */
+	UPROPERTY(Config, EditAnywhere, Category = "Assets")
+	TMap<FName, FRotator> MeshRotation;
+
+	/** Крупная вариация цвета по слоту материала (0 — выключить; для плитки/сетки, где она даёт «второй слой»). */
+	UPROPERTY(Config, EditAnywhere, Category = "Assets")
+	TMap<FName, float> MaterialMacroVariation;
+
 	/** Звуки по слотам: DoorOpen, DoorClose, DoorLocked, FuseBlow, Breaker, GeneratorLoop, LampHum, Morse_RU, ... */
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, TSoftObjectPtr<USoundBase>> Sounds;
@@ -138,7 +146,7 @@ public:
 	 * Пишет в лог, если материал собран старой версией Tools/darc_setup.py (без наложения
 	 * по миру — тогда текстура растягивается на всю коробку).
 	 */
-	static UMaterialInterface* GetTiledMaterial(FName Slot, UObject* Outer, bool bLocalUV = false);
+	static UMaterialInterface* GetTiledMaterial(FName Slot, UObject* Outer, bool bLocalUV = false, const FVector& BoxSize = FVector(100.f));
 	static UAnimationAsset* FindAnimation(FName Slot);
 	static USoundBase* FindSound(FName Slot);
 
