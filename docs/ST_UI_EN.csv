@@ -105,7 +105,7 @@ Hint_DriveSlot,take the drive out once the archive is copied
 Name_Server,Server
 Hint_Server,"insert the module, power it up and copy the archive"
 Name_Inlet,Power inlet
-Hint_Inlet,bring the portable generator here (it stands by the south wall)
+Hint_Inlet,connect the portable generator here (it is in the storage room)
 Name_Console,Server console
 Hint_Console,works while the server has power
 Name_Rack,Server rack
@@ -115,16 +115,21 @@ Hint_Keycard,"opens the server room; the code is on the back"
 Name_Guard,Guard
 Hint_Guard,"gives you the access card; hand him the archive drive"
 Name_FuseBox,Fuse box
-Hint_FuseBox,"switch the breaker off, insert the fuse, switch it on"
+Hint_FuseBox,circuit breaker: E to switch on/off
 Name_Fuse,Fuse
-Hint_Fuse,insert into a fuse box with the breaker off
+Hint_Fuse,insert into the server room fuse box — switch its breaker off first
 Name_InterfaceModule,Interface module
 Hint_InterfaceModule,insert into the interface port by the server
 Name_Generator,Portable generator
-Hint_Generator,drag it to the power inlet on the outer wall of the server room and connect
+Hint_Generator,drag it to the power inlet in the server room and connect (fits through doors sideways)
 Name_TechCabinet,Technical cabinet
 Fuse_Installed,Fuse installed. Now switch the breaker on.
 Fuse_BlownBreakerOn,The fuse blew: the breaker was on. You need a new fuse.
 Sign_ServerCode,ACCESS CODE — SERVER ROOM
 HUD_FlashlightHint,[F] Flashlight
 Heavy_CableTooFar,The cable won't reach — move it closer to the socket
+Name_FuseBox_Server,Server room fuse box
+Name_FuseBox_Corridor,Corridor fuse box
+Name_FuseBox_Building,Building fuse box
+Hint_FuseBox_NoFuse,"no fuse: switch the breaker off, insert a fuse, switch the breaker on"
+Fuse_InsertBreakerOn,Insert fuse (breaker is ON — it will blow!)

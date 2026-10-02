@@ -68,6 +68,7 @@ namespace DarcSlice
 	// модели (79 см) не дотягивалась до краёв, дверь выглядела маленькой посреди широкой дыры.
 	constexpr float DoorWidth = 120.f;
 	constexpr float DoorHeight = 230.f;
+	constexpr float DoorFrame = 3.f; // ширина дверной коробки внутри проёма
 
 	FText Txt(const TCHAR* Key) { return UDarcGameplayLibrary::UIText(Key); }
 
@@ -185,6 +186,11 @@ void ADarcSliceBuilder::AddWall(const FVector2D& A, const FVector2D& B, const TA
 		const float D1 = Center + DoorWidth * 0.5f;
 		Segment(Cursor, D0, 0.f, WallHeight);
 		Segment(D0, D1, DoorHeight, WallHeight); // перемычка над дверью
+		// Дверная коробка: наличники по всей толщине стены внутри проёма. Створка встаёт в неё
+		// вплотную — свет больше не «просачивается» в щели между створкой и стеной.
+		Segment(D0, D0 + DoorFrame, 0.f, DoorHeight);
+		Segment(D1 - DoorFrame, D1, 0.f, DoorHeight);
+		Segment(D0 + DoorFrame, D1 - DoorFrame, DoorHeight - DoorFrame, DoorHeight);
 		Cursor = D1;
 	}
 	Segment(Cursor, End, 0.f, WallHeight);
@@ -965,7 +971,8 @@ AInteractableDoor* ADarcSliceBuilder::SpawnDoor(const FVector2D& WallPoint, bool
 	Door->PromptLocked = Txt(TEXT("Door_Locked"));
 	// Створка вписывается по центру петли и сдвигается вдоль стены на полширины.
 	// Материал DoorMaterial — только для серой коробки; у модели двери остаётся её собственный.
-	Door->VisualSpec = Vis(TEXT("Door"), FVector(6.f, DoorWidth - 4.f, DoorHeight - 4.f), TEXT("DoorMaterial"), FVector(0.f, DoorWidth * 0.5f, 0.f));
+	// Створка — ровно по коробке (без щелей) и толще, чтобы не просвечивала.
+	Door->VisualSpec = Vis(TEXT("Door"), FVector(8.f, DoorWidth - 2.f * DoorFrame, DoorHeight - DoorFrame), TEXT("DoorMaterial"), FVector(0.f, DoorWidth * 0.5f, 0.f));
 	Finish(Door, Hinge, Rotation);
 	return Door;
 }
@@ -1023,6 +1030,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Box->bBreakerOn = true;
 		Box->CollateralCircuits = Collateral;
 		Box->PromptInsertFuse = Txt(TEXT("Fuse_Insert"));
+		Box->PromptInsertFuseBreakerOn = Txt(TEXT("Fuse_InsertBreakerOn"));
 		Box->PromptBreakerOn = Txt(TEXT("Breaker_On"));
 		Box->PromptBreakerOff = Txt(TEXT("Breaker_Off"));
 		if (bTaskOnBlow)
@@ -1036,7 +1044,8 @@ void ADarcSliceBuilder::BuildGameplay()
 		// щитки стояли к игроку боком.
 		Box->VisualSpec = Vis(TEXT("FuseBox"), FVector(15.f, 50.f, 70.f), NAME_None, FVector(0.f, 0.f, 90.f));
 		Finish(Box, Location, FaceCorridor);
-		AddHint(Box, TEXT("Name_FuseBox"), TEXT("Hint_FuseBox"));
+		// Своё название у каждого щитка; у щитка без предохранителя — что именно делать.
+		AddHint(Box, *(FString(TEXT("Name_FuseBox_")) + Circuit.ToString()), bHasFuse ? FName(TEXT("Hint_FuseBox")) : FName(TEXT("Hint_FuseBox_NoFuse")));
 	};
 	MakeFuseBox(FVector(1980.f, -140.f, 0.f), TEXT("Server"), false, { TEXT("Corridor") }, true);
 	MakeFuseBox(FVector(2060.f, -140.f, 0.f), TEXT("Corridor"), true, {}, false);
@@ -1096,16 +1105,16 @@ void ADarcSliceBuilder::BuildGameplay()
 		AddHint(Catalog, TEXT("Name_Terminal"), TEXT("Hint_Terminal"));
 	}
 
-	// --- Переносной генератор: снаружи, у южной стены ---
-	// Он большой (~3.7 × 1.5 × 2 м) и в дверь не проходит, поэтому стоит на улице, а ввод
-	// питания — на наружной стене серверной: дотащить к стене и подключить (кабель — через стену).
+	// --- Переносной генератор: в кладовой, длинной стороной к двери ---
+	// 160 × 80 × 100 см: проходит в двери (1.14 м в свету) боком; 170 кг — тяжёлый.
 	{
-		const FVector Loc(2100.f, -1450.f, 100.f);
-		ADarcGenerator* Generator = SpawnDeferred<ADarcGenerator>(Loc);
+		const FVector Loc(1200.f, -560.f, 55.f);
+		const FRotator Rot(0.f, 90.f, 0.f);
+		ADarcGenerator* Generator = SpawnDeferred<ADarcGenerator>(Loc, Rot);
 		Generator->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
-		Generator->MassKg = 170.f; // тяжёлый: один в коопе не сдвинет, вдвоём (или в соло) — медленно
-		Generator->VisualSpec = Vis(TEXT("Generator"), FVector(375.f, 150.f, 195.f));
-		Finish(Generator, Loc);
+		Generator->MassKg = 170.f;
+		Generator->VisualSpec = Vis(TEXT("Generator"), FVector(160.f, 80.f, 100.f));
+		Finish(Generator, Loc, Rot);
 		AddHint(Generator, TEXT("Name_Generator"), TEXT("Hint_Generator"));
 	}
 
@@ -1234,15 +1243,14 @@ void ADarcSliceBuilder::BuildGameplay()
 		Finish(Station, StationLoc, FaceWest);
 		AddHint(Station, TEXT("Name_Server"), TEXT("Hint_Server"));
 
-		// Ввод питания — на НАРУЖНОЙ южной стене серверной: генератор слишком велик для дверей.
-		const FVector InletLoc(3000.f, -814.f, 70.f);
-		const FRotator FaceSouth(0.f, -90.f, 0.f);
-		ADarcPowerInlet* Inlet = SpawnDeferred<ADarcPowerInlet>(InletLoc, FaceSouth);
+		// Ввод питания — в серверной, на восточной стене, лицом в зал.
+		const FVector InletLoc(3388.f, -450.f, 40.f);
+		ADarcPowerInlet* Inlet = SpawnDeferred<ADarcPowerInlet>(InletLoc, FaceWest);
 		Inlet->CircuitId = TEXT("Server");
 		Inlet->PromptConnect = Txt(TEXT("Inlet_Connect"));
 		Inlet->PromptDisconnect = Txt(TEXT("Inlet_Disconnect"));
 		Inlet->VisualSpec = Vis(TEXT("PowerInlet"), FVector(10.f, 30.f, 30.f));
-		Finish(Inlet, InletLoc, FaceSouth);
+		Finish(Inlet, InletLoc, FaceWest);
 		AddHint(Inlet, TEXT("Name_Inlet"), TEXT("Hint_Inlet"));
 
 		// Консоль сервера: работает, только когда сервер запитан. Здесь виден «лишний файл».

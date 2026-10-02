@@ -1,5 +1,6 @@
 // DarcGrabComponent.cpp
 #include "DarcGrabComponent.h"
+#include "DarcGameplayLibrary.h"
 #include "CarryableItem.h"
 #include "DarcPlayerState.h"
 #include "DarcWorldMemorySubsystem.h"
@@ -54,22 +55,15 @@ bool UDarcGrabComponent::GetEyes(FVector& OutLocation, FVector& OutForward) cons
 		return false;
 	}
 	FRotator Rotation;
-	Pawn->GetActorEyesViewPoint(OutLocation, Rotation); // на сервере — по реплицированному взгляду
+	UDarcGameplayLibrary::GetAimViewPoint(Pawn, OutLocation, Rotation); // у себя — камера, на сервере — реплицированный взгляд
 	OutForward = Rotation.Vector();
 	return true;
 }
 
 UPrimitiveComponent* UDarcGrabComponent::TraceForGrabbable(FVector* OutHit) const
 {
-	FVector Eyes, Forward;
-	if (!GetEyes(Eyes, Forward) || !GetWorld())
-	{
-		return nullptr;
-	}
 	FHitResult Hit;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(DarcGrabTrace), false, GetOwner());
-	if (GetWorld()->LineTraceSingleByChannel(Hit, Eyes, Eyes + Forward * GrabRange, ECC_Visibility, Params)
-		&& IsGrabbable(Hit.GetComponent()))
+	if (UDarcGameplayLibrary::TraceAim(Cast<APawn>(GetOwner()), GrabRange, Hit) && IsGrabbable(Hit.GetComponent()))
 	{
 		if (OutHit)
 		{

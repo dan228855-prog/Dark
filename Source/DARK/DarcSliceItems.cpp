@@ -39,5 +39,8 @@ void ADarcKeycard::BeginPlay()
 	// Корень карты масштабирован под её размер — смещение надписи пересчитываем,
 	// чтобы цифры лежали на поверхности карты, а не внутри неё.
 	const FVector Scale = Mesh->GetRelativeScale3D().ComponentMax(FVector(0.0001f));
-	BackMarking->SetRelativeLocation(FVector(0.f, 0.f, 0.6f / Scale.Z));
+	BackMarking->SetRelativeLocation(FVector(0.f, 0.f, 0.4f / Scale.Z));
+	// Цифры — чёрные и по размеру карты (5.4 см): раньше 6 см текста не помещались на карту.
+	BackMarking->SetWorldSize(1.6f);
+	BackMarking->SetTextRenderColor(FColor(5, 5, 5));
 }

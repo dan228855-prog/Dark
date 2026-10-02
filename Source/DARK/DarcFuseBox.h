@@ -56,6 +56,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
 	FText PromptInsertFuse;
 
+	/** Вставить при включённом рубильнике (предохранитель сгорит) — предупреждение в подсказке. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
+	FText PromptInsertFuseBreakerOn;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
 	FText PromptBreakerOn;
 

@@ -1,5 +1,6 @@
 // InteractionComponent.cpp
 #include "InteractionComponent.h"
+#include "DarcGameplayLibrary.h"
 #include "Interactable.h"
 #include "DarcTerminal.h"
 #include "GameFramework/PlayerState.h"
@@ -34,17 +35,9 @@ AActor* UInteractionComponent::FindInteractableInView() const
 		return nullptr; // трейсим только на локальном клиенте владельца
 	}
 
-	FVector ViewLocation;
-	FRotator ViewRotation;
-	OwnerPawn->GetActorEyesViewPoint(ViewLocation, ViewRotation);
-
-	const FVector TraceEnd = ViewLocation + ViewRotation.Vector() * InteractionRange;
-
+	// Луч — из настоящей камеры (см. UDarcGameplayLibrary::TraceAim).
 	FHitResult Hit;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(Owner);
-
-	if (GetWorld()->LineTraceSingleByChannel(Hit, ViewLocation, TraceEnd, ECC_Visibility, Params))
+	if (UDarcGameplayLibrary::TraceAim(OwnerPawn, InteractionRange, Hit))
 	{
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && HitActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))

@@ -93,6 +93,9 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void OnRep_AttachmentReplication() override;
+
+    /** Рисовать предмет вместе с руками от первого лица (в руке у своего игрока) или в мире. */
+    void SetFirstPersonRendering(bool bFirstPerson);
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION()

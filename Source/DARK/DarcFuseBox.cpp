@@ -6,6 +6,8 @@
 #include "DarcGameState.h"
 #include "DarcGameplayLibrary.h"
 #include "Engine/StaticMesh.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 #include "DarcPowerSubsystem.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
@@ -224,10 +226,15 @@ void ADarcFuseBox::Multicast_FuseBlown_Implementation()
 
 FText ADarcFuseBox::GetInteractionPrompt_Implementation() const
 {
-	if (!bHasFuse)
+	// Подсказку показывает HUD своего игрока — смотрим, что у него в руках: с предохранителем
+	// E вставляет его, без — дёргает рубильник. Раньше всегда писалось «Вставить
+	// предохранитель», даже когда E переключал рубильник.
+	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	const APawn* LocalPawn = PC ? PC->GetPawn() : nullptr;
+	const bool bHoldingFuse = Cast<ADarcFuseItem>(ACarryableItem::FindItemHeldBy(LocalPawn)) != nullptr;
+	if (!bHasFuse && bHoldingFuse)
 	{
-		// Подсказка не знает, что в руках у игрока, поэтому общая: «Вставить предохранитель».
-		return PromptInsertFuse;
+		return (bBreakerOn && !PromptInsertFuseBreakerOn.IsEmpty()) ? PromptInsertFuseBreakerOn : PromptInsertFuse;
 	}
 	return bBreakerOn ? PromptBreakerOff : PromptBreakerOn;
 }

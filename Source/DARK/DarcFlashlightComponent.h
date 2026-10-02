@@ -8,6 +8,7 @@
 #include "DarcFlashlightComponent.generated.h"
 
 class USpotLightComponent;
+class UStaticMeshComponent;
 
 UCLASS(ClassGroup = (DARC), meta = (BlueprintSpawnableComponent))
 class DARK_API UDarcFlashlightComponent : public UActorComponent
@@ -26,7 +27,11 @@ public:
 
 	/** Яркость (люмены), дальность (см) и угол конуса (градусы). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
-	float Lumens = 1800.f;
+	float Lumens = 900.f;
+
+	/** Ближе этого (см) к стене луч плавно тускнеет — без пересвета «в упор». */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
+	float DimDistance = 260.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
 	float Range = 2200.f;
@@ -52,4 +57,14 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<USpotLightComponent> Spot;
+
+	/** Видимый фонарь: корпус и светящаяся линза. У себя — у камеры слева внизу, у других — в руке. */
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> Housing;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> Lens;
+
+	void BuildHousing();
+	void UpdateLensGlow();
 };

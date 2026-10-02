@@ -6,6 +6,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "DarcGameplayLibrary.generated.h"
 
+class APawn;
+
 UCLASS()
 class DARK_API UDarcGameplayLibrary : public UBlueprintFunctionLibrary
 {
@@ -23,6 +25,19 @@ public:
 	/** Текст для игрока из таблицы строк ST_UI по ключу (единственный путь текста из C++). */
 	UFUNCTION(BlueprintPure, Category = "DARC")
 	static FText UIText(FName Key);
+
+	/**
+	 * Откуда и куда смотрит игрок: у своего игрока — настоящая камера (как на экране), у
+	 * остальных и на сервере — реплицированный взгляд из «глаз». Раньше трейсы шли из глаз
+	 * актора, а камера от первого лица — в голове модели: луч проходил мимо прицела.
+	 */
+	static void GetAimViewPoint(const APawn* Pawn, FVector& OutLocation, FRotator& OutRotation);
+
+	/**
+	 * Что под прицелом: точный луч, а если он ничего не задел — тонкий «щуп» (сфера 5 см),
+	 * чтобы мелкие предметы и разъёмы не требовали снайперской точности.
+	 */
+	static bool TraceAim(const APawn* Pawn, float Range, FHitResult& OutHit);
 
 	/** Строка → двоичный код UTF-8: байты по 8 бит через пробел, BytesPerLine байт в строке. */
 	UFUNCTION(BlueprintPure, Category = "DARC")

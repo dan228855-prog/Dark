@@ -1,6 +1,9 @@
 // DarcGameplayLibrary.cpp
 #include "DarcGameplayLibrary.h"
 #include "TaskManagerComponent.h"
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Math/RandomStream.h"
 #include "Misc/Crc.h"
 
@@ -24,6 +27,41 @@ FString UDarcGameplayLibrary::GetMissionCode(const UObject* WorldContextObject, 
 FText UDarcGameplayLibrary::UIText(FName Key)
 {
 	return FText::FromStringTable(TEXT("ST_UI"), Key.ToString());
+}
+
+void UDarcGameplayLibrary::GetAimViewPoint(const APawn* Pawn, FVector& OutLocation, FRotator& OutRotation)
+{
+	OutLocation = FVector::ZeroVector;
+	OutRotation = FRotator::ZeroRotator;
+	if (!Pawn)
+	{
+		return;
+	}
+	const APlayerController* PC = Cast<APlayerController>(Pawn->GetController());
+	if (PC && PC->IsLocalController())
+	{
+		PC->GetPlayerViewPoint(OutLocation, OutRotation); // камера — ровно то, что видно на экране
+		return;
+	}
+	Pawn->GetActorEyesViewPoint(OutLocation, OutRotation);
+}
+
+bool UDarcGameplayLibrary::TraceAim(const APawn* Pawn, float Range, FHitResult& OutHit)
+{
+	if (!Pawn || !Pawn->GetWorld())
+	{
+		return false;
+	}
+	FVector Start;
+	FRotator Rotation;
+	GetAimViewPoint(Pawn, Start, Rotation);
+	const FVector End = Start + Rotation.Vector() * Range;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(DarcAim), false, Pawn);
+	if (Pawn->GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, Params))
+	{
+		return true;
+	}
+	return Pawn->GetWorld()->SweepSingleByChannel(OutHit, Start, End, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(5.f), Params);
 }
 
 FString UDarcGameplayLibrary::EncodeBinary(const FString& Text, int32 BytesPerLine)

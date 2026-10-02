@@ -136,7 +136,7 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
             AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("HandGrip_R"));
             SetActorRelativeLocation(FirstPersonGripOffset);
             SetActorRelativeRotation(FirstPersonGripRotation);
-            Mesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+            SetFirstPersonRendering(true);
             return;
         }
         // Нет рук с сокетом — перед камерой, в нижней правой части экрана.
@@ -191,9 +191,21 @@ void ACarryableItem::OnRep_AttachmentReplication()
     Super::OnRep_AttachmentReplication();
 }
 
+void ACarryableItem::SetFirstPersonRendering(bool bFirstPerson)
+{
+    // Все видимые части предмета (модель И надписи на нём) — в одном пространстве с руками:
+    // иначе модель рисуется «у лица», а надпись остаётся в мире и уползает в сторону.
+    TArray<UPrimitiveComponent*> Parts;
+    GetComponents<UPrimitiveComponent>(Parts);
+    for (UPrimitiveComponent* Part : Parts)
+    {
+        Part->SetFirstPersonPrimitiveType(bFirstPerson ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::None);
+    }
+}
+
 void ACarryableItem::DetachFromHolder()
 {
-    Mesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
+    SetFirstPersonRendering(false);
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
     SetActorEnableCollision(true);
 
