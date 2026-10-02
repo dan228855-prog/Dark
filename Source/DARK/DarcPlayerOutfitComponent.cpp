@@ -26,7 +26,7 @@ void UDarcPlayerOutfitComponent::BeginPlay()
 		return;
 	}
 
-	Outfit = NewObject<USkeletalMeshComponent>(Character, TEXT("Outfit"));
+	Outfit = NewObject<USkeletalMeshComponent>(Character, TEXT("OutfitMesh"));
 	Outfit->SetupAttachment(Body);
 	Outfit->SetSkeletalMeshAsset(Mesh);
 	Outfit->SetCollisionEnabled(ECollisionEnabled::NoCollision);
