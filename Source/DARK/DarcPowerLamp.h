@@ -30,6 +30,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
 	TObjectPtr<UStaticMeshComponent> Visual;
 
+	/** Уличный натриевый фонарь: тёплый оранжевый свет, ярче и дальше комнатной лампы. */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Lamp")
+	bool bStreetLight = false;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
 	TObjectPtr<UPointLightComponent> Light;
 

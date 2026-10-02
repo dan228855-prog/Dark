@@ -47,6 +47,10 @@
 #include "Engine/World.h"
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/TextRenderComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "TimerManager.h"
 #include <type_traits>
 
 namespace DarcSlice
@@ -108,6 +112,10 @@ void ADarcSliceBuilder::PostInitializeComponents()
 void ADarcSliceBuilder::BeginPlay()
 {
 	Super::BeginPlay();
+	if (BlinkLights.Num() > 0)
+	{
+		GetWorldTimerManager().SetTimer(BlinkTimer, this, &ADarcSliceBuilder::ToggleBlinkLights, 0.9f, true);
+	}
 	if (HasAuthority())
 	{
 		BuildGameplay();
@@ -138,7 +146,7 @@ void ADarcSliceBuilder::AddBox(const FVector& Min, const FVector& Max, FName Mat
 	Mesh->SetMaterial(0, Material ? Material : LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")));
 }
 
-void ADarcSliceBuilder::AddWall(const FVector2D& A, const FVector2D& B, const TArray<float>& DoorCenters)
+void ADarcSliceBuilder::AddWall(const FVector2D& A, const FVector2D& B, const TArray<float>& DoorCenters, FName MaterialSlot)
 {
 	using namespace DarcSlice;
 	const bool bAlongX = FMath::IsNearlyEqual(A.Y, B.Y);
@@ -155,7 +163,7 @@ void ADarcSliceBuilder::AddWall(const FVector2D& A, const FVector2D& B, const TA
 		}
 		const FVector Min = bAlongX ? FVector(S0, Fixed - Half, Z0) : FVector(Fixed - Half, S0, Z0);
 		const FVector Max = bAlongX ? FVector(S1, Fixed + Half, Z1) : FVector(Fixed + Half, S1, Z1);
-		AddBox(Min, Max, TEXT("Wall"));
+		AddBox(Min, Max, MaterialSlot);
 	};
 
 	TArray<float> Doors = DoorCenters;
@@ -174,22 +182,21 @@ void ADarcSliceBuilder::AddWall(const FVector2D& A, const FVector2D& B, const TA
 
 void ADarcSliceBuilder::BuildEnvironment()
 {
-	// Вечер: низкое солнце, атмосфера, туман, небесный свет — всё подвижное (Lumen).
+	// Сумерки по референсу docs/reference/mission1_checkpoint.png: солнце садится за холмы
+	// слева от въезда, небо сиреневое, в низинах туман, тёплые натриевые фонари. Всё подвижное (Lumen).
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	Params.ObjectFlags |= RF_Transient;
 
-	if (ADirectionalLight* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0.f, 0.f, 2000.f), FRotator(-6.f, 35.f, 0.f), Params))
+	// Игрок у КПП смотрит на восток (+X); солнце — впереди слева, у самого горизонта.
+	// Поворот источника — направление, КУДА идёт свет: от солнца к игроку.
+	if (ADirectionalLight* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector(0.f, 0.f, 2000.f), FRotator(-3.f, 141.f, 0.f), Params))
 	{
 		Sun->SetMobility(EComponentMobility::Movable);
 		if (UDirectionalLightComponent* SunLight = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
-			// Яркость в люксах (проект использует физические единицы, см. DefaultEngine.ini
-			// r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange=True) — старое значение
-			// 1.5 было на порядок темнее стандартного солнца шаблона (~10) и с низким углом
-			// давало почти чёрный экран даже снаружи.
-			SunLight->SetIntensity(20.f);
-			SunLight->SetLightColor(FLinearColor(1.f, 0.62f, 0.4f));
+			SunLight->SetIntensity(12.f); // люксы; закатное солнце слабое, основную картинку держит небо
+			SunLight->SetLightColor(FLinearColor(1.f, 0.48f, 0.28f));
 			SunLight->SetAtmosphereSunLight(true);
 		}
 	}
@@ -206,32 +213,292 @@ void ADarcSliceBuilder::BuildEnvironment()
 		USkyLightComponent* Light = SkyLight->GetLightComponent();
 		Light->SetMobility(EComponentMobility::Movable);
 		Light->bRealTimeCapture = true;
-		Light->SetIntensity(3.f);
+		Light->SetIntensity(2.f);
 		Light->RecaptureSky();
 	}
 
-	if (AExponentialHeightFog* Fog = GetWorld()->SpawnActor<AExponentialHeightFog>(FVector(0.f, 0.f, -100.f), FRotator::ZeroRotator, Params))
+	if (AExponentialHeightFog* Fog = GetWorld()->SpawnActor<AExponentialHeightFog>(FVector(0.f, 0.f, -50.f), FRotator::ZeroRotator, Params))
 	{
-		Fog->GetComponent()->SetFogDensity(0.035f); // «лёгкий туман»
+		// Туман лежит низко (быстро редеет с высотой) и холодный сиреневый; у солнца — тёплый.
+		// Объёмный туман даёт ореолы вокруг фонарей. Было: 0.035 и белый — «молоко» на весь экран.
+		UExponentialHeightFogComponent* FogComponent = Fog->GetComponent();
+		FogComponent->SetFogDensity(0.02f);
+		FogComponent->SetFogHeightFalloff(0.6f);
+		FogComponent->SetFogInscatteringColor(FLinearColor(0.07f, 0.07f, 0.13f));
+		FogComponent->SetDirectionalInscatteringColor(FLinearColor(0.5f, 0.22f, 0.1f));
+		FogComponent->SetVolumetricFog(true);
+		FogComponent->SetVolumetricFogScatteringDistribution(0.6f);
 	}
 
-	// Без своего PostProcessVolume экспозиция считается автоматически и может «зажать»
-	// картинку темнее, чем задумано (особенно пока в кадре в основном серые коробки).
-	// ВАЖНО: НЕ переключаем на AEM_Manual — в этом режиме яркость считается по
-	// Aperture/ISO/ShutterSpeed камеры (как у настоящего фотоаппарата), а не по свету
-	// в сцене; без ручной калибровки этих параметров экран гарантированно останется
-	// тёмным, что и произошло при первой попытке. Вместо этого просто зажимаем
-	// автоэкспозицию в узком ярком диапазоне (EV100) и чуть добавляем общую яркость —
-	// движок по-прежнему сам считает экспозицию по сцене, но не может уйти в черноту.
+	// Автоэкспозиция в широком диапазоне (EV100). Было [0..2] + сдвиг +2: снаружи сцена ярче
+	// EV 2, экспозиция упиралась в потолок — отсюда пересвеченная «дневная» картинка.
+	// Нижняя граница 1 — в тёмном коридоре без света остаётся темно, но не чёрный экран.
 	if (APostProcessVolume* ExposureVolume = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Params))
 	{
 		ExposureVolume->bUnbound = true;
-		ExposureVolume->Settings.bOverride_AutoExposureMinBrightness = true;
-		ExposureVolume->Settings.AutoExposureMinBrightness = 0.f;
-		ExposureVolume->Settings.bOverride_AutoExposureMaxBrightness = true;
-		ExposureVolume->Settings.AutoExposureMaxBrightness = 2.f;
-		ExposureVolume->Settings.bOverride_AutoExposureBias = true;
-		ExposureVolume->Settings.AutoExposureBias = 2.f;
+		FPostProcessSettings& PP = ExposureVolume->Settings;
+		PP.bOverride_AutoExposureMinBrightness = true;
+		PP.AutoExposureMinBrightness = 1.f;
+		PP.bOverride_AutoExposureMaxBrightness = true;
+		PP.AutoExposureMaxBrightness = 8.f;
+		PP.bOverride_AutoExposureBias = true;
+		PP.AutoExposureBias = -0.3f;
+		// Чуть холоднее и контрастнее в тенях, мягкое свечение огней — как на референсе.
+		PP.bOverride_ColorSaturation = true;
+		PP.ColorSaturation = FVector4(0.95f, 0.95f, 1.05f, 0.9f);
+		PP.bOverride_BloomIntensity = true;
+		PP.BloomIntensity = 0.9f;
+		PP.bOverride_VignetteIntensity = true;
+		PP.VignetteIntensity = 0.5f;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Улица у КПП
+// ---------------------------------------------------------------------------
+
+UStaticMeshComponent* ADarcSliceBuilder::AddShape(const TCHAR* Shape, const FVector& Center, const FVector& Size,
+	const FLinearColor& Color, const FRotator& Rotation, bool bCollision)
+{
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.ObjectFlags |= RF_Transient;
+	AStaticMeshActor* Actor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), FTransform(Rotation, Center), Params);
+	if (!Actor)
+	{
+		return nullptr;
+	}
+	Actor->SetReplicates(false); // строится у каждого сам
+	UStaticMeshComponent* Mesh = Actor->GetStaticMeshComponent();
+	Mesh->SetMobility(EComponentMobility::Movable);
+	Mesh->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Engine/BasicShapes/%s.%s"), Shape, Shape)));
+	Mesh->SetWorldScale3D(Size / 100.f);
+	Mesh->SetCollisionProfileName(bCollision ? TEXT("BlockAll") : TEXT("NoCollision"));
+	// Цвет — параметр Color у стандартного материала фигур.
+	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")))
+	{
+		UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(Base, Mesh);
+		Material->SetVectorParameterValue(TEXT("Color"), Color);
+		Mesh->SetMaterial(0, Material);
+	}
+	return Mesh;
+}
+
+UPointLightComponent* ADarcSliceBuilder::AddLight(const FVector& Location, const FLinearColor& Color, float Lumens, float Radius)
+{
+	UPointLightComponent* Light = NewObject<UPointLightComponent>(this);
+	Light->SetMobility(EComponentMobility::Movable);
+	Light->SetupAttachment(RootComponent);
+	Light->SetIntensityUnits(ELightUnits::Lumens);
+	Light->SetIntensity(Lumens);
+	Light->SetAttenuationRadius(Radius);
+	Light->SetLightColor(Color);
+	Light->SetCastShadows(false); // декоративные огни — без теней, дёшево
+	Light->RegisterComponent();
+	Light->SetWorldLocation(Location);
+	AddInstanceComponent(Light);
+	return Light;
+}
+
+void ADarcSliceBuilder::AddTree(const FVector2D& Location, float Height, float Radius)
+{
+	// Ель силуэтом: ствол и два конуса. Коллизия только у ствола — сквозь «лапы» можно пройти.
+	const FLinearColor Trunk(0.035f, 0.025f, 0.02f);
+	const FLinearColor Needles(0.018f, 0.03f, 0.022f);
+	AddShape(TEXT("Cylinder"), FVector(Location, Height * 0.2f), FVector(35.f, 35.f, Height * 0.4f), Trunk);
+	AddShape(TEXT("Cone"), FVector(Location, Height * 0.45f), FVector(Radius * 2.f, Radius * 2.f, Height * 0.55f), Needles, FRotator::ZeroRotator, false);
+	AddShape(TEXT("Cone"), FVector(Location, Height * 0.75f), FVector(Radius * 1.3f, Radius * 1.3f, Height * 0.5f), Needles, FRotator::ZeroRotator, false);
+}
+
+void ADarcSliceBuilder::ToggleBlinkLights()
+{
+	bBlinkOn = !bBlinkOn;
+	for (UPointLightComponent* Light : BlinkLights)
+	{
+		if (Light)
+		{
+			Light->SetVisibility(bBlinkOn);
+		}
+	}
+}
+
+void ADarcSliceBuilder::BuildExterior()
+{
+	// Раскладка: игроки появляются на дороге (X ≈ -2400) лицом к зданию (+X). Забор — по X = -1150
+	// с воротами на дороге (Y от -250 до 250), будка КПП справа от ворот, вывеска — слева.
+	const FLinearColor Dark(0.03f, 0.03f, 0.035f);
+	const FLinearColor Concrete(0.25f, 0.25f, 0.26f);
+	const FLinearColor Sodium(1.f, 0.55f, 0.25f);
+	const FLinearColor WarmWindow(1.f, 0.7f, 0.4f);
+	const FLinearColor Red(1.f, 0.05f, 0.03f);
+
+	// Дорога — грунтовка от леса до здания.
+	AddBox(FVector(-12000.f, -250.f, 0.f), FVector(0.f, 250.f, 1.5f),
+		UDarcAssetSettings::FindMaterial(TEXT("Road")) ? FName(TEXT("Road")) : FName(TEXT("Ground")));
+
+	// Забор: столбы через 300 см, сетка — тонкая тёмная «панель». Модель слота Fence, если задана.
+	constexpr float FenceX = -1150.f;
+	for (float Y = -2400.f; Y < 2400.f; Y += 300.f)
+	{
+		const float Center = Y + 150.f;
+		if (FMath::Abs(Center) < 300.f)
+		{
+			continue; // ворота
+		}
+		AddShape(TEXT("Cylinder"), FVector(FenceX, Y, 125.f), FVector(8.f, 8.f, 250.f), Dark);
+		if (UDarcAssetSettings::FindMesh(TEXT("Fence")))
+		{
+			FActorSpawnParameters Params;
+			Params.Owner = this;
+			Params.ObjectFlags |= RF_Transient;
+			// Модель — дочерним компонентом: тогда ApplyVisual ставит её низом на землю по центру пролёта.
+			if (AActor* Panel = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(),
+				FTransform(FRotator(0.f, 90.f, 0.f), FVector(FenceX, Center, 0.f)), Params))
+			{
+				USceneComponent* Root = NewObject<USceneComponent>(Panel);
+				Panel->SetRootComponent(Root);
+				Root->RegisterComponent();
+				Root->SetWorldLocationAndRotation(FVector(FenceX, Center, 0.f), FRotator(0.f, 90.f, 0.f));
+				UStaticMeshComponent* PanelMesh = NewObject<UStaticMeshComponent>(Panel);
+				PanelMesh->SetupAttachment(Root);
+				PanelMesh->RegisterComponent();
+				UDarcAssetSettings::ApplyVisual(PanelMesh, TEXT("Fence"), FVector(300.f, 6.f, 220.f));
+			}
+		}
+		else
+		{
+			AddShape(TEXT("Cube"), FVector(FenceX, Center, 115.f), FVector(3.f, 296.f, 210.f), FLinearColor(0.06f, 0.06f, 0.07f));
+		}
+	}
+	// Створки ворот (открыты внутрь) и шлагбаум поперёк дороги — без коллизии, это декор.
+	AddShape(TEXT("Cube"), FVector(FenceX + 130.f, -330.f, 115.f), FVector(260.f, 4.f, 210.f), Dark, FRotator::ZeroRotator, false);
+	AddShape(TEXT("Cube"), FVector(FenceX + 130.f, 330.f, 115.f), FVector(260.f, 4.f, 210.f), Dark, FRotator::ZeroRotator, false);
+	AddShape(TEXT("Cylinder"), FVector(FenceX + 40.f, 300.f, 55.f), FVector(25.f, 25.f, 110.f), FLinearColor(0.6f, 0.5f, 0.1f));
+	for (int32 i = 0; i < 6; ++i)
+	{
+		// Красно-белые полосы стрелы шлагбаума.
+		const FLinearColor Stripe = (i % 2 == 0) ? FLinearColor(0.7f, 0.04f, 0.03f) : FLinearColor(0.75f, 0.75f, 0.72f);
+		AddShape(TEXT("Cube"), FVector(FenceX + 40.f, 260.f - 50.f - i * 100.f, 100.f), FVector(10.f, 100.f, 10.f), Stripe, FRotator::ZeroRotator, false);
+	}
+
+	// Вывеска D.A.R.C. на заборе слева от ворот (текст — из String Table).
+	AddShape(TEXT("Cube"), FVector(FenceX - 6.f, -750.f, 150.f), FVector(6.f, 600.f, 170.f), FLinearColor(0.02f, 0.02f, 0.025f));
+	auto AddSignText = [this](const TCHAR* Key, const FVector& Location, float Size)
+	{
+		UTextRenderComponent* Text = NewObject<UTextRenderComponent>(this);
+		Text->SetMobility(EComponentMobility::Movable);
+		Text->SetupAttachment(RootComponent);
+		Text->SetText(UDarcGameplayLibrary::UIText(Key));
+		Text->SetWorldSize(Size);
+		Text->SetHorizontalAlignment(EHTA_Center);
+		Text->SetVerticalAlignment(EVRTA_TextCenter);
+		Text->SetTextRenderColor(FColor(170, 170, 165));
+		Text->RegisterComponent();
+		// Текст читается со стороны -X (оттуда подходят игроки).
+		Text->SetWorldLocationAndRotation(Location, FRotator(0.f, 180.f, 0.f));
+		AddInstanceComponent(Text);
+	};
+	AddSignText(TEXT("Sign_DarcName"), FVector(FenceX - 10.f, -750.f, 175.f), 70.f);
+	AddSignText(TEXT("Sign_DarcSub"), FVector(FenceX - 10.f, -750.f, 115.f), 16.f);
+
+	// Будка: тёплое окно к дороге и натриевый фонарь на столбе между будкой и воротами.
+	AddShape(TEXT("Cube"), FVector(-1052.f, 400.f, 150.f), FVector(4.f, 110.f, 80.f), WarmWindow, FRotator::ZeroRotator, false);
+	AddLight(FVector(-1110.f, 400.f, 150.f), WarmWindow, 350.f, 450.f);
+	AddShape(TEXT("Cylinder"), FVector(-1000.f, 200.f, 225.f), FVector(14.f, 14.f, 450.f), Dark);
+	AddShape(TEXT("Cube"), FVector(-1000.f, 160.f, 450.f), FVector(20.f, 90.f, 10.f), Dark);
+	AddShape(TEXT("Cylinder"), FVector(-1100.f, -300.f, 125.f), FVector(10.f, 10.f, 250.f), Dark); // фонарик на воротах
+	AddLight(FVector(-1100.f, -300.f, 255.f), Sodium, 500.f, 600.f);
+
+	// Тарелка: опора, «чаша» (сплюснутая сфера, наклонена к небу) и облучатель с красным огнём.
+	const FVector DishBase(-1600.f, -1700.f, 0.f);
+	AddShape(TEXT("Cylinder"), DishBase + FVector(0.f, 0.f, 350.f), FVector(160.f, 160.f, 700.f), Concrete);
+	AddShape(TEXT("Cube"), DishBase + FVector(0.f, 0.f, 760.f), FVector(260.f, 200.f, 140.f), Concrete);
+	const FRotator DishTilt(50.f, 150.f, 0.f);
+	const FVector DishCenter = DishBase + FVector(0.f, 0.f, 1150.f);
+	if (UDarcAssetSettings::FindMesh(TEXT("SatelliteDish")))
+	{
+		// Есть модель тарелки — она вместо серой «чаши».
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.ObjectFlags |= RF_Transient;
+		if (AStaticMeshActor* Dish = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), FTransform(DishBase), Params))
+		{
+			Dish->SetReplicates(false);
+			UDarcAssetSettings::ApplyVisual(Dish->GetStaticMeshComponent(), TEXT("SatelliteDish"), FVector(1100.f, 1100.f, 1600.f));
+		}
+	}
+	else
+	{
+		AddShape(TEXT("Sphere"), DishCenter, FVector(120.f, 1100.f, 1100.f), FLinearColor(0.3f, 0.3f, 0.32f), DishTilt);
+	}
+	// Облучатель — перед чашей по направлению, куда она смотрит.
+	const FVector Feed = DishCenter + DishTilt.Vector() * 450.f;
+	AddShape(TEXT("Cylinder"), (DishCenter + Feed) * 0.5f, FVector(12.f, 12.f, 450.f), Dark,
+		FRotationMatrix::MakeFromZ(DishTilt.Vector()).Rotator(), false);
+	BlinkLights.Add(AddLight(Feed, Red, 300.f, 500.f));
+
+	// Радиовышка за зданием с красными огнями.
+	const FVector TowerBase(3900.f, 1500.f, 0.f);
+	for (const FVector2D Leg : { FVector2D(-120.f, -120.f), FVector2D(120.f, -120.f), FVector2D(-120.f, 120.f), FVector2D(120.f, 120.f) })
+	{
+		// Ноги сходятся к вершине.
+		const FVector Bottom = TowerBase + FVector(Leg, 0.f);
+		const FVector Top = TowerBase + FVector(Leg * 0.2f, 4500.f);
+		AddShape(TEXT("Cylinder"), (Bottom + Top) * 0.5f, FVector(14.f, 14.f, FVector::Dist(Bottom, Top)), Dark,
+			FRotationMatrix::MakeFromZ(Top - Bottom).Rotator(), false);
+	}
+	for (const float Z : { 1500.f, 3000.f, 4500.f })
+	{
+		BlinkLights.Add(AddLight(TowerBase + FVector(0.f, 0.f, Z), Red, 600.f, 900.f));
+		AddShape(TEXT("Sphere"), TowerBase + FVector(0.f, 0.f, Z), FVector(30.f), Red, FRotator::ZeroRotator, false);
+	}
+
+	// Машина игроков слева от дороги, задние фонари горят.
+	const FVector Car(-2700.f, -480.f, 0.f);
+	AddShape(TEXT("Cube"), Car + FVector(0.f, 0.f, 95.f), FVector(460.f, 195.f, 110.f), FLinearColor(0.02f, 0.022f, 0.02f));
+	AddShape(TEXT("Cube"), Car + FVector(-40.f, 0.f, 190.f), FVector(300.f, 185.f, 85.f), FLinearColor(0.02f, 0.022f, 0.02f));
+	for (const float Y : { -75.f, 75.f })
+	{
+		AddShape(TEXT("Cube"), Car + FVector(-232.f, Y, 115.f), FVector(4.f, 25.f, 15.f), Red, FRotator::ZeroRotator, false);
+		AddLight(Car + FVector(-260.f, Y, 115.f), Red, 120.f, 350.f);
+		for (const float X : { -150.f, 150.f })
+		{
+			AddShape(TEXT("Cylinder"), Car + FVector(X, Y * 1.25f, 40.f), FVector(80.f, 80.f, 30.f), FLinearColor(0.01f, 0.01f, 0.01f),
+				FRotator(0.f, 0.f, 90.f), false);
+		}
+	}
+
+	// Лес: ели вокруг, кроме дороги, площадки у ворот, здания, тарелки и места появления.
+	// Генератор с постоянным зерном — у всех игроков одинаковый лес.
+	FRandomStream Stream(1337);
+	auto IsFree = [](const FVector2D& P)
+	{
+		const auto In = [&P](float X0, float Y0, float X1, float Y1) { return P.X > X0 && P.X < X1 && P.Y > Y0 && P.Y < Y1; };
+		return !In(-12000.f, -550.f, 0.f, 550.f)          // дорога
+			&& !In(-1500.f, -1200.f, -500.f, 1000.f)      // ворота, будка, вывеска
+			&& !In(-300.f, -1200.f, 4300.f, 1200.f)       // здание
+			&& !In(3500.f, 1100.f, 4300.f, 1900.f)        // вышка
+			&& !In(-2300.f, -2400.f, -900.f, -1000.f);    // тарелка
+	};
+	int32 Placed = 0;
+	for (int32 Attempt = 0; Attempt < 2000 && Placed < 220; ++Attempt)
+	{
+		const FVector2D P(Stream.FRandRange(-9000.f, 9000.f), Stream.FRandRange(-9000.f, 9000.f));
+		if (IsFree(P))
+		{
+			AddTree(P, Stream.FRandRange(900.f, 1800.f), Stream.FRandRange(220.f, 380.f));
+			++Placed;
+		}
+	}
+
+	// Холмы на горизонте — тёмные силуэты в тумане (особенно в стороне заката).
+	for (int32 i = 0; i < 12; ++i)
+	{
+		const float Angle = FMath::DegreesToRadians(i * 30.f + Stream.FRandRange(-10.f, 10.f));
+		const float Distance = Stream.FRandRange(20000.f, 32000.f);
+		const FVector Center(FMath::Cos(Angle) * Distance, FMath::Sin(Angle) * Distance, -1500.f);
+		AddShape(TEXT("Sphere"), Center, FVector(Stream.FRandRange(14000.f, 24000.f), Stream.FRandRange(14000.f, 24000.f), Stream.FRandRange(5000.f, 9000.f)),
+			FLinearColor(0.015f, 0.02f, 0.018f), FRotator::ZeroRotator, false);
 	}
 }
 
@@ -246,7 +513,7 @@ void ADarcSliceBuilder::BuildGeometry()
 	using namespace DarcSlice;
 
 	// Земля вокруг (лес/КПП) и пол здания.
-	AddBox(FVector(-3500.f, -2500.f, -20.f), FVector(4000.f, 2500.f, 0.f), TEXT("Ground"));
+	AddBox(FVector(-12000.f, -12000.f, -20.f), FVector(12000.f, 12000.f, 0.f), TEXT("Ground"));
 	AddRoom(FVector2D(0.f, -800.f), FVector2D(800.f, 800.f));      // лобби
 	AddRoom(FVector2D(800.f, -150.f), FVector2D(2600.f, 150.f));   // коридор
 	AddRoom(FVector2D(800.f, 150.f), FVector2D(2600.f, 800.f));    // северные комнаты
@@ -254,10 +521,12 @@ void ADarcSliceBuilder::BuildGeometry()
 	AddRoom(FVector2D(2600.f, -800.f), FVector2D(3400.f, 800.f));  // серверная
 
 	// Внешние стены здания (вход — в западной стене по центру).
-	AddWall(FVector2D(0.f, -800.f), FVector2D(0.f, 800.f), { 0.f });
-	AddWall(FVector2D(3400.f, -800.f), FVector2D(3400.f, 800.f));
-	AddWall(FVector2D(0.f, 800.f), FVector2D(3400.f, 800.f));
-	AddWall(FVector2D(0.f, -800.f), FVector2D(3400.f, -800.f));
+	// Бетон снаружи (слот WallOutside), если задан; иначе как внутри.
+	const FName Outside = UDarcAssetSettings::FindMaterial(TEXT("WallOutside")) ? FName(TEXT("WallOutside")) : FName(TEXT("Wall"));
+	AddWall(FVector2D(0.f, -800.f), FVector2D(0.f, 800.f), { 0.f }, Outside);
+	AddWall(FVector2D(3400.f, -800.f), FVector2D(3400.f, 800.f), {}, Outside);
+	AddWall(FVector2D(0.f, 800.f), FVector2D(3400.f, 800.f), {}, Outside);
+	AddWall(FVector2D(0.f, -800.f), FVector2D(3400.f, -800.f), {}, Outside);
 
 	// Лобби → коридор (проём без двери).
 	AddWall(FVector2D(800.f, -800.f), FVector2D(800.f, 800.f), { 0.f });
@@ -282,18 +551,13 @@ void ADarcSliceBuilder::BuildGeometry()
 	AddBox(FVector(2350.f, 650.f, 0.f), FVector(2580.f, 780.f, 90.f), TEXT("Furniture"));    // полка с модулем
 	AddBox(FVector(1400.f, -780.f, 0.f), FVector(1580.f, -640.f, 90.f), TEXT("Furniture"));  // шкаф с запасным предохранителем
 	AddBox(FVector(-1050.f, 250.f, 0.f), FVector(-750.f, 550.f, 260.f), TEXT("Booth"));      // будка КПП
-	AddBox(FVector(-1700.f, -1700.f, 0.f), FVector(-1500.f, -1500.f, 900.f), TEXT("Furniture")); // опора тарелки
 
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	Params.ObjectFlags |= RF_Transient;
 
-	// Ориентир — спутниковая тарелка (локально у каждого).
-	if (AStaticMeshActor* Dish = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), FTransform(FVector(-1600.f, -1600.f, 900.f)), Params))
-	{
-		Dish->SetReplicates(false);
-		UDarcAssetSettings::ApplyVisual(Dish->GetStaticMeshComponent(), TEXT("SatelliteDish"), FVector(900.f, 900.f, 500.f));
-	}
+	// Улица у КПП: дорога, забор, шлагбаум, вывеска, лес, холмы, тарелка, вышка, машина.
+	BuildExterior();
 
 	// Табличка в кладовой с кодом серверной (цифры из сида выезда — у всех одинаковые).
 	if (AActor* Sign = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(FRotator(0.f, 90.f, 0.f), FVector(1000.f, -785.f, 160.f)), Params))
@@ -373,12 +637,13 @@ AInteractableDoor* ADarcSliceBuilder::SpawnDoor(const FVector2D& WallPoint, bool
 	return Door;
 }
 
-ADarcPowerLamp* ADarcSliceBuilder::SpawnLamp(const FVector& Location, FName CircuitId)
+ADarcPowerLamp* ADarcSliceBuilder::SpawnLamp(const FVector& Location, FName CircuitId, bool bStreetLight)
 {
 	using namespace DarcSlice;
 	ADarcPowerLamp* Lamp = SpawnDeferred<ADarcPowerLamp>(Location);
 	Lamp->Power->CircuitId = CircuitId;
-	Lamp->VisualSpec = Vis(TEXT("Lamp"), FVector(120.f, 25.f, 8.f));
+	Lamp->bStreetLight = bStreetLight;
+	Lamp->VisualSpec = bStreetLight ? Vis(TEXT("StreetLamp"), FVector(50.f, 30.f, 15.f)) : Vis(TEXT("Lamp"), FVector(120.f, 25.f, 8.f));
 	Finish(Lamp, Location);
 	return Lamp;
 }
@@ -466,7 +731,8 @@ void ADarcSliceBuilder::BuildGameplay()
 		SpawnLamp(FVector(X, 0.f, 290.f), TEXT("Corridor"));
 	}
 	SpawnLamp(FVector(3000.f, 0.f, 290.f), TEXT("Server"));
-	SpawnLamp(FVector(-700.f, -200.f, 380.f), TEXT("Building")); // фонарь у КПП
+	// Натриевый фонарь у ворот (столб строит BuildExterior): тёплый, ярче и дальше комнатных ламп.
+	SpawnLamp(FVector(-1000.f, 120.f, 440.f), TEXT("Building"), true);
 
 	// --- Рабочая комната: терминал каталога ---
 	{

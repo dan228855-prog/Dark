@@ -87,3 +87,5 @@ HUD_TaskLocked,  - {0}
 HUD_SubtitleFormat,{0}: {1}
 HUD_Grab,[ЛКМ] Схватить
 HUD_Holding,"Держите ЛКМ — тащить, отпустите — бросить на месте, ПКМ — толкнуть"
+Sign_DarcName,D.A.R.C.
+Sign_DarcSub,ИССЛЕДОВАНИЯ И ОБРАБОТКА

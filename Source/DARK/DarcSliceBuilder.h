@@ -37,13 +37,23 @@ protected:
 	void BuildEnvironment();
 	void AddBox(const FVector& Min, const FVector& Max, FName MaterialSlot);
 	/** Стена от A до B (по оси X или Y) с проёмами под двери в точках вдоль стены. */
-	void AddWall(const FVector2D& A, const FVector2D& B, const TArray<float>& DoorCenters = {});
+	void AddWall(const FVector2D& A, const FVector2D& B, const TArray<float>& DoorCenters = {}, FName MaterialSlot = TEXT("Wall"));
 	void AddRoom(const FVector2D& Min, const FVector2D& Max);
+
+	/** Улица у КПП по референсу docs/reference/mission1_checkpoint.png (на каждой машине). */
+	void BuildExterior();
+	/** Простая фигура движка (Cube/Cylinder/Cone/Sphere, 100 см) с центром в Center, размером Size, своим цветом. */
+	UStaticMeshComponent* AddShape(const TCHAR* Shape, const FVector& Center, const FVector& Size, const FLinearColor& Color,
+		const FRotator& Rotation = FRotator::ZeroRotator, bool bCollision = true);
+	/** Декоративный свет (не от электросистемы — всегда горит). */
+	class UPointLightComponent* AddLight(const FVector& Location, const FLinearColor& Color, float Lumens, float Radius);
+	void AddTree(const FVector2D& Location, float Height, float Radius);
+	void ToggleBlinkLights();
 
 	// --- Игровые объекты (только сервер) ---
 	void BuildGameplay();
 	AInteractableDoor* SpawnDoor(const FVector2D& WallPoint, bool bWallAlongX, bool bLocked, FName MemoryId);
-	ADarcPowerLamp* SpawnLamp(const FVector& Location, FName CircuitId);
+	ADarcPowerLamp* SpawnLamp(const FVector& Location, FName CircuitId, bool bStreetLight = false);
 	void SpawnRoomVolume(FName RoomId, const FVector2D& Min, const FVector2D& Max);
 
 	template <class T>
@@ -51,4 +61,11 @@ protected:
 	void Finish(AActor* Actor, const FVector& Location, const FRotator& Rotation = FRotator::ZeroRotator);
 
 	bool bGeometryBuilt = false;
+
+	/** Красные огни на вышке и тарелке — мигают у каждой машины сами. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UPointLightComponent>> BlinkLights;
+
+	FTimerHandle BlinkTimer;
+	bool bBlinkOn = true;
 };

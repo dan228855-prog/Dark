@@ -39,6 +39,12 @@ void ADarcPowerLamp::BeginPlay()
 {
 	Super::BeginPlay();
 	VisualSpec.ApplyTo(Visual); // модель — у каждой машины сама
+	if (bStreetLight)
+	{
+		Light->SetLightColor(FLinearColor(1.f, 0.55f, 0.25f));
+		Light->SetIntensity(5000.f);
+		Light->SetAttenuationRadius(2200.f);
+	}
 
 	// Делегаты срабатывают и на сервере, и у клиентов (по репликации) — свет у каждого свой.
 	Power->OnPowerChanged.AddDynamic(this, &ADarcPowerLamp::HandlePowerChanged);
@@ -94,4 +100,5 @@ void ADarcPowerLamp::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ADarcPowerLamp, VisualSpec, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(ADarcPowerLamp, bStreetLight, COND_InitialOnly);
 }
