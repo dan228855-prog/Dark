@@ -76,6 +76,7 @@ void ADarcPlayerController::SetupInputComponent()
 	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Released, this, &ADarcPlayerController::HandlePrimaryReleased);
 	InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ADarcPlayerController::HandleSecondary);
 	InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ADarcPlayerController::HandleSpiritBreaker);
+	InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ADarcPlayerController::HandleDrop);
 }
 
 void ADarcPlayerController::OnPossess(APawn* InPawn)
@@ -156,6 +157,14 @@ void ADarcPlayerController::HandleInteract()
 	if (UInteractionComponent* Interaction = GetPawn() ? GetPawn()->FindComponentByClass<UInteractionComponent>() : nullptr)
 	{
 		Interaction->TryInteract();
+	}
+}
+
+void ADarcPlayerController::HandleDrop()
+{
+	if (UInteractionComponent* Interaction = GetPawn() ? GetPawn()->FindComponentByClass<UInteractionComponent>() : nullptr)
+	{
+		Interaction->DropHeldItem();
 	}
 }
 

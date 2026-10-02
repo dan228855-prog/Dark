@@ -80,6 +80,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Power|Visual")
 	TObjectPtr<UStaticMeshComponent> Lever;
 
+	/** Гнездо под предохранитель на лицевой панели (видно всегда). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Power|Visual")
+	TObjectPtr<UStaticMeshComponent> FuseSocket;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Power|Visual")
 	TObjectPtr<UStaticMeshComponent> StatusLamp;
 

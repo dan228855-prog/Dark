@@ -52,6 +52,7 @@ protected:
 
 	void HandleInteract();
 	void HandleToggleTasks();
+	void HandleDrop();             // G: положить то, что в руках
 	void HandlePrimaryPressed();   // ЛКМ: захват (живой) / мигнуть светом (дух)
 	void HandlePrimaryReleased();  // ЛКМ отпущена: отпустить предмет
 	void HandleSecondary();        // ПКМ: бросить (живой) / толкнуть предмет (дух)

@@ -1,5 +1,6 @@
 // DarcHUD.cpp
 #include "DarcHUD.h"
+#include "CarryableItem.h"
 #include "DarcGameState.h"
 #include "DarcGameplayLibrary.h"
 #include "DarcPlayerController.h"
@@ -118,6 +119,12 @@ void ADarcHUD::DrawHUD()
 		{
 			DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_Grab")), W * 0.5f, H * 0.5f + 52.f, FLinearColor(0.85f, 0.9f, 1.f, 0.85f), 0.9f, true);
 		}
+	}
+
+	// --- В руках предмет: как положить ---
+	if (Pawn && ACarryableItem::FindItemHeldBy(Pawn))
+	{
+		DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_DropHint")), W - 160.f, H - 64.f, FLinearColor(0.8f, 0.8f, 0.8f, 0.6f), 0.85f, false);
 	}
 
 	// --- Фонарик: подсказка, пока выключен ---

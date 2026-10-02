@@ -35,6 +35,7 @@ ADarcFuseBox::ADarcFuseBox()
 		return Part;
 	};
 	FuseIndicator = MakePart(TEXT("FuseIndicator"), TEXT("Cylinder"));
+	FuseSocket = MakePart(TEXT("FuseSocket"), TEXT("Cube"));
 	Lever = MakePart(TEXT("Lever"), TEXT("Cube"));
 	StatusLamp = MakePart(TEXT("StatusLamp"), TEXT("Sphere"));
 }
@@ -59,17 +60,25 @@ void ADarcFuseBox::OnInteract_Implementation(AActor* Interactor)
 
 	if (!bHasFuse && HeldFuse)
 	{
-		// Предохранитель расходуется в любом случае: либо встал, либо сгорел.
-		HeldFuse->ForceDrop();
-		HeldFuse->Destroy();
-
+		// Под напряжением вставлять нельзя: первое E выключает рубильник, второе — вставляет.
+		// Раньше E с предохранителем в руках всегда вставлял его — при включённом рубильнике он
+		// сгорал, а выключить рубильник с предохранителем в руках было нечем (E занят вставкой).
 		if (bBreakerOn)
 		{
-			// Не установлен: сгорел. Индикатор остаётся красным, предохранителя в щитке нет.
-			HandleBlowFromMistake(Interactor);
-			TellNearby(TEXT("Fuse_BlownBreakerOn"));
+			bBreakerOn = false;
+			if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+			{
+				Memory->RecordInteraction(CircuitId, TEXT("BreakerOff"), Interactor);
+			}
+			NotifyStateChanged();
+			TellNearby(TEXT("Fuse_BreakerOffNowInsert"));
 			return;
 		}
+
+		// Предохранитель уходит из рук и встаёт в гнездо щитка (виден, индикатор меняет цвет).
+		HeldFuse->ForceDrop();
+		HeldFuse->Destroy();
+		UDarcAssetSettings::PlaySound(this, TEXT("FuseInsert"), GetActorLocation());
 
 		bHasFuse = true;
 		if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
@@ -182,32 +191,40 @@ void ADarcFuseBox::TellNearby(const TCHAR* Key) const
 void ADarcFuseBox::LayoutIndicators()
 {
 	// Лицевая сторона — локальная +X актора (щиток смотрит в коридор). Габариты — по модели.
+	// Всё навесное — ПЕРЕД панелью целиком (раньше половина сидела внутри корпуса).
 	const FBox Box = Visual->Bounds.GetBox().TransformBy(GetActorTransform().Inverse());
 	const FVector Center = Box.GetCenter();
 	const FVector Extent = Box.GetExtent();
-	const float Front = Box.Max.X + 1.5f;
-	FuseIndicator->SetRelativeLocationAndRotation(FVector(Front, Center.Y - Extent.Y * 0.35f, Center.Z), FRotator(0.f, 0.f, 0.f));
-	FuseIndicator->SetRelativeScale3D(FVector(0.05f, 0.05f, 0.12f));
-	StatusLamp->SetRelativeLocation(FVector(Front, Center.Y + Extent.Y * 0.35f, Center.Z + Extent.Z * 0.6f));
-	StatusLamp->SetRelativeScale3D(FVector(0.06f));
-	Lever->SetRelativeScale3D(FVector(0.04f, 0.04f, 0.2f));
+	const float Front = Box.Max.X;
+
+	// Гнездо предохранителя (всегда видно — понятно, куда вставлять) и сам предохранитель в нём.
+	FuseSocket->SetRelativeLocation(FVector(Front + 1.f, Center.Y - Extent.Y * 0.35f, Center.Z));
+	FuseSocket->SetRelativeScale3D(FVector(0.02f, 0.16f, 0.07f)); // 2 × 16 × 7 см
+	FuseIndicator->SetRelativeLocationAndRotation(FVector(Front + 3.5f, Center.Y - Extent.Y * 0.35f, Center.Z), FRotator(0.f, 0.f, 90.f));
+	FuseIndicator->SetRelativeScale3D(FVector(0.045f, 0.045f, 0.13f)); // лёжа: Ø4.5 × 13 см
+
+	StatusLamp->SetRelativeLocation(FVector(Front + 3.5f, Center.Y + Extent.Y * 0.35f, Center.Z + Extent.Z * 0.6f));
+	StatusLamp->SetRelativeScale3D(FVector(0.07f)); // Ø7 см
+	Lever->SetRelativeScale3D(FVector(0.035f, 0.035f, 0.18f));
 }
 
 void ADarcFuseBox::UpdateIndicators()
 {
-	if (!FuseIndicator || !Lever || !StatusLamp)
+	if (!FuseIndicator || !Lever || !StatusLamp || !FuseSocket)
 	{
 		return;
 	}
 	// Предохранитель виден, только когда вставлен.
 	FuseIndicator->SetVisibility(bHasFuse);
 	FuseIndicator->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(this, FLinearColor(0.75f, 0.45f, 0.15f)));
+	FuseSocket->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(this, FLinearColor(0.02f, 0.02f, 0.02f)));
 
 	// Рычаг: вверх — включён, вниз — выключен.
 	const FBox Box = Visual->Bounds.GetBox().TransformBy(GetActorTransform().Inverse());
 	const FVector Center = Box.GetCenter();
 	const FVector Extent = Box.GetExtent();
-	Lever->SetRelativeLocationAndRotation(FVector(Box.Max.X + 4.f, Center.Y + Extent.Y * 0.35f, Center.Z - Extent.Z * 0.2f),
+	// Центр рычага — в 8 см перед панелью: при наклоне ±35° он целиком снаружи корпуса.
+	Lever->SetRelativeLocationAndRotation(FVector(Box.Max.X + 8.f, Center.Y + Extent.Y * 0.35f, Center.Z - Extent.Z * 0.2f),
 		FRotator(bBreakerOn ? 35.f : -35.f, 0.f, 0.f));
 	Lever->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(this, FLinearColor(0.6f, 0.05f, 0.03f)));
 
@@ -234,6 +251,7 @@ FText ADarcFuseBox::GetInteractionPrompt_Implementation() const
 	const bool bHoldingFuse = Cast<ADarcFuseItem>(ACarryableItem::FindItemHeldBy(LocalPawn)) != nullptr;
 	if (!bHasFuse && bHoldingFuse)
 	{
+		// Под напряжением E сначала выключает рубильник — так и пишем.
 		return (bBreakerOn && !PromptInsertFuseBreakerOn.IsEmpty()) ? PromptInsertFuseBreakerOn : PromptInsertFuse;
 	}
 	return bBreakerOn ? PromptBreakerOff : PromptBreakerOn;

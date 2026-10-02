@@ -25,6 +25,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void TryInteract();
 
+	/** Положить то, что в руках (G), — без наведения на сам предмет. */
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void DropHeldItem();
+
 	/** Актор, на который сейчас смотрит игрок — для показа подсказки в HUD. Чисто косметика, не для логики. */
 	UPROPERTY(BlueprintReadOnly, Category = "Interaction")
 	AActor* FocusedActor = nullptr;
@@ -56,4 +60,7 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_LeaveTerminal(ADarcTerminal* Terminal);
+
+	UFUNCTION(Server, Reliable)
+	void Server_DropHeldItem();
 };

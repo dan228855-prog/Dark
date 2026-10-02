@@ -1,5 +1,6 @@
 // InteractionComponent.cpp
 #include "InteractionComponent.h"
+#include "CarryableItem.h"
 #include "DarcGameplayLibrary.h"
 #include "Interactable.h"
 #include "DarcTerminal.h"
@@ -50,6 +51,20 @@ AActor* UInteractionComponent::FindInteractableInView() const
 	}
 
 	return nullptr;
+}
+
+void UInteractionComponent::DropHeldItem()
+{
+	Server_DropHeldItem();
+}
+
+void UInteractionComponent::Server_DropHeldItem_Implementation()
+{
+	// Сервер сам ищет, что держит именно этот игрок (клиент ничего не указывает).
+	if (ACarryableItem* Held = ACarryableItem::FindItemHeldBy(GetOwner()))
+	{
+		Held->ForceDrop();
+	}
 }
 
 void UInteractionComponent::TryInteract()

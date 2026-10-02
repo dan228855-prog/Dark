@@ -123,7 +123,7 @@ Hint_InterfaceModule,insert into the port on the front of the server rack
 Name_Generator,Portable generator
 Hint_Generator,drag it to the power inlet in the server room and connect (fits through doors sideways)
 Name_TechCabinet,Technical cabinet
-Fuse_Installed,Fuse installed. Now switch the breaker on.
+Fuse_Installed,Fuse installed. Now switch the breaker on (E).
 Fuse_BlownBreakerOn,The fuse blew: the breaker was on. You need a new fuse.
 Sign_ServerCode,ACCESS CODE — SERVER ROOM
 HUD_FlashlightHint,[F] Flashlight
@@ -132,8 +132,10 @@ Name_FuseBox_Server,Server room fuse box
 Name_FuseBox_Corridor,Corridor fuse box
 Name_FuseBox_Building,Building fuse box
 Hint_FuseBox_NoFuse,"no fuse: switch the breaker off, insert a fuse, switch the breaker on"
-Fuse_InsertBreakerOn,Insert fuse (breaker is ON — it will blow!)
+Fuse_InsertBreakerOn,Switch the breaker off (before inserting the fuse)
 Name_CablePlug,Rack power cable
 Hint_CablePlug,"pick up the plug (E), bring it to the server rack and plug it in"
 Heavy_PlugIn,Plug in the power cable
 Heavy_Unplug,Unplug the power cable
+Fuse_BreakerOffNowInsert,Breaker is off. Now insert the fuse (E).
+HUD_DropHint,[G] Drop
