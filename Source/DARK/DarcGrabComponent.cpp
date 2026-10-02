@@ -42,9 +42,9 @@ bool UDarcGrabComponent::IsGrabbable(const UPrimitiveComponent* Component)
 	{
 		return false;
 	}
-	// Предмет у кого-то в руках (E) — не отнимаем.
-	const ACarryableItem* Item = Cast<ACarryableItem>(Owner);
-	return !Item || !Item->CurrentHolder;
+	// Ручные предметы (карта, предохранитель, диск...) берутся только E — ЛКМ их не хватает,
+	// иначе под прицелом были бы две подсказки сразу.
+	return !Cast<ACarryableItem>(Owner);
 }
 
 bool UDarcGrabComponent::GetEyes(FVector& OutLocation, FVector& OutForward) const

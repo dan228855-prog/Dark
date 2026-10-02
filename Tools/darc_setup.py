@@ -294,18 +294,18 @@ def build_materials():
         if eal.does_asset_exist(mat_path):
             material = eal.load_asset(mat_path)
             # Уже собран этой версией и текстуры не менялись — не трогаем.
-            params = [str(n) for n in mel.get_scalar_parameter_names(material)]
+            # Уже собран этой версией графа и текстуры не менялись — не трогаем.
+            # Версию пишем меткой ассета: по одним именам параметров не отличить
+            # рабочий материал от собранного с ошибкой шейдера.
             textures_changed = any(path.split(".")[0] in changed_textures for path in maps.values())
-            vector_params = [str(n) for n in mel.get_vector_parameter_names(material)]
-            if "MacroVariation" in params and "BoxSize" in vector_params and not textures_changed:
+            if eal.get_metadata_tag(material, "DarcGraph") == MATERIAL_GRAPH_VERSION and not textures_changed:
+                texture_report[-1][1] += " (без изменений)"
                 continue
-            mel.delete_all_material_expressions(material)  # старая версия: текстура растягивалась
         else:
             material = asset_tools.create_asset(mat_name, ROOT + "/Imported/Materials",
                                                 unreal.Material, unreal.MaterialFactoryNew())
-        build_material_graph(material, maps)
-        mel.recompile_material(material)
-        eal.save_loaded_asset(material)
+        how = build_material_safe(material, maps)
+        texture_report[-1][1] += " — " + how
         made += 1
     if made:
         say("Собрано/обновлено материалов из наборов текстур: %d" % made)
@@ -316,46 +316,101 @@ def build_materials():
 # (серые стены — растянутые кубы, обычные UV растягивали текстуру на всю стену).
 # WorldAligned = 0 — та же проекция, но в осях самой коробки (LocalPosition × BoxSize, см):
 # у движущихся объектов (стойка, предметы) текстура едет вместе с ними и не растягивается.
-WORLD_UV_CODE = """float3 p = Aligned > 0.5 ? P : LP * BoxSize / 100.0;
-float3 n = abs(Aligned > 0.5 ? N : LN);
+MATERIAL_GRAPH_VERSION = "3"
+
+# lerp вместо «?:» и BoxSize.xyz: без неявных приведений float4→float3, на которых
+# компилятор шейдера мог спотыкаться (материал оставался пустым — «текстуры пропали»).
+WORLD_UV_CODE = """float a = saturate(Aligned);
+float3 p = lerp(LP * BoxSize.xyz / 100.0, P, a);
+float3 n = abs(lerp(LN, N, a));
 float2 w = (n.z >= n.x && n.z >= n.y) ? p.xy : (n.x >= n.y ? p.yz : p.xz);
 w = w / max(Tile, 1.0);
 w.y = -w.y;
 return w;"""
 
+# Запасной вариант (проверенный, был до движущихся объектов): только мировые координаты.
+SIMPLE_UV_CODE = """float3 n = abs(N);
+float2 w = (n.z >= n.x && n.z >= n.y) ? P.xy : (n.x >= n.y ? P.yz : P.xz);
+w = w / max(Tile, 1.0);
+w.y = -w.y;
+return w;"""
 
-def build_material_graph(material, maps):
+
+def shader_ok(material):
+    """Скомпилировался ли шейдер: у материала с ошибкой 0 инструкций."""
+    try:
+        stats = unreal.MaterialEditingLibrary.get_statistics(material)
+        return stats.get_editor_property("num_pixel_shader_instructions") > 0
+    except Exception:
+        return True  # проверить нечем — считаем, что всё хорошо
+
+
+def build_material_safe(material, maps):
+    """Собрать граф; при ошибке (Python или шейдер) — запасной простой граф.
+    Материал никогда не остаётся пустым. Возвращает, каким способом собран."""
+    mel = unreal.MaterialEditingLibrary
+    attempts = [("полный граф", False), ("запасной граф (мировые UV)", True)]
+    for label, simple in attempts:
+        try:
+            mel.delete_all_material_expressions(material)
+            build_material_graph(material, maps, simple)
+            mel.recompile_material(material)
+            if not shader_ok(material) and not simple:
+                say("ВНИМАНИЕ: %s — ошибка шейдера в полном графе, собираю запасной" % material.get_name())
+                continue
+            eal.set_metadata_tag(material, "DarcGraph", MATERIAL_GRAPH_VERSION)
+            eal.save_loaded_asset(material)
+            return label
+        except Exception as error:
+            say("ВНИМАНИЕ: %s — %s не собран: %s" % (material.get_name(), label, error))
+    # Совсем крайний случай: просто цветовая карта по обычным UV — лучше, чем серый.
+    try:
+        mel.delete_all_material_expressions(material)
+        node = mel.create_material_expression(material, unreal.MaterialExpressionTextureSample, -400, 0)
+        node.set_editor_property("texture", eal.load_asset(maps["BaseColor"]))
+        mel.connect_material_property(node, "RGB", unreal.MaterialProperty.MP_BASE_COLOR)
+        mel.recompile_material(material)
+        eal.save_loaded_asset(material)
+    except Exception as error:
+        say("ОШИБКА: %s — не собран даже простой материал: %s" % (material.get_name(), error))
+    return "ПРОСТОЙ материал (UV модели): смотри Output Log"
+
+
+def build_material_graph(material, maps, simple=False):
     mel = unreal.MaterialEditingLibrary
     pos = mel.create_material_expression(material, unreal.MaterialExpressionWorldPosition, -1300, -200)
     nrm = mel.create_material_expression(material, unreal.MaterialExpressionVertexNormalWS, -1300, -60)
-    local_pos = mel.create_material_expression(material, unreal.MaterialExpressionLocalPosition, -1300, 80)
-    local_nrm = mel.create_material_expression(material, unreal.MaterialExpressionPreSkinnedNormal, -1300, 140)
-    box_size = mel.create_material_expression(material, unreal.MaterialExpressionVectorParameter, -1300, 560)
-    box_size.set_editor_property("parameter_name", "BoxSize")
-    box_size.set_editor_property("default_value", unreal.LinearColor(100.0, 100.0, 100.0, 0.0))
     tile = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 200)
     tile.set_editor_property("parameter_name", "TileSize")
     tile.set_editor_property("default_value", 200.0)
-    aligned = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 320)
-    aligned.set_editor_property("parameter_name", "WorldAligned")
-    aligned.set_editor_property("default_value", 1.0)
     custom = mel.create_material_expression(material, unreal.MaterialExpressionCustom, -900, 0)
-    custom.set_editor_property("code", WORLD_UV_CODE)
+    custom.set_editor_property("code", SIMPLE_UV_CODE if simple else WORLD_UV_CODE)
     custom.set_editor_property("output_type", unreal.CustomMaterialOutputType.CMOT_FLOAT2)
     custom.set_editor_property("description", "DarcWorldUV")
+    names = ["P", "N", "Tile"] if simple else ["P", "N", "LP", "LN", "BoxSize", "Tile", "Aligned"]
     inputs = []
-    for name in ["P", "N", "LP", "LN", "BoxSize", "Tile", "Aligned"]:
+    for name in names:
         item = unreal.CustomInput()
         item.set_editor_property("input_name", name)
         inputs.append(item)
     custom.set_editor_property("inputs", inputs)
     mel.connect_material_expressions(pos, "", custom, "P")
     mel.connect_material_expressions(nrm, "", custom, "N")
-    mel.connect_material_expressions(local_pos, "", custom, "LP")
-    mel.connect_material_expressions(local_nrm, "", custom, "LN")
-    mel.connect_material_expressions(box_size, "", custom, "BoxSize")
     mel.connect_material_expressions(tile, "", custom, "Tile")
-    mel.connect_material_expressions(aligned, "", custom, "Aligned")
+    if not simple:
+        # Локальные координаты коробки — для движущихся объектов (WorldAligned = 0).
+        local_pos = mel.create_material_expression(material, unreal.MaterialExpressionLocalPosition, -1300, 80)
+        local_nrm = mel.create_material_expression(material, unreal.MaterialExpressionPreSkinnedNormal, -1300, 140)
+        box_size = mel.create_material_expression(material, unreal.MaterialExpressionVectorParameter, -1300, 560)
+        box_size.set_editor_property("parameter_name", "BoxSize")
+        box_size.set_editor_property("default_value", unreal.LinearColor(100.0, 100.0, 100.0, 0.0))
+        aligned = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -1300, 320)
+        aligned.set_editor_property("parameter_name", "WorldAligned")
+        aligned.set_editor_property("default_value", 1.0)
+        mel.connect_material_expressions(local_pos, "", custom, "LP")
+        mel.connect_material_expressions(local_nrm, "", custom, "LN")
+        mel.connect_material_expressions(box_size, "", custom, "BoxSize")
+        mel.connect_material_expressions(aligned, "", custom, "Aligned")
 
     y = 0
     for role, prop in [("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR),
