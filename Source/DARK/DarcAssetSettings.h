@@ -82,6 +82,13 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, TSoftObjectPtr<UMaterialInterface>> Materials;
 
+	/**
+	 * Размер повтора текстуры по слоту материала, см (параметр TileSize материалов из
+	 * Tools/darc_setup.py): Ground=300 — трава повторяется раз в 3 м. Нет записи — 200.
+	 */
+	UPROPERTY(Config, EditAnywhere, Category = "Assets")
+	TMap<FName, float> MaterialTiling;
+
 	/** Звуки по слотам: DoorOpen, DoorClose, DoorLocked, FuseBlow, Breaker, GeneratorLoop, LampHum, Morse_RU, ... */
 	UPROPERTY(Config, EditAnywhere, Category = "Assets")
 	TMap<FName, TSoftObjectPtr<USoundBase>> Sounds;
@@ -108,6 +115,13 @@ public:
 	static UStaticMesh* FindMesh(FName Slot);
 	static UMaterialInterface* FindMaterial(FName Slot);
 	static USkeletalMesh* FindCharacter(FName Slot);
+
+	/**
+	 * Материал слота для серых коробок с нужным повтором текстуры (MaterialTiling).
+	 * Пишет в лог, если материал собран старой версией Tools/darc_setup.py (без наложения
+	 * по миру — тогда текстура растягивается на всю коробку).
+	 */
+	static UMaterialInterface* GetTiledMaterial(FName Slot, UObject* Outer);
 	static UAnimationAsset* FindAnimation(FName Slot);
 	static USoundBase* FindSound(FName Slot);
 

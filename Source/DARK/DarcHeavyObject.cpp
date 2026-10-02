@@ -4,6 +4,8 @@
 #include "DarcWorldMemorySubsystem.h"
 #include "TaskManagerComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
@@ -14,10 +16,15 @@ ADarcHeavyObject::ADarcHeavyObject()
 	SetReplicateMovement(true); // физику считает сервер, клиенты получают позицию
 	PrimaryActorTick.bCanEverTick = false;
 
+	Collision = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
+	Collision->SetCollisionProfileName(TEXT("PhysicsActor"));
+	Collision->SetBoxExtent(FVector(50.f));
+	RootComponent = Collision;
+
 	Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
-	Body->SetSimulatePhysics(true);
-	Body->SetCollisionProfileName(TEXT("PhysicsActor"));
-	RootComponent = Body;
+	Body->SetupAttachment(Collision);
+	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Body->SetMobility(EComponentMobility::Movable);
 }
 
 void ADarcHeavyObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,11 +38,13 @@ void ADarcHeavyObject::BeginPlay()
 {
 	Super::BeginPlay();
 	VisualSpec.ApplyTo(Body); // модель — у каждой машины сама
-	UDarcAssetSettings::EnsurePhysicsCollision(Body, VisualSpec);
+	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision); // модель с карты могла принести свою коллизию
+	FitCollisionToVisual();
 
-	// Масса — после модели (смена модели пересоздаёт физическое тело).
-	Body->SetSimulatePhysics(true);
-	Body->SetMassOverrideInKg(NAME_None, MassKg, true);
+	// Масса — после размера тела. Угловое затухание — чтобы не кувыркался от каждого толчка.
+	Collision->SetSimulatePhysics(true);
+	Collision->SetMassOverrideInKg(NAME_None, MassKg, true);
+	Collision->SetAngularDamping(1.5f);
 	ApplyCableDrag();
 
 	if (HasAuthority())
@@ -44,10 +53,35 @@ void ADarcHeavyObject::BeginPlay()
 	}
 }
 
+void ADarcHeavyObject::FitCollisionToVisual()
+{
+	if (!VisualSpec.CopyFrom && !VisualSpec.Size.IsNearlyZero())
+	{
+		// Коробка = размер из спека; модель вписана с низом в начале координат — опускаем
+		// её на полвысоты, чтобы она стояла внутри коробки.
+		const FVector Extent = VisualSpec.Size * 0.5f;
+		Collision->SetBoxExtent(Extent);
+		Body->AddRelativeLocation(FVector(0.f, 0.f, -Extent.Z));
+		return;
+	}
+	if (!Body->GetStaticMesh())
+	{
+		return;
+	}
+	// Модель с карты: коробка — по её габаритам, центр тела — в центре модели (модель на месте).
+	const FTransform MeshWorld = Body->GetComponentTransform();
+	const FBox Local = Body->GetStaticMesh()->GetBoundingBox();
+	const FVector Extent = (Local.GetExtent() * MeshWorld.GetScale3D().GetAbs()).ComponentMax(FVector(5.f));
+	Collision->SetBoxExtent(Extent);
+	Collision->SetWorldLocationAndRotation(MeshWorld.TransformPosition(Local.GetCenter()), MeshWorld.GetRotation(),
+		false, nullptr, ETeleportType::TeleportPhysics);
+	Body->SetWorldTransform(MeshWorld);
+}
+
 void ADarcHeavyObject::ServerCheck()
 {
 	// Рывок — кабель срывается.
-	if (bHasFragileCable && bCableAttached && Body->GetPhysicsLinearVelocity().Size() > BreakSpeed)
+	if (bHasFragileCable && bCableAttached && Collision->GetPhysicsLinearVelocity().Size() > BreakSpeed)
 	{
 		DetachCable();
 	}
@@ -81,7 +115,7 @@ void ADarcHeavyObject::DetachCable()
 void ADarcHeavyObject::ApplyCableDrag()
 {
 	// Оборванный кабель «держит» объект: сильное сопротивление движению, пока не закрепят.
-	Body->SetLinearDamping(bCableAttached ? 0.2f : 25.f);
+	Collision->SetLinearDamping(bCableAttached ? 0.2f : 25.f);
 }
 
 bool ADarcHeavyObject::CanInteract_Implementation(AActor* Interactor) const

@@ -89,3 +89,37 @@ HUD_Grab,[LMB] Grab
 HUD_Holding,"Hold LMB to drag, release to let go, RMB to shove"
 Sign_DarcName,D.A.R.C.
 Sign_DarcSub,RESEARCH & PROCESSING
+HUD_HintFormat,{0} ({1})
+Name_Terminal,Workstation
+Hint_Terminal,enter the code from the access card
+Name_CardReader,Card reader
+Hint_CardReader,swipe the access card to open the server room
+Name_Keypad,Keypad
+Hint_Keypad,the server room code is on a sign in the storage room
+Name_InterfaceSlot,Interface port
+Hint_InterfaceSlot,insert the interface module
+Name_Drive,Archive drive
+Hint_Drive,"after copying, take it out and bring it to the guard"
+Name_DriveSlot,Drive bay
+Hint_DriveSlot,take the drive out once the archive is copied
+Name_Server,Server
+Hint_Server,"insert the module, power it up and copy the archive"
+Name_Inlet,Power inlet
+Hint_Inlet,connect the portable generator here
+Name_Console,Server console
+Hint_Console,works while the server has power
+Name_Rack,Server rack
+Hint_Rack,drag it onto the yellow marking by the server
+Name_Keycard,Access card
+Hint_Keycard,"opens the server room; the code is on the back"
+Name_Guard,Guard
+Hint_Guard,"gives you the access card; hand him the archive drive"
+Name_FuseBox,Fuse box
+Hint_FuseBox,"switch the breaker off, insert the fuse, switch it on"
+Name_Fuse,Fuse
+Hint_Fuse,insert into a fuse box with the breaker off
+Name_InterfaceModule,Interface module
+Hint_InterfaceModule,insert into the interface port by the server
+Name_Generator,Portable generator
+Hint_Generator,drag it to the power inlet in the server room and connect
+Name_TechCabinet,Technical cabinet

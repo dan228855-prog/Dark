@@ -30,7 +30,7 @@ public:
 
 	/** Дальность захвата, см. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
-	float GrabRange = 260.f;
+	float GrabRange = 240.f;
 
 	/** Максимальная сила одного игрока, кг·см/с². ~40 кг поднять можно, ~80 кг — только вдвоём. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
@@ -49,7 +49,15 @@ public:
 
 	/** Если предмет застрял дальше этого от точки захвата — захват срывается, см. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
-	float BreakDistance = 380.f;
+	float BreakDistance = 450.f;
+
+	/**
+	 * «Привязь»: дальше этого (по горизонтали, от игрока до ближайшего края предмета) игрок
+	 * не отойдёт, пока держит предмет, — ~3 шага. Тяжёлое не «тянется резиной» за убегающим
+	 * игроком: игрок упирается и тянет, предмет идёт с той скоростью, на какую хватает сил.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
+	float TetherLength = 220.f;
 
 	/** Скорость броска (изменение скорости), см/с — тяжёлое бросается слабее (ограничено силой). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
@@ -96,6 +104,8 @@ protected:
 	bool GetEyes(FVector& OutLocation, FVector& OutForward) const;
 	UPrimitiveComponent* TraceForGrabbable(FVector* OutHit = nullptr) const;
 	void ServerTickHold(float DeltaTime);
+	/** Не дать игроку отойти дальше TetherLength (локальный игрок и сервер — одинаково). */
+	void ApplyTether(float DeltaTime);
 	void ReleaseInternal();
 	float GetEffectiveMaxForce() const;
 

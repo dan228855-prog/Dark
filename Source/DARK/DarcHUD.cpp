@@ -7,6 +7,8 @@
 #include "Interactable.h"
 #include "InteractionComponent.h"
 #include "DarcGrabComponent.h"
+#include "DarcHintComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "TaskManagerComponent.h"
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -70,6 +72,25 @@ void ADarcHUD::DrawHUD()
 
 	// --- Прицел ---
 	DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.6f), W * 0.5f - 2.f, H * 0.5f - 2.f, 4.f, 4.f);
+
+	// --- Название под прицелом (ВРЕМЕННО, см. DarcHintComponent.h) ---
+	if (PlayerOwner && Pawn)
+	{
+		FVector ViewLocation;
+		FRotator ViewRotation;
+		PlayerOwner->GetPlayerViewPoint(ViewLocation, ViewRotation);
+		FHitResult Hit;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(DarcHintTrace), false, Pawn);
+		if (GetWorld()->LineTraceSingleByChannel(Hit, ViewLocation, ViewLocation + ViewRotation.Vector() * 350.f, ECC_Visibility, Params))
+		{
+			const UDarcHintComponent* Hint = Hit.GetActor() ? Hit.GetActor()->FindComponentByClass<UDarcHintComponent>() : nullptr;
+			const FText Label = Hint ? Hint->GetDisplayText() : FText::GetEmpty();
+			if (!Label.IsEmpty())
+			{
+				DrawTextLine(Label, W * 0.5f, H * 0.5f - 40.f, FLinearColor(1.f, 0.92f, 0.7f, 0.95f), 1.f, true);
+			}
+		}
+	}
 
 	// --- Подсказка взаимодействия ---
 	if (const UInteractionComponent* Interaction = Pawn ? Pawn->FindComponentByClass<UInteractionComponent>() : nullptr)

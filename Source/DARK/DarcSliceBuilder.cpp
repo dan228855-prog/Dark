@@ -20,6 +20,7 @@
 #include "DarcFuseBox.h"
 #include "DarcFuseItem.h"
 #include "DarcGameplayLibrary.h"
+#include "DarcHintComponent.h"
 #include "DarcGenerator.h"
 #include "DarcHeavyObject.h"
 #include "DarcItemSlot.h"
@@ -57,8 +58,10 @@ namespace DarcSlice
 {
 	constexpr float WallHeight = 300.f;
 	constexpr float WallThickness = 20.f;
-	constexpr float DoorWidth = 200.f;
-	constexpr float DoorHeight = 220.f;
+	// Проём под реальную дверь: ~1.2 × 2.3 м (персонаж ~1.8 м). Было 2 × 2.2 м — створка
+	// модели (79 см) не дотягивалась до краёв, дверь выглядела маленькой посреди широкой дыры.
+	constexpr float DoorWidth = 120.f;
+	constexpr float DoorHeight = 230.f;
 
 	FText Txt(const TCHAR* Key) { return UDarcGameplayLibrary::UIText(Key); }
 
@@ -142,7 +145,7 @@ void ADarcSliceBuilder::AddBox(const FVector& Min, const FVector& Max, FName Mat
 	Mesh->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
 	Mesh->SetWorldScale3D((Max - Min) / 100.f);
 	Mesh->SetCollisionProfileName(TEXT("BlockAll"));
-	UMaterialInterface* Material = UDarcAssetSettings::FindMaterial(MaterialSlot);
+	UMaterialInterface* Material = UDarcAssetSettings::GetTiledMaterial(MaterialSlot, Mesh);
 	Mesh->SetMaterial(0, Material ? Material : LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")));
 }
 
@@ -559,6 +562,24 @@ void ADarcSliceBuilder::BuildGeometry()
 	// Улица у КПП: дорога, забор, шлагбаум, вывеска, лес, холмы, тарелка, вышка, машина.
 	BuildExterior();
 
+	// Разметка на полу серверной: сюда катить стойку (точка доставки задачи MoveServerRack).
+	AddShape(TEXT("Cube"), FVector(3150.f, 450.f, 3.f), FVector(150.f, 150.f, 1.f), FLinearColor(0.8f, 0.6f, 0.05f), FRotator::ZeroRotator, false);
+	AddShape(TEXT("Cube"), FVector(3150.f, 450.f, 3.5f), FVector(130.f, 130.f, 1.f), FLinearColor(0.05f, 0.05f, 0.05f), FRotator::ZeroRotator, false);
+
+	// Невидимые стены по краю земли: раньше земля кончалась за забором (75 × 50 м), игрок
+	// уходил в лес и падал с края — отсюда «провал под карту». Сетка безопасности в
+	// ADarcPlayerController остаётся на случай других дыр.
+	constexpr float Edge = 11800.f;
+	for (const FVector& Wall : { FVector(Edge, 0.f, 0.f), FVector(-Edge, 0.f, 0.f), FVector(0.f, Edge, 0.f), FVector(0.f, -Edge, 0.f) })
+	{
+		const bool bAlongY = !FMath::IsNearlyZero(Wall.X);
+		if (UStaticMeshComponent* Blocker = AddShape(TEXT("Cube"), Wall + FVector(0.f, 0.f, 1000.f),
+			bAlongY ? FVector(100.f, 2.f * Edge, 2000.f) : FVector(2.f * Edge, 100.f, 2000.f), FLinearColor::Black))
+		{
+			Blocker->SetHiddenInGame(true);
+		}
+	}
+
 	// Табличка в кладовой с кодом серверной (цифры из сида выезда — у всех одинаковые).
 	if (AActor* Sign = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(FRotator(0.f, 90.f, 0.f), FVector(1000.f, -785.f, 160.f)), Params))
 	{
@@ -608,6 +629,11 @@ T* ADarcSliceBuilder::SpawnDeferred(const FVector& Location, const FRotator& Rot
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 }
 
+void ADarcSliceBuilder::AddHint(AActor* Actor, FName NameKey, FName HintKey)
+{
+	UDarcHintComponent::AddHint(Actor, NameKey, HintKey); // ВРЕМЕННО — см. DarcHintComponent.h
+}
+
 void ADarcSliceBuilder::Finish(AActor* Actor, const FVector& Location, const FRotator& Rotation)
 {
 	if (Actor)
@@ -632,7 +658,8 @@ AInteractableDoor* ADarcSliceBuilder::SpawnDoor(const FVector2D& WallPoint, bool
 	Door->PromptClose = Txt(TEXT("Door_Close"));
 	Door->PromptLocked = Txt(TEXT("Door_Locked"));
 	// Створка вписывается по центру петли и сдвигается вдоль стены на полширины.
-	Door->VisualSpec = Vis(TEXT("Door"), FVector(8.f, DoorWidth - 4.f, DoorHeight - 4.f), TEXT("DoorMaterial"), FVector(0.f, DoorWidth * 0.5f, 0.f));
+	// Материал DoorMaterial — только для серой коробки; у модели двери остаётся её собственный.
+	Door->VisualSpec = Vis(TEXT("Door"), FVector(6.f, DoorWidth - 4.f, DoorHeight - 4.f), TEXT("DoorMaterial"), FVector(0.f, DoorWidth * 0.5f, 0.f));
 	Finish(Door, Hinge, Rotation);
 	return Door;
 }
@@ -701,6 +728,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		}
 		Box->VisualSpec = Vis(TEXT("FuseBox"), FVector(50.f, 15.f, 70.f), NAME_None, FVector(0.f, 0.f, 90.f));
 		Finish(Box, Location, FaceCorridor);
+		AddHint(Box, TEXT("Name_FuseBox"), TEXT("Hint_FuseBox"));
 	};
 	MakeFuseBox(FVector(1980.f, -140.f, 0.f), TEXT("Server"), false, { TEXT("Corridor") }, true);
 	MakeFuseBox(FVector(2060.f, -140.f, 0.f), TEXT("Corridor"), true, {}, false);
@@ -715,6 +743,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Item->PromptDrop = Txt(TEXT("Carry_Drop"));
 		Item->VisualSpec = Vis(MeshSlot, Size);
 		Finish(Item, Location); // физику свободного предмета включает он сам у каждой машины
+		AddHint(Item, *(FString(TEXT("Name_")) + MeshSlot.ToString()), *(FString(TEXT("Hint_")) + MeshSlot.ToString()));
 		return Item;
 	};
 	MakeItem(static_cast<ADarcFuseItem*>(nullptr), FVector(2060.f, -100.f, 20.f), TEXT("Fuse"), FVector(12.f, 4.f, 4.f), TEXT("Fuse_Main"));
@@ -751,15 +780,20 @@ void ADarcSliceBuilder::BuildGameplay()
 		Catalog->PromptNoPower = Txt(TEXT("Terminal_NoPower"));
 		Catalog->VisualSpec = Vis(TEXT("Terminal"), FVector(50.f, 45.f, 45.f));
 		Finish(Catalog, Loc, Rot);
+		AddHint(Catalog, TEXT("Name_Terminal"), TEXT("Hint_Terminal"));
 	}
 
 	// --- Кладовая: генератор и табличка с кодом серверной ---
 	{
-		const FVector Loc(1150.f, -500.f, 60.f);
-		ADarcGenerator* Generator = SpawnDeferred<ADarcGenerator>(Loc);
+		// Длинной стороной к двери кладовой — выкатывается без разворота.
+		const FVector Loc(1200.f, -520.f, 50.f); // напротив двери кладовой (X = 1200)
+		const FRotator Rot(0.f, 90.f, 0.f);
+		ADarcGenerator* Generator = SpawnDeferred<ADarcGenerator>(Loc, Rot);
 		Generator->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
-		Generator->VisualSpec = Vis(TEXT("Generator"), FVector(110.f, 70.f, 90.f));
-		Finish(Generator, Loc);
+		// Пропорции модели генератора (~2.5 : 1 : 1.3) — без сплющивания; проходит в дверь боком.
+		Generator->VisualSpec = Vis(TEXT("Generator"), FVector(150.f, 60.f, 78.f));
+		Finish(Generator, Loc, Rot);
+		AddHint(Generator, TEXT("Name_Generator"), TEXT("Hint_Generator"));
 	}
 
 	// --- Тех. шкаф: исчезающая комната ---
@@ -768,8 +802,10 @@ void ADarcSliceBuilder::BuildGameplay()
 		const FVector CabinetLoc(1800.f, 650.f, 100.f);
 		ADarcHeavyObject* Cabinet = SpawnDeferred<ADarcHeavyObject>(CabinetLoc);
 		Cabinet->bHasFragileCable = false;
-		Cabinet->VisualSpec = Vis(TEXT("Cabinet"), FVector(120.f, 60.f, 200.f));
+		// Металлический технический шкаф (не мебельный): серая коробка с металлом.
+		Cabinet->VisualSpec = Vis(TEXT("TechCabinet"), FVector(120.f, 60.f, 200.f), TEXT("TechCabinetMaterial"));
 		Finish(Cabinet, CabinetLoc);
+		AddHint(Cabinet, TEXT("Name_TechCabinet"));
 
 		const FVector Loc(1800.f, 450.f, 0.f);
 		ADarcRareEventAnchor* Anchor = SpawnDeferred<ADarcRareEventAnchor>(Loc);
@@ -822,6 +858,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Reader->PromptSwipe = Txt(TEXT("Card_Swipe"));
 		Reader->VisualSpec = Vis(TEXT("CardReader"), FVector(8.f, 12.f, 18.f));
 		Finish(Reader, ReaderLoc, FaceWest);
+		AddHint(Reader, TEXT("Name_CardReader"), TEXT("Hint_CardReader"));
 
 		const FVector KeypadLoc(2585.f, -160.f, 110.f);
 		ADarcTerminal* Keypad = SpawnDeferred<ADarcTerminal>(KeypadLoc, FaceWest);
@@ -834,6 +871,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Keypad->PromptBusy = Txt(TEXT("Terminal_Busy"));
 		Keypad->VisualSpec = Vis(TEXT("Keypad"), FVector(8.f, 15.f, 20.f));
 		Finish(Keypad, KeypadLoc, FaceWest);
+		AddHint(Keypad, TEXT("Name_Keypad"), TEXT("Hint_Keypad"));
 	}
 	{
 		const FRotator FaceWest(0.f, 180.f, 0.f);
@@ -846,6 +884,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		InterfaceSlot->PromptRemove = Txt(TEXT("Slot_Remove"));
 		InterfaceSlot->VisualSpec = Vis(TEXT("Socket"), FVector(10.f, 30.f, 6.f));
 		Finish(InterfaceSlot, InterfaceLoc, FaceWest);
+		AddHint(InterfaceSlot, TEXT("Name_InterfaceSlot"), TEXT("Hint_InterfaceSlot"));
 
 		const FVector DriveLoc(3250.f, -140.f, 100.f);
 		ADarcDataDrive* Drive = SpawnDeferred<ADarcDataDrive>(DriveLoc);
@@ -854,6 +893,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Drive->PromptDrop = Txt(TEXT("Carry_Drop"));
 		Drive->VisualSpec = Vis(TEXT("Drive"), FVector(14.f, 9.f, 3.f));
 		Finish(Drive, DriveLoc);
+		AddHint(Drive, TEXT("Name_Drive"), TEXT("Hint_Drive"));
 
 		ADarcItemSlot* DriveSlot = SpawnDeferred<ADarcItemSlot>(DriveLoc, FaceWest);
 		DriveSlot->AcceptedClass = ADarcDataDrive::StaticClass();
@@ -863,6 +903,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		DriveSlot->PromptRemove = Txt(TEXT("Slot_Remove"));
 		DriveSlot->VisualSpec = Vis(TEXT("Socket"), FVector(10.f, 30.f, 6.f));
 		Finish(DriveSlot, DriveLoc, FaceWest);
+		AddHint(DriveSlot, TEXT("Name_DriveSlot"), TEXT("Hint_DriveSlot"));
 
 		const FVector StationLoc(3320.f, 0.f, 0.f);
 		ADarcDataTransferStation* Station = SpawnDeferred<ADarcDataTransferStation>(StationLoc, FaceWest);
@@ -870,8 +911,9 @@ void ADarcSliceBuilder::BuildGameplay()
 		Station->DriveSlot = DriveSlot;
 		Station->TaskIdOnComplete = TEXT("CopyArchive");
 		Station->PromptStart = Txt(TEXT("Transfer_Start"));
-		Station->VisualSpec = Vis(TEXT("ServerRackStatic"), FVector(80.f, 120.f, 200.f));
+		Station->VisualSpec = Vis(TEXT("ServerRackStatic"), FVector(80.f, 120.f, 200.f), TEXT("ServerMaterial"));
 		Finish(Station, StationLoc, FaceWest);
+		AddHint(Station, TEXT("Name_Server"), TEXT("Hint_Server"));
 
 		const FVector InletLoc(3380.f, -450.f, 40.f);
 		ADarcPowerInlet* Inlet = SpawnDeferred<ADarcPowerInlet>(InletLoc, FaceWest);
@@ -880,6 +922,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Inlet->PromptDisconnect = Txt(TEXT("Inlet_Disconnect"));
 		Inlet->VisualSpec = Vis(TEXT("PowerInlet"), FVector(10.f, 30.f, 30.f));
 		Finish(Inlet, InletLoc, FaceWest);
+		AddHint(Inlet, TEXT("Name_Inlet"), TEXT("Hint_Inlet"));
 
 		// Консоль сервера: работает, только когда сервер запитан. Здесь виден «лишний файл».
 		const FVector ConsoleLoc(3320.f, -300.f, 75.f);
@@ -894,6 +937,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Console->PromptNoPower = Txt(TEXT("Terminal_NoPower"));
 		Console->VisualSpec = Vis(TEXT("Terminal"), FVector(50.f, 45.f, 45.f));
 		Finish(Console, ConsoleLoc, FaceWest);
+		AddHint(Console, TEXT("Name_Console"), TEXT("Hint_Console"));
 
 		// Тяжёлая стойка: перекатить к рабочей точке у станции.
 		ATargetPoint* WorkPoint = GetWorld()->SpawnActor<ATargetPoint>(FVector(3150.f, 450.f, 0.f), FRotator::ZeroRotator);
@@ -902,8 +946,9 @@ void ADarcSliceBuilder::BuildGameplay()
 		Rack->DeliveryTarget = WorkPoint;
 		Rack->TaskIdOnDelivered = TEXT("MoveServerRack");
 		Rack->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
-		Rack->VisualSpec = Vis(TEXT("ServerRack"), FVector(70.f, 90.f, 200.f));
+		Rack->VisualSpec = Vis(TEXT("ServerRack"), FVector(70.f, 90.f, 200.f), TEXT("ServerMaterial"));
 		Finish(Rack, RackLoc);
+		AddHint(Rack, TEXT("Name_Rack"), TEXT("Hint_Rack"));
 	}
 
 	// --- КПП: охранник с картой доступа ---
@@ -915,6 +960,7 @@ void ADarcSliceBuilder::BuildGameplay()
 		Card->PromptDrop = Txt(TEXT("Carry_Drop"));
 		Card->VisualSpec = Vis(TEXT("Keycard"), FVector(8.5f, 5.4f, 0.5f));
 		Finish(Card, CardLoc);
+		AddHint(Card, TEXT("Name_Keycard"), TEXT("Hint_Keycard"));
 
 		const FVector GuardLoc(-900.f, 80.f, 0.f);
 		const FRotator FacePlayers(0.f, 180.f, 0.f);
@@ -932,5 +978,6 @@ void ADarcSliceBuilder::BuildGameplay()
 		Guard->PromptHandOver = Txt(TEXT("Npc_HandOver"));
 		Guard->VisualSpec = Vis(TEXT("Guard"), FVector(50.f, 50.f, 180.f));
 		Finish(Guard, GuardLoc, FacePlayers);
+		AddHint(Guard, TEXT("Name_Guard"), TEXT("Hint_Guard"));
 	}
 }

@@ -18,6 +18,7 @@ D.A.R.C. — настройка проекта одной командой (за
 """
 
 import csv
+import json
 import os
 import re
 
@@ -33,7 +34,13 @@ MAP_PATH = ROOT + "/Maps/L_Slice"
 DATA_PATH = ROOT + "/Data"
 
 MESH_EXT = {".fbx", ".obj", ".gltf", ".glb"}
-TEX_EXT = {".png", ".jpg", ".jpeg", ".tga", ".exr", ".hdr"}
+# Форматы, которые импортирует Unreal. Раньше .tif/.tiff/.bmp/.psd/.dds тихо пропускались —
+# поэтому часть присланных текстур (Poliigon и др. отдают TIFF) в проект не попадала.
+TEX_EXT = {".png", ".jpg", ".jpeg", ".tga", ".exr", ".hdr", ".tif", ".tiff", ".bmp", ".psd", ".dds", ".pcx"}
+# Картинки, которые Unreal НЕ импортирует: о них — в отчёте, их нужно пересохранить в PNG.
+UNSUPPORTED_IMAGE_EXT = {".webp", ".avif", ".heic", ".heif", ".gif", ".jxl", ".svg", ".ktx", ".ktx2", ".jp2"}
+MANIFEST_PATH = os.path.join(PROJECT_DIR, "Saved", "DarcImport", "manifest.json")
+TEXTURE_REPORT_PATH = os.path.join(PROJECT_DIR, "docs", "texture_report.csv")
 SOUND_EXT = {".wav", ".ogg", ".flac", ".mp3"}
 ARCHIVE_EXT = {".zip", ".rar", ".7z"}
 
@@ -41,6 +48,8 @@ asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
 eal = unreal.EditorAssetLibrary
 log = unreal.log
 report = []
+texture_report = []      # строки отчёта по текстурам: файл, статус, ассет
+changed_textures = set()  # ассеты текстур, импортированные/обновлённые в этом запуске
 
 
 def say(msg):
@@ -98,13 +107,13 @@ def ensure_slice_builder():
 # ---------------------------------------------------------------------------
 # 2. Импорт файлов из RawAssets
 # ---------------------------------------------------------------------------
-def make_task(filename, destination, name):
+def make_task(filename, destination, name, replace=False):
     task = unreal.AssetImportTask()
     task.set_editor_property("filename", filename)
     task.set_editor_property("destination_path", destination)
     task.set_editor_property("destination_name", name)
     task.set_editor_property("automated", True)
-    task.set_editor_property("replace_existing", False)
+    task.set_editor_property("replace_existing", replace)
     task.set_editor_property("save", True)
     return task
 
@@ -121,6 +130,25 @@ def fbx_options():
     return options
 
 
+def load_manifest():
+    try:
+        with open(MANIFEST_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None  # первого запуска с манифестом ещё не было
+
+
+def save_manifest(data):
+    os.makedirs(os.path.dirname(MANIFEST_PATH), exist_ok=True)
+    with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=0)
+
+
+def file_stamp(path):
+    st = os.stat(path)
+    return "%d:%d" % (int(st.st_mtime), st.st_size)
+
+
 def import_raw_assets():
     if not os.path.isdir(RAW_DIR):
         os.makedirs(os.path.join(RAW_DIR, "Meshes"), exist_ok=True)
@@ -129,7 +157,12 @@ def import_raw_assets():
         say("Папки RawAssets не было — создана (Meshes / Textures / Sounds/Loops). Положи туда файлы и запусти скрипт ещё раз.")
         return
 
-    tasks, archives, looping = [], [], []
+    tasks, archives, looping, unsupported = [], [], [], []
+    manifest = load_manifest() or {}
+    first_manifest_run = load_manifest() is None
+    if first_manifest_run:
+        manifest = None
+    new_manifest = {}
     for folder, _, files in os.walk(RAW_DIR):
         rel = os.path.relpath(folder, RAW_DIR)
         rel_parts = [clean_name(p) for p in rel.split(os.sep) if p not in (".", "")]
@@ -141,6 +174,10 @@ def import_raw_assets():
 
             if ext in ARCHIVE_EXT:
                 archives.append(os.path.relpath(path, RAW_DIR))
+                continue
+            if ext in UNSUPPORTED_IMAGE_EXT:
+                unsupported.append(os.path.relpath(path, RAW_DIR))
+                texture_report.append([os.path.relpath(path, RAW_DIR), "НЕ ПОДДЕРЖИВАЕТСЯ: пересохранить в PNG", ""])
                 continue
             if ext in MESH_EXT:
                 kind, prefix = "Meshes", "SM_"
@@ -155,10 +192,27 @@ def import_raw_assets():
             parts = rel_parts[1:] if rel_parts and rel_parts[0].lower() == kind.lower() else rel_parts
             destination = "/".join([ROOT, "Imported", kind] + parts)
             asset_name = name if name.startswith(prefix) else prefix + name
-            if eal.does_asset_exist(destination + "/" + asset_name):
-                continue
+            asset_path = destination + "/" + asset_name
+            stamp = file_stamp(path)
+            key = os.path.relpath(path, RAW_DIR)
+            new_manifest[key] = stamp
+            replace = False
+            if eal.does_asset_exist(asset_path):
+                # Файл заменили (другая дата/размер) — переимпортировать. Раньше уже
+                # импортированное имя пропускалось навсегда, и в игре оставалась старая текстура.
+                # Первый запуск с манифестом: текстуры переимпортируются один раз (неизвестно,
+                # совпадают ли они с файлами), звуки и модели — нет.
+                known = manifest.get(key) if manifest is not None else None
+                if known == stamp or (known is None and kind != "Textures"):
+                    if kind == "Textures":
+                        texture_report.append([key, "уже в проекте", asset_path])
+                    continue
+                replace = True
 
-            task = make_task(path, destination, asset_name)
+            task = make_task(path, destination, asset_name, replace)
+            if kind == "Textures":
+                texture_report.append([key, "переимпортирована (файл изменился)" if replace else "импортирована", asset_path])
+                changed_textures.add(asset_path)
             if ext == ".fbx":
                 task.set_editor_property("options", fbx_options())
             tasks.append(task)
@@ -168,8 +222,12 @@ def import_raw_assets():
 
     if archives:
         say("!! Архивы не импортируются — распакуй их в RawAssets: " + ", ".join(archives[:10]))
+    if unsupported:
+        say("!! Формат картинок не поддерживается Unreal (нужен PNG, TGA, JPG или TIFF): "
+            + ", ".join(unsupported[:10]) + (" и ещё %d" % (len(unsupported) - 10) if len(unsupported) > 10 else ""))
+    save_manifest(new_manifest)
     if not tasks:
-        say("Новых файлов для импорта нет.")
+        say("Новых или изменённых файлов для импорта нет.")
         return
 
     say("Импорт файлов: %d ..." % len(tasks))
@@ -189,6 +247,7 @@ TEX_ROLES = [
     ("BaseColor", r"(diff|diffuse|albedo|basecolor|base_color|color|col)$"),
     ("Normal", r"(nor|normal|nrm|nor_gl|normal_gl|normalgl|nor_dx|normaldx)$"),
     ("Roughness", r"(rough|roughness|rgh)$"),
+    ("Gloss", r"(gloss|glossiness)$"),
     ("AO", r"(ao|ambientocclusion|occlusion)$"),
     ("Metallic", r"(metal|metallic|metalness)$"),
 ]
@@ -203,27 +262,40 @@ def build_materials():
         name = str(data.asset_name)
         # Разрешение (_4k и т.п.) часто стоит ПОСЛЕ роли (..._diff_4k) - срезаем его
         # заранее, иначе роль-паттерн с якорем $ не находит совпадение.
-        base = re.sub(r"_(1k|2k|4k|8k)$", "", name, flags=re.I)
+        base = re.sub(r"_(1k|2k|3k|4k|6k|8k)$", "", name, flags=re.I)
+        base = re.sub(r"_var\d+$", "", base, flags=re.I)  # Poliigon: ..._COL_VAR1_4K
         lowered = base.lower()
         for role, pattern in TEX_ROLES:
             m = re.search(r"_" + pattern, lowered)
             if m:
                 set_name = base[: m.start()]
                 set_name = re.sub(r"^T_", "", set_name)
-                sets.setdefault(set_name, {})[role] = str(data.package_name)
+                maps = sets.setdefault(set_name, {})
+                # Нормаль: Unreal нужна DirectX. Если в наборе есть и GL, и DX — берём DX.
+                if role == "Normal" and "Normal" in maps and "dx" not in lowered[m.start():]:
+                    break
+                maps[role] = str(data.package_name)
                 break
+        else:
+            texture_report.append([name, "роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic)", str(data.package_name)])
 
     mel = unreal.MaterialEditingLibrary
     made = 0
     for set_name, maps in sets.items():
         if "BaseColor" not in maps:
+            # Частая причина «текстуры не используются»: имя цветовой карты не распознано.
+            texture_report.append(["набор " + set_name, "МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: "
+                                   + "/".join(sorted(maps)), ""])
             continue
         mat_name = "M_" + clean_name(set_name)
+        texture_report.append(["набор " + set_name, "материал: " + "/".join(sorted(maps)), ROOT + "/Imported/Materials/" + mat_name])
         mat_path = ROOT + "/Imported/Materials/" + mat_name
         if eal.does_asset_exist(mat_path):
             material = eal.load_asset(mat_path)
-            # Уже собран новой версией (с выравниванием по миру) — не трогаем.
-            if "WorldAligned" in [str(n) for n in mel.get_scalar_parameter_names(material)]:
+            # Уже собран этой версией и текстуры не менялись — не трогаем.
+            params = [str(n) for n in mel.get_scalar_parameter_names(material)]
+            textures_changed = any(path.split(".")[0] in changed_textures for path in maps.values())
+            if "MacroVariation" in params and not textures_changed:
                 continue
             mel.delete_all_material_expressions(material)  # старая версия: текстура растягивалась
         else:
@@ -285,9 +357,10 @@ def build_material_graph(material, maps):
     for role, prop in [("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR),
                        ("Normal", unreal.MaterialProperty.MP_NORMAL),
                        ("Roughness", unreal.MaterialProperty.MP_ROUGHNESS),
+                       ("Gloss", unreal.MaterialProperty.MP_ROUGHNESS),
                        ("Metallic", unreal.MaterialProperty.MP_METALLIC),
                        ("AO", unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)]:
-        if role not in maps:
+        if role not in maps or (role == "Gloss" and "Roughness" in maps):
             continue
         texture = eal.load_asset(maps[role])
         if role == "Normal":
@@ -305,8 +378,48 @@ def build_material_graph(material, maps):
             node.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
         mel.connect_material_expressions(custom, "", node, "UVs")
         output = "RGB" if role in ("BaseColor", "Normal") else "R"
-        mel.connect_material_property(node, output, prop)
+        if role == "BaseColor":
+            connect_base_color_with_variation(material, custom, node, texture, y)
+        elif role == "Gloss":
+            # Glossiness — обратная шероховатость.
+            invert = mel.create_material_expression(material, unreal.MaterialExpressionOneMinus, -150, y)
+            mel.connect_material_expressions(node, "R", invert, "")
+            mel.connect_material_property(invert, "", prop)
+        else:
+            mel.connect_material_property(node, output, prop)
         y += 260
+
+
+def connect_base_color_with_variation(material, custom, sample, texture, y):
+    """Цвет × крупное пятно той же текстуры (в ~7 раз крупнее): ломает заметный повтор
+    узора на больших площадях (трава, дорога). MacroVariation = 0 — выключить."""
+    mel = unreal.MaterialEditingLibrary
+    scale = mel.create_material_expression(material, unreal.MaterialExpressionConstant, -900, y + 120)
+    scale.set_editor_property("r", 0.137)
+    big_uv = mel.create_material_expression(material, unreal.MaterialExpressionMultiply, -700, y + 120)
+    mel.connect_material_expressions(custom, "", big_uv, "A")
+    mel.connect_material_expressions(scale, "", big_uv, "B")
+    macro = mel.create_material_expression(material, unreal.MaterialExpressionTextureSample, -550, y + 120)
+    macro.set_editor_property("texture", texture)
+    mel.connect_material_expressions(big_uv, "", macro, "UVs")
+    boost = mel.create_material_expression(material, unreal.MaterialExpressionConstant, -550, y + 260)
+    boost.set_editor_property("r", 1.8)
+    macro_bright = mel.create_material_expression(material, unreal.MaterialExpressionMultiply, -400, y + 160)
+    mel.connect_material_expressions(macro, "RGB", macro_bright, "A")
+    mel.connect_material_expressions(boost, "", macro_bright, "B")
+    one = mel.create_material_expression(material, unreal.MaterialExpressionConstant, -400, y + 280)
+    one.set_editor_property("r", 1.0)
+    amount = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter, -400, y + 360)
+    amount.set_editor_property("parameter_name", "MacroVariation")
+    amount.set_editor_property("default_value", 0.35)
+    lerp = mel.create_material_expression(material, unreal.MaterialExpressionLinearInterpolate, -250, y + 200)
+    mel.connect_material_expressions(one, "", lerp, "A")
+    mel.connect_material_expressions(macro_bright, "", lerp, "B")
+    mel.connect_material_expressions(amount, "", lerp, "Alpha")
+    final = mel.create_material_expression(material, unreal.MaterialExpressionMultiply, -120, y)
+    mel.connect_material_expressions(sample, "RGB", final, "A")
+    mel.connect_material_expressions(lerp, "", final, "B")
+    mel.connect_material_property(final, "", unreal.MaterialProperty.MP_BASE_COLOR)
 
 
 # ---------------------------------------------------------------------------
@@ -370,6 +483,15 @@ INVENTORY_CLASSES = {
 }
 
 
+def write_texture_report():
+    """docs/texture_report.csv: что стало с каждым файлом текстуры и каждым набором."""
+    with open(TEXTURE_REPORT_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["file_or_set", "status", "asset"])
+        writer.writerows(texture_report)
+    say("Отчёт по текстурам: docs/texture_report.csv (%d строк)" % len(texture_report))
+
+
 def write_inventory():
     registry = unreal.AssetRegistryHelpers.get_asset_registry()
     rows = []
@@ -423,6 +545,7 @@ def main():
         if tasks:
             ensure_mission(tasks)
         slow.enter_progress_frame(1, "Список ассетов")
+        write_texture_report()
         write_inventory()
         slow.enter_progress_frame(1, "Готово")
 

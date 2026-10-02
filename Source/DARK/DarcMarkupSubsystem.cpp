@@ -2,6 +2,7 @@
 #include "DarcMarkupSubsystem.h"
 #include "DarcAssetSettings.h"
 #include "DarcGameplayLibrary.h"
+#include "DarcHintComponent.h"
 #include "InteractableDoor.h"
 #include "CarryableItem.h"
 #include "DarcFuseBox.h"
@@ -338,6 +339,8 @@ void UDarcMarkupSubsystem::ConvertMarkup()
 	for (const FSpawned& Entry : Spawned)
 	{
 		Entry.Actor->FinishSpawning(Entry.Transform);
+		// ВРЕМЕННО: название/подсказка под прицелом (теги Name=Ключ, Hint=Ключ из ST_UI).
+		UDarcHintComponent::AddHint(Entry.Actor, Entry.Markup->GetName(TEXT("Name")), Entry.Markup->GetName(TEXT("Hint")));
 	}
 	UE_LOG(LogDarcMarkup, Log, TEXT("DARC markup: %d tagged actors, %d gameplay objects created"), All.Num(), Spawned.Num());
 }

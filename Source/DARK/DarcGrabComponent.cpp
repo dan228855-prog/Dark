@@ -7,6 +7,8 @@
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 UDarcGrabComponent::UDarcGrabComponent()
@@ -123,6 +125,45 @@ void UDarcGrabComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	{
 		ServerTickHold(DeltaTime);
 	}
+
+	// Привязь считают и клиент (он сам предсказывает своё движение), и сервер — иначе сервер
+	// поправлял бы позицию клиента рывками.
+	if (GrabbedActor && Pawn && (Pawn->IsLocallyControlled() || Pawn->HasAuthority()))
+	{
+		ApplyTether(DeltaTime);
+	}
+}
+
+void UDarcGrabComponent::ApplyTether(float DeltaTime)
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	UCharacterMovementComponent* Movement = Character ? Character->GetCharacterMovement() : nullptr;
+	const UPrimitiveComponent* Body = GrabbedActor ? Cast<UPrimitiveComponent>(GrabbedActor->GetRootComponent()) : nullptr;
+	if (!Movement || !Body)
+	{
+		return;
+	}
+
+	// Ближайшая к игроку точка предмета (по габаритам) — по горизонтали.
+	const FVector PawnLocation = Character->GetActorLocation();
+	const FVector Closest = Body->Bounds.GetBox().GetClosestPointTo(PawnLocation);
+	FVector Away = PawnLocation - Closest;
+	Away.Z = 0.f;
+	const float Distance = Away.Size();
+	if (Distance <= TetherLength || Distance < KINDA_SMALL_NUMBER)
+	{
+		return;
+	}
+	Away /= Distance;
+
+	// Скорость «от предмета» гасим — к предмету и вбок идти можно.
+	const float Outward = FVector::DotProduct(Movement->Velocity, Away);
+	if (Outward > 0.f)
+	{
+		Movement->Velocity -= Away * Outward;
+	}
+	// Вышли за длину (кадр, лаг, схватили издалека) — плавно, не быстрее 3 м/с, возвращаем на границу.
+	Character->AddActorWorldOffset(-Away * FMath::Min(Distance - TetherLength, 300.f * DeltaTime), true);
 }
 
 // ---------------------------------------------------------------------------
@@ -159,7 +200,7 @@ void UDarcGrabComponent::Server_Grab_Implementation(AActor* Target, FVector_NetQ
 
 	HeldComponent = Body;
 	LocalGrabPoint = Body->GetComponentTransform().InverseTransformPosition(Hit);
-	HoldDistance = FMath::Clamp(FVector::Dist(Eyes, Hit), 80.f, GrabRange);
+	HoldDistance = FMath::Clamp(FVector::Dist(Eyes, Hit), 80.f, FMath::Min(GrabRange, TetherLength));
 	SavedAngularDamping = Body->GetAngularDamping();
 	Body->SetAngularDamping(FMath::Max(SavedAngularDamping, 4.f)); // чтобы не крутился волчком на «верёвке»
 	Body->WakeAllRigidBodies();

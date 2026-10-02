@@ -18,6 +18,7 @@
 #include "DarcHeavyObject.generated.h"
 
 class UStaticMeshComponent;
+class UBoxComponent;
 
 UCLASS()
 class DARK_API ADarcHeavyObject : public AActor, public IInteractable
@@ -31,6 +32,15 @@ public:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Visual")
 	FDarcVisualSpec VisualSpec;
 
+	/**
+	 * Физическое тело — невидимая коробка размера VisualSpec.Size (или габаритов модели карты).
+	 * Физика не зависит от коллизии модели: подходит любая модель, даже без простой коллизии
+	 * (раньше модель с ComplexAsSimple — генератор — просто не двигалась).
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Heavy")
+	TObjectPtr<UBoxComponent> Collision;
+
+	/** Модель — только картинка, без коллизии. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Heavy")
 	TObjectPtr<UStaticMeshComponent> Body;
 
@@ -84,6 +94,8 @@ protected:
 
 	void ServerCheck();
 	void ApplyCableDrag();
+	/** Подогнать коробку-тело под модель и поставить модель внутрь неё. */
+	void FitCollisionToVisual();
 
 	FTimerHandle CheckTimer;
 	bool bDelivered = false;

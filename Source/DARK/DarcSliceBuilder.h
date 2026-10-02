@@ -59,6 +59,8 @@ protected:
 	template <class T>
 	T* SpawnDeferred(const FVector& Location, const FRotator& Rotation = FRotator::ZeroRotator);
 	void Finish(AActor* Actor, const FVector& Location, const FRotator& Rotation = FRotator::ZeroRotator);
+	/** ВРЕМЕННО: название/подсказка под прицелом (DarcHintComponent). */
+	void AddHint(AActor* Actor, FName NameKey, FName HintKey = NAME_None);
 
 	bool bGeometryBuilt = false;
 

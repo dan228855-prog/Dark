@@ -39,6 +39,35 @@ UMaterialInterface* UDarcAssetSettings::FindMaterial(FName Slot)
 	return Found ? Found->LoadSynchronous() : nullptr;
 }
 
+UMaterialInterface* UDarcAssetSettings::GetTiledMaterial(FName Slot, UObject* Outer)
+{
+	UMaterialInterface* Material = Slot.IsNone() ? nullptr : FindMaterial(Slot);
+	if (!Material)
+	{
+		return nullptr;
+	}
+	float Current = 0.f;
+	if (!Material->GetScalarParameterValue(FHashedMaterialParameterInfo(FName(TEXT("WorldAligned"))), Current))
+	{
+		static TSet<FName> Reported;
+		if (!Reported.Contains(Slot))
+		{
+			Reported.Add(Slot);
+			UE_LOG(LogTemp, Warning, TEXT("DARC: material %s (slot %s) has no world-aligned UV - texture will stretch. Re-run Tools/darc_setup.py."),
+				*Material->GetName(), *Slot.ToString());
+		}
+		return Material;
+	}
+	const float* Tile = Get()->MaterialTiling.Find(Slot);
+	if (!Tile)
+	{
+		return Material;
+	}
+	UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Material, Outer);
+	Instance->SetScalarParameterValue(TEXT("TileSize"), *Tile);
+	return Instance;
+}
+
 USkeletalMesh* UDarcAssetSettings::FindCharacter(FName Slot)
 {
 	const TSoftObjectPtr<USkeletalMesh>* Found = Get()->Characters.Find(Slot);
@@ -126,21 +155,13 @@ void UDarcAssetSettings::ApplyVisual(UStaticMeshComponent* Component, FName Slot
 		}
 	}
 
-	if (UMaterialInterface* Material = MaterialSlot.IsNone() ? nullptr : FindMaterial(MaterialSlot))
+	// Материал слота — только серой коробке. У настоящей модели остаются её собственные
+	// материалы (раньше двери перекрашивались в «металлическую пластину» поверх своей текстуры).
+	if (UMaterialInterface* Material = (Mesh || MaterialSlot.IsNone()) ? nullptr : GetTiledMaterial(MaterialSlot, Component))
 	{
-		// Материалы из Tools/darc_setup.py накладывают текстуру «по миру» (для растянутых
-		// серых коробок). У настоящей модели свои UV — выравнивание выключаем, иначе текстура
-		// «поплывёт», когда объект двигается (дверь открывается).
-		UMaterialInterface* Applied = Material;
-		if (Mesh)
-		{
-			UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Material, Component);
-			Instance->SetScalarParameterValue(TEXT("WorldAligned"), 0.f);
-			Applied = Instance;
-		}
 		for (int32 i = 0; i < Component->GetNumMaterials(); ++i)
 		{
-			Component->SetMaterial(i, Applied);
+			Component->SetMaterial(i, Material);
 		}
 	}
 	else if (!Mesh)
@@ -235,13 +256,6 @@ void UDarcAssetSettings::EnsurePhysicsCollision(UStaticMeshComponent* Component,
 	const bool bHasSimpleCollision = BodySetup
 		&& BodySetup->AggGeom.GetElementCount() > 0
 		&& BodySetup->CollisionTraceFlag != ECollisionTraceFlag::CTF_UseComplexAsSimple;
-	UE_LOG(LogTemp, Warning, TEXT("DARC DIAG: mesh %s slot %s BodySetup=%d AggGeomElems=%d TraceFlag=%d bHasSimple=%d"),
-		Mesh ? *Mesh->GetName() : TEXT("null"),
-		*Spec.Slot.ToString(),
-		BodySetup != nullptr,
-		BodySetup ? BodySetup->AggGeom.GetElementCount() : -1,
-		BodySetup ? (int32)BodySetup->CollisionTraceFlag : -1,
-		bHasSimpleCollision);
 	if (bHasSimpleCollision)
 	{
 		return;

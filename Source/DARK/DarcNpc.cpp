@@ -70,7 +70,7 @@ void ADarcNpc::ApplyCharacterModel()
 	{
 		return; // нет модели — остаётся коробка
 	}
-	Body->SetSkeletalMesh(Mesh);
+	Body->SetSkeletalMeshAsset(Mesh);
 	// Рост — по высоте коробки, ноги — на пол. Модели обычно смотрят вдоль +Y, NPC — вдоль +X.
 	const FBox Bounds = Mesh->GetBounds().GetBox();
 	const float Height = FMath::Max(Bounds.GetSize().Z, 1.f);
