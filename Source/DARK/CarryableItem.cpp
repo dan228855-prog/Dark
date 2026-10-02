@@ -157,9 +157,9 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
             return;
         }
         // Нет рук с сокетом — перед камерой, в нижней правой части экрана.
-        if (UCameraComponent* Camera = Character->FindComponentByClass<UCameraComponent>())
+        if (UCameraComponent* CameraComp = Character->FindComponentByClass<UCameraComponent>())
         {
-            AttachToComponent(Camera, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+            AttachToComponent(CameraComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
             SetActorRelativeLocation(FirstPersonHoldOffset);
             SetActorRelativeRotation(FirstPersonHoldRotation);
             return;
