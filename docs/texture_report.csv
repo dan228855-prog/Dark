@@ -248,6 +248,17 @@ Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_diff_4k.jpg,�
 Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_disp_4k.png,уже в проекте,/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_disp_4k
 Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_nor_gl_4k.exr,уже в проекте,/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_nor_gl_4k
 Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_rough_4k.jpg,уже в проекте,/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_rough_4k
+T_ao_rotDn,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_ao_rotDn
+T_tex_base0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base0
+T_tex_base1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base1
+T_tex_base2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base2
+T_tex_base3,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base3
+T_tex_base4,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base4
+T_tex_base5,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base5
+T_tex_base6,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base6
+T_tex_dish0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish0
+T_tex_dish1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish1
+T_tex_dish2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish2
 T_komputer_komplekt_001_metallicRoughness,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/072e7111ef104bc4a62bd66dc9edf42d/textures/T_komputer_komplekt_001_metallicRoughness
 T_Asphalt010,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Asphalt010_4K_JPG/T_Asphalt010
 T_Asphalt010_4K_JPG_Displacement,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Asphalt010_4K_JPG/T_Asphalt010_4K_JPG_Displacement
@@ -297,17 +308,6 @@ T_IndoorEnvironmentHDRI015_12K_HDR,роль не распознана по им�
 T_IndoorEnvironmentHDRI015_12K_TONEMAPPED,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/IndoorEnvironmentHDRI015_12K/T_IndoorEnvironmentHDRI015_12K_TONEMAPPED
 T_ManholeCover05_4K_Height,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/ManholeCover05_4K/T_ManholeCover05_4K_Height
 T_ManholeCover05_4K_Mask,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/ManholeCover05_4K/T_ManholeCover05_4K_Mask
-T_ao_rotDn,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_ao_rotDn
-T_tex_base0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base0
-T_tex_base1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base1
-T_tex_base2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base2
-T_tex_base3,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base3
-T_tex_base4,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base4
-T_tex_base5,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base5
-T_tex_base6,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base6
-T_tex_dish0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish0
-T_tex_dish1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish1
-T_tex_dish2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish2
 T_metal_plate_disp_4k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/metal_plate_4k_blend/textures/T_metal_plate_disp_4k
 T_NightEnvironmentHDRI008,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/NightEnvironmentHDRI008_12K/T_NightEnvironmentHDRI008
 T_NightEnvironmentHDRI008_12K_HDR,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/NightEnvironmentHDRI008_12K/T_NightEnvironmentHDRI008_12K_HDR
@@ -339,45 +339,45 @@ T_4K_walllpaper_11_displacement,роль не распознана по имен
 T_4K_walllpaper_11_specular,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/wallpaper_11_4K/wallpaper_11_4K/T_4K_walllpaper_11_specular
 T_weathered_peeling_timber_disp_4k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/weathered_peeling_timber_4k_blend/textures/T_weathered_peeling_timber_disp_4k
 T_white_rough_plaster_disp_4k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_disp_4k
-набор Ekran_2,материал: BaseColor,/Game/DARC/Imported/Materials/M_Ekran_2
-набор komputer_komplekt_001,материал: BaseColor/Normal,/Game/DARC/Imported/Materials/M_komputer_komplekt_001
-набор Armstrong,материал: AO/BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Armstrong
-набор Asphalt010_4K_JPG,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Asphalt010_4K_JPG
-набор asphalt_02,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_asphalt_02
-набор Material_117_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_Material_117_A
-набор Material_346_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_Material_346_A
-набор Material_428_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_Material_428_A
-набор T,материал: AO/BaseColor/Gloss/Metallic/Roughness,/Game/DARC/Imported/Materials/M_T
-набор Bark001_4K_JPG,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Bark001_4K_JPG
-набор brick_wall_006,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_brick_wall_006
-набор Carpet012_4K_JPG,материал: AO/BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Carpet012_4K_JPG
-набор concrete_layers,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_concrete_layers
-набор concrete_wall_004,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_concrete_wall_004
-набор concrete_wall_008,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_concrete_wall_008
-набор corrugated_iron_02,материал: BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_corrugated_iron_02
-набор denim_fabric_06,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_denim_fabric_06
-набор diagonal_parquet,материал: AO/BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_diagonal_parquet
-набор fabric_leather_01,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_fabric_leather_01
-набор floor_tiles_02,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_floor_tiles_02
-набор forest_leaves_02,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_forest_leaves_02
-набор forest_leaves_03,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_forest_leaves_03
-набор Ground074_4K_JPG,материал: AO/BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Ground074_4K_JPG
-набор Ground108_4K_JPG,материал: AO/BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Ground108_4K_JPG
-набор ManholeCover05_4K,материал: BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_ManholeCover05_4K
-набор metal_plate,материал: BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_metal_plate
-набор OldIron01_4K,материал: BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_OldIron01_4K
-набор old_linoleum_flooring_01,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_old_linoleum_flooring_01
-набор Onyx015_4K_JPG,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_Onyx015_4K_JPG
-набор oriented_strand_board,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_oriented_strand_board
-набор painted_plaster_wall,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_painted_plaster_wall
-набор peeling_painted_wall,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_peeling_painted_wall
-набор Poliigon_GrassPatchyGround_4585,материал: AO/BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_Poliigon_GrassPatchyGround_4585
-набор ribbed_corduroy,материал: BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_ribbed_corduroy
-набор rock_face_04,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_rock_face_04
-набор rubber_tiles,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_rubber_tiles
-набор rusty_chain,материал: AO/BaseColor/Metallic/Normal/Roughness,/Game/DARC/Imported/Materials/M_rusty_chain
-набор rusty_metal_05,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_rusty_metal_05
-набор sparse_grass,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_sparse_grass
-набор 4K_walllpaper_11,материал: AO/BaseColor/Normal,/Game/DARC/Imported/Materials/M_4K_walllpaper_11
-набор weathered_peeling_timber,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_weathered_peeling_timber
-набор white_rough_plaster,материал: BaseColor/Normal/Roughness,/Game/DARC/Imported/Materials/M_white_rough_plaster
+набор Ground074_4K_JPG,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Ground074_4K_JPG
+набор corrugated_iron_02,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_corrugated_iron_02
+набор Armstrong,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Armstrong
+набор painted_plaster_wall,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_painted_plaster_wall
+набор concrete_wall_008,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_concrete_wall_008
+набор floor_tiles_02,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_floor_tiles_02
+набор Poliigon_GrassPatchyGround_4585,материал: AO/BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Poliigon_GrassPatchyGround_4585
+набор metal_plate,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_metal_plate
+набор Ekran_2,материал: BaseColor — полный граф,/Game/DARC/Imported/Materials/M_Ekran_2
+набор komputer_komplekt_001,материал: BaseColor/Normal — полный граф,/Game/DARC/Imported/Materials/M_komputer_komplekt_001
+набор Asphalt010_4K_JPG,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Asphalt010_4K_JPG
+набор asphalt_02,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_asphalt_02
+набор Material_117_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Material_117_A
+набор Material_346_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Material_346_A
+набор Material_428_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Material_428_A
+набор T,материал: AO/BaseColor/Gloss/Metallic/Roughness — полный граф,/Game/DARC/Imported/Materials/M_T
+набор Bark001_4K_JPG,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Bark001_4K_JPG
+набор brick_wall_006,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_brick_wall_006
+набор Carpet012_4K_JPG,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Carpet012_4K_JPG
+набор concrete_layers,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_concrete_layers
+набор concrete_wall_004,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_concrete_wall_004
+набор denim_fabric_06,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_denim_fabric_06
+набор diagonal_parquet,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_diagonal_parquet
+набор fabric_leather_01,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_fabric_leather_01
+набор forest_leaves_02,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_forest_leaves_02
+набор forest_leaves_03,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_forest_leaves_03
+набор Ground108_4K_JPG,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Ground108_4K_JPG
+набор ManholeCover05_4K,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_ManholeCover05_4K
+набор OldIron01_4K,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_OldIron01_4K
+набор old_linoleum_flooring_01,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_old_linoleum_flooring_01
+набор Onyx015_4K_JPG,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Onyx015_4K_JPG
+набор oriented_strand_board,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_oriented_strand_board
+набор peeling_painted_wall,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_peeling_painted_wall
+набор ribbed_corduroy,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_ribbed_corduroy
+набор rock_face_04,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rock_face_04
+набор rubber_tiles,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rubber_tiles
+набор rusty_chain,материал: AO/BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rusty_chain
+набор rusty_metal_05,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rusty_metal_05
+набор sparse_grass,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_sparse_grass
+набор 4K_walllpaper_11,материал: AO/BaseColor/Normal — полный граф,/Game/DARC/Imported/Materials/M_4K_walllpaper_11
+набор weathered_peeling_timber,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_weathered_peeling_timber
+набор white_rough_plaster,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_white_rough_plaster

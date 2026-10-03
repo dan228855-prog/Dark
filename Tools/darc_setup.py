@@ -316,7 +316,7 @@ def build_materials():
 # (серые стены — растянутые кубы, обычные UV растягивали текстуру на всю стену).
 # WorldAligned = 0 — та же проекция, но в осях самой коробки (LocalPosition × BoxSize, см):
 # у движущихся объектов (стойка, предметы) текстура едет вместе с ними и не растягивается.
-MATERIAL_GRAPH_VERSION = "3"
+MATERIAL_GRAPH_VERSION = "4"
 
 # lerp вместо «?:» и BoxSize.xyz: без неявных приведений float4→float3, на которых
 # компилятор шейдера мог спотыкаться (материал оставался пустым — «текстуры пропали»).
@@ -400,7 +400,13 @@ def build_material_graph(material, maps, simple=False):
     if not simple:
         # Локальные координаты коробки — для движущихся объектов (WorldAligned = 0).
         local_pos = mel.create_material_expression(material, unreal.MaterialExpressionLocalPosition, -1300, 80)
-        local_nrm = mel.create_material_expression(material, unreal.MaterialExpressionPreSkinnedNormal, -1300, 140)
+        # Нормаль в осях объекта: мировая нормаль → Transform World→Local.
+        # PreSkinnedNormal нельзя — он есть только в вершинном шейдере, в пиксельном
+        # материал не компилируется и в игре становится серой шашкой.
+        local_nrm = mel.create_material_expression(material, unreal.MaterialExpressionTransform, -1100, 140)
+        local_nrm.set_editor_property("transform_source_type", unreal.MaterialVectorCoordTransformSource.TRANSFORMSOURCE_WORLD)
+        local_nrm.set_editor_property("transform_type", unreal.MaterialVectorCoordTransform.TRANSFORM_LOCAL)
+        mel.connect_material_expressions(nrm, "", local_nrm, "")
         box_size = mel.create_material_expression(material, unreal.MaterialExpressionVectorParameter, -1300, 560)
         box_size.set_editor_property("parameter_name", "BoxSize")
         box_size.set_editor_property("default_value", unreal.LinearColor(100.0, 100.0, 100.0, 0.0))
@@ -614,6 +620,13 @@ def write_inventory():
 
 # ---------------------------------------------------------------------------
 def main():
+    # Во время игры (Play) редактор блокирует работу с ассетами: скрипт решит, что
+    # их нет, и полезет создавать заново (окна «перезаписать?», «материал используется»).
+    if unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor():
+        unreal.EditorDialog.show_message("D.A.R.C.", "Сначала останови игру (Stop / Esc), потом запусти скрипт ещё раз.",
+                                         unreal.AppMsgType.OK)
+        say("Скрипт остановлен: редактор в режиме игры (Play)")
+        return
     for path in [ROOT, ROOT + "/Maps", DATA_PATH, ROOT + "/Imported"]:
         if not eal.does_directory_exist(path):
             eal.make_directory(path)
