@@ -355,3 +355,23 @@ Room_ServerSector,SERVER ROOM
 Room_Records,RECORDS
 Room_Electrical,ELECTRICAL ROOM
 Room_Security,SECURITY
+Item_Battery,Battery
+Battery_Insert,Put the battery in the flashlight
+HUD_Battery,Flashlight {0}%
+HUD_BatteryDead,Flashlight dead — need a battery
+VoiceLog_Play,Play recording
+VoiceLog_Security_Speaker,Recording: night shift
+VoiceLog_Security_1,"Shift log. Eleven forty. Finished the second floor round, everything is locked."
+VoiceLog_Security_2,The server room fans are humming again. They cut its power on Monday — I watched them seal the panel myself.
+VoiceLog_Security_3,"Called the duty engineer. He said it's residual current, the capacitors. Well, he'd know."
+VoiceLog_Security_4,"The corridor lights keep flickering, nobody will replace them — the building is being written off anyway. I'll leave flashlight batteries in the tech room."
+VoiceLog_WorkRoom_Speaker,Recording: engineer
+VoiceLog_WorkRoom_1,"Note to self. Archive check before decommissioning, the rack in the server sector."
+VoiceLog_WorkRoom_2,"The inventory lists forty files. The disk has forty-one. The extra one has no job number, and it was created tonight."
+VoiceLog_WorkRoom_3,"Probably left over from the last inventory, and the date got reset on reboot. I'll recount tomorrow."
+VoiceLog_WorkRoom_4,And someone should check the fuses on the panel. One already blew when I powered the rack.
+VoiceLog_Records_Speaker,Recording: records clerk
+VoiceLog_Records_1,Reminder. They moved the decommission date again — third time this month. No reason given.
+VoiceLog_Records_2,The answering machine in the lobby says good night to me now. By name. I never set it up that way.
+VoiceLog_Records_3,"One of the technicians is probably joking. I wrote it in the log, let them sort it out."
+VoiceLog_Records_4,I'm leaving the archive keys at the security post. I'm not coming here at night anymore.

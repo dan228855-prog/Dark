@@ -61,6 +61,34 @@ public:
 	/** Esc: меню паузы. Закрыть — вернуть управление игре. */
 	void SetPauseMenuOpen(bool bOpen);
 
+	// --- Консоль разработчика (клавиша ` / Ё) для проверок, в том числе в собранной игре. ---
+	// В Shipping-сборке команды ничего не делают. Реализация — DarcDevConsole.cpp. Список — DarcHelp.
+	UFUNCTION(Exec) void DarcHelp();
+	UFUNCTION(Exec) void DarcGod();
+	UFUNCTION(Exec) void DarcHeal();
+	UFUNCTION(Exec) void DarcKill();
+	UFUNCTION(Exec) void DarcBattery(int32 Percent);
+	UFUNCTION(Exec) void DarcFear(float Value);
+	UFUNCTION(Exec) void DarcShadow();
+	UFUNCTION(Exec) void DarcTasks();
+	UFUNCTION(Exec) void DarcTask(const FString& TaskId);
+	UFUNCTION(Exec) void DarcMains(int32 On);
+	UFUNCTION(Exec) void DarcFact(const FString& Fact);
+	UFUNCTION(Exec) void DarcFacts();
+	UFUNCTION(Exec) void DarcRooms();
+	UFUNCTION(Exec) void DarcGoto(const FString& Room);
+	UFUNCTION(Exec) void DarcSkipIntro();
+	UFUNCTION(Exec) void DarcEndMission(int32 Success);
+	UFUNCTION(Exec) void DarcVoiceLogs();
+
+	/** Сервер: выполнить команду консоли разработчика (то, что меняет игру, решает сервер). */
+	UFUNCTION(Server, Reliable)
+	void Server_Dev(const FString& Command, const FString& Arg);
+
+	/** Ответ консоли: в консоль и на экран у этого игрока. */
+	UFUNCTION(Client, Reliable)
+	void Client_DevPrint(const FString& Text);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -122,6 +150,9 @@ protected:
 	/** Шанс появления тени за одну проверку (раз в 20 с), после первых 90 с на ногах. */
 	UPROPERTY(EditAnywhere, Category = "Shadow")
 	float ShadowChance = 0.12f;
+
+	/** Своя машина: поставить тень сейчас (с учётом недавнего шума рядом). */
+	void SpawnShadowNow();
 
 	void SubmitTerminalText(const FText& Text);
 	FText BuildTerminalScreenText() const;

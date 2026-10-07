@@ -2,6 +2,9 @@
 #include "DarcVitalsComponent.h"
 #include "DarcGameMode.h"
 #include "DarcGrabComponent.h"
+#include "DarcGameState.h"
+#include "DarcAssetSettings.h"
+#include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -90,6 +93,10 @@ void UDarcVitalsComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		return;
 	}
 	const bool bSprinting = IsSprinting();
+	if (Character->IsLocallyControlled())
+	{
+		TickFear(DeltaTime);
+	}
 
 	// Скорость — у сервера и у владельца одинаково (иначе движение дёргается). Пока тащим
 	// тяжёлое, скоростью управляет захват — не вмешиваемся.
@@ -136,7 +143,7 @@ void UDarcVitalsComponent::HandleLanded(const FHitResult& Hit)
 
 void UDarcVitalsComponent::ApplyHealthDamage(float Amount)
 {
-	if (bDead || Amount <= 0.f)
+	if (bDead || bGodMode || Amount <= 0.f)
 	{
 		return;
 	}
@@ -154,4 +161,33 @@ void UDarcVitalsComponent::ApplyHealthDamage(float Amount)
 			GM->KillPlayer(Pawn ? Pawn->GetController() : nullptr, nullptr);
 		}
 	}
+}
+
+float UDarcVitalsComponent::GetBaseFear() const
+{
+	return FMath::Clamp(0.05f + 0.07f * (ADarcGameState::GetMissionLevel(this) - 1), 0.f, 0.45f);
+}
+
+void UDarcVitalsComponent::AddFear(float Amount)
+{
+	Fear = FMath::Clamp(FMath::Max(Fear, GetBaseFear()) + Amount, 0.f, 1.f);
+}
+
+void UDarcVitalsComponent::TickFear(float DeltaTime)
+{
+	const float Base = GetBaseFear();
+	const float Before = FearLastTick; // испуг (AddFear) мог случиться между кадрами
+	// Отпускает медленно: от сильного испуга до спокойствия — около минуты.
+	Fear = Fear < Base ? Base : FMath::FInterpConstantTo(Fear, Base, DeltaTime, 0.012f);
+	// Перешёл черту — тяжёлое дыхание (у себя, «в голове»), не чаще раза в 20 с.
+	const float Now = GetWorld()->GetTimeSeconds();
+	if (Before < 0.6f && Fear >= 0.6f && Now >= NextBreathTime)
+	{
+		NextBreathTime = Now + 20.f;
+		if (USoundBase* Breath = UDarcAssetSettings::FindSoundVariant(TEXT("FearBreath")))
+		{
+			UGameplayStatics::PlaySound2D(this, Breath, 0.55f);
+		}
+	}
+	FearLastTick = Fear;
 }

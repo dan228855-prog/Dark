@@ -1,5 +1,6 @@
 // DarcFootstepComponent.cpp
 #include "DarcFootstepComponent.h"
+#include "DarcNoiseSubsystem.h"
 #include "DarcAssetSettings.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/PrimitiveComponent.h"
@@ -130,6 +131,11 @@ void UDarcFootstepComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 				DistanceSinceStep = 0.f;
 				const float Volume = FMath::GetMappedRangeValueClamped(FVector2D(100.f, 600.f), FVector2D(0.35f, 1.f), Speed);
 				PlayStep(bCrouched ? Volume * 0.4f : Volume);
+				// Бег слышно (тень тянется на шум), шаг и присед — нет.
+				if (Speed > 450.f && !bCrouched)
+				{
+					UDarcNoiseSubsystem::Report(this, Character->GetActorLocation(), 0.35f);
+				}
 			}
 		}
 		else

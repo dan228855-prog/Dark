@@ -14,6 +14,7 @@
 #include "DarcGameplayLibrary.h"
 #include "TimerManager.h"
 #include "DarcInventoryComponent.h"
+#include "DarcNoiseSubsystem.h"
 
 ACarryableItem::ACarryableItem()
 {
@@ -506,7 +507,38 @@ void ACarryableItem::BeginPlay()
 
     if (HasAuthority())
     {
+        // Удары физики — только на сервере (он же решает, был ли стук), звук — всем мультикастом.
+        Mesh->SetNotifyRigidBodyCollision(true);
+        Mesh->OnComponentHit.AddDynamic(this, &ACarryableItem::HandleMeshHit);
+        LastImpactTime = GetWorld()->GetTimeSeconds() + 2.f; // предметы оседают на старте уровня — без грохота
         SafeTransform = GetActorTransform();
         GetWorldTimerManager().SetTimer(FallCheckTimer, this, &ACarryableItem::CheckFellThrough, 1.f, true, 1.f);
     }
+}
+
+void ACarryableItem::HandleMeshHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    if (CurrentHolder || StowedBy || !Mesh->IsSimulatingPhysics())
+    {
+        return;
+    }
+    // Скорость вдоль нормали удара: катится/скользит по полу — не стучит, упал/врезался — стучит.
+    const float Speed = FMath::Abs(FVector::DotProduct(Mesh->GetPhysicsLinearVelocity(), Hit.ImpactNormal));
+    const float Now = GetWorld()->GetTimeSeconds();
+    if (Speed < 120.f || Now - LastImpactTime < 0.25f)
+    {
+        return;
+    }
+    LastImpactTime = Now;
+    // Громкость — от скорости удара и веса предмета (тяжёлое грохочет сильнее).
+    const float Mass = Mesh->GetMass();
+    const float Volume = FMath::GetMappedRangeValueClamped(FVector2D(120.f, 800.f), FVector2D(0.25f, 1.f), Speed)
+        * FMath::GetMappedRangeValueClamped(FVector2D(0.3f, 8.f), FVector2D(0.7f, 1.3f), Mass);
+    Multicast_Impact(FMath::Min(Volume, 1.3f));
+}
+
+void ACarryableItem::Multicast_Impact_Implementation(float Volume)
+{
+    UDarcAssetSettings::PlaySound(this, TEXT("ItemImpact"), GetActorLocation(), Volume);
+    UDarcNoiseSubsystem::Report(this, GetActorLocation(), FMath::Clamp(Volume * 0.7f, 0.f, 1.f));
 }

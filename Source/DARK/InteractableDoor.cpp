@@ -1,5 +1,6 @@
 // InteractableDoor.cpp
 #include "InteractableDoor.h"
+#include "DarcNoiseSubsystem.h"
 #include "DarcWorldMemorySubsystem.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/StaticMeshComponent.h"
@@ -136,6 +137,7 @@ FText AInteractableDoor::GetInteractionPrompt_Implementation() const
 void AInteractableDoor::Multicast_Pried_Implementation()
 {
     UDarcAssetSettings::PlaySound(this, TEXT("DoorPry"), GetActorLocation(), 1.f);
+    UDarcNoiseSubsystem::Report(this, GetActorLocation(), 1.f); // лом по двери слышно на весь этаж
 }
 
 void AInteractableDoor::OnRep_IsOpen()

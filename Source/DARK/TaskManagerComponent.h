@@ -66,6 +66,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Tasks")
 	TArray<FDarcTaskState> GetTasks() const { return Tasks; }
 
+	/** Сервер, консоль разработчика: завершить выезд успехом/провалом прямо сейчас. */
+	void DevFinishMission(bool bSucceeded) { FinishMission(bSucceeded); }
+
 	/** Задачи для показа в HUD: без скрытых, пока они не стали активными. */
 	UFUNCTION(BlueprintPure, Category = "Tasks")
 	TArray<FDarcTaskState> GetVisibleTasks() const;

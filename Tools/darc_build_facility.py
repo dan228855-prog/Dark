@@ -371,7 +371,8 @@ def choose_doors(f, runs):
 # Обход в серверную: из восточного коридора 2-го этажа через короб, лезть пригнувшись (Ctrl).
 # Решётку (DARC.Cover) ставит Tools/darc_add_mechanics.py.
 VENT_LINE, VENT_V0, VENT_V1, VENT_H, VENT_LEN = 2900.0, 1700.0, 1800.0, 100.0, 110.0
-WALL_GAPS = {(1, "u", VENT_LINE): (VENT_V0, VENT_V1, VENT_H)}
+# Автор 07.10.2026: вентиляции в выезде 1 нет (переносится на другой уровень) — проёмов нет.
+WALL_GAPS = {}
 
 
 def wall_gap_lintel(axis, line, g0, g1, gh, z, folder, label):
@@ -518,7 +519,7 @@ unreal.log("[DARC] step: walls")
 GRIDS = []
 for f in range(FLOORS):
     g = build_walls(f)
-    if f == 1:
+    if f == 1 and WALL_GAPS:
         build_vent_duct(f)
     GRIDS.append(g)
     z = zf(f)

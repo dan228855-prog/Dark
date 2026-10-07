@@ -1,5 +1,6 @@
 // DarcRemovableCover.cpp
 #include "DarcRemovableCover.h"
+#include "DarcNoiseSubsystem.h"
 #include "DarcTool.h"
 #include "DarcGameState.h"
 #include "DarcGameplayLibrary.h"
@@ -108,6 +109,7 @@ void ADarcRemovableCover::Remove(AActor* ByActor, bool bLoud)
 void ADarcRemovableCover::Multicast_Sound_Implementation(FName Slot, float Volume)
 {
 	UDarcAssetSettings::PlaySound(this, Slot, GetActorLocation(), Volume);
+	UDarcNoiseSubsystem::Report(this, GetActorLocation(), 0.6f * Volume);
 }
 
 FText ADarcRemovableCover::GetInteractionPrompt_Implementation() const

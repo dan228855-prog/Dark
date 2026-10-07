@@ -3,7 +3,10 @@
 // Здоровье — на сервере: урон (ApplyDamage / падение с высоты), медленное восстановление
 // после паузы, ноль — смерть через ADarcGameMode::KillPlayer. Выносливость — бег на Shift:
 // тратится на бегу, восстанавливается шагом/стоя; пусто — бег недоступен, пока не наберётся порог.
-// Статусы (страх, кровотечение, яд, инфекция) — только список для HUD: источников пока нет.
+// Статусы (кровотечение, яд, инфекция) — только список для HUD: источников пока нет.
+// Страх — у каждого игрока свой и только на его машине (как и «тень», которая его пугает):
+// базовый уровень растёт с номером уровня выезда, испуг поднимает его, потом медленно отпускает.
+// Урона страх не наносит — только мешает: тёмные края экрана, тяжёлое дыхание.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -69,6 +72,22 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Vitals")
 	void SetStatus(FName Status, bool bActive);
 
+	/** Сервер, консоль разработчика: без урона / полное здоровье и выносливость. */
+	bool bGodMode = false;
+	void DevRestore() { Health = MaxHealth; Stamina = MaxStamina; bExhausted = false; }
+
+	/** Своя машина: страх 0..1. */
+	float GetFear() const { return Fear; }
+
+	/** Своя машина: испуг (тень, шёпот). Страх не опускается ниже базового для уровня. */
+	void AddFear(float Amount);
+
+	/** Своя машина: поставить страх (консоль разработчика). */
+	void SetFear(float Value) { Fear = FMath::Clamp(Value, 0.f, 1.f); }
+
+	/** Базовый страх этого уровня выезда: 1 — почти спокойно, к 7 — заметно. */
+	float GetBaseFear() const;
+
 	/** Своя машина: зажат ли Shift. Отправляет на сервер. */
 	void SetSprintPressed(bool bPressed);
 
@@ -108,6 +127,11 @@ protected:
 
 	void ApplyHealthDamage(float Amount);
 	bool IsSprinting() const;
+
+	float Fear = 0.f;
+	float NextBreathTime = 0.f;
+	float FearLastTick = 0.f;
+	void TickFear(float DeltaTime);
 
 	float BaseWalkSpeed = -1.f;
 	bool bDead = false;

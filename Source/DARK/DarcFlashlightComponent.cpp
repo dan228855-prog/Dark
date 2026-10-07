@@ -11,6 +11,8 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "DARKCharacter.h"
+#include "DarcBatteryItem.h"
+#include "DarcInventoryComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
 
@@ -25,6 +27,7 @@ void UDarcFlashlightComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UDarcFlashlightComponent, bOn);
+	DOREPLIFETIME(UDarcFlashlightComponent, Charge);
 }
 
 void UDarcFlashlightComponent::BeginPlay()
@@ -172,10 +175,51 @@ void UDarcFlashlightComponent::Server_SetOn_Implementation(bool bNewOn)
 	{
 		bNewOn = false;
 	}
+	// Батарейка села — включение меняет её на запасную (если есть), иначе фонарь не зажигается.
+	if (bNewOn && Charge <= 0.f && !ServerUseSpareBattery())
+	{
+		UDarcAssetSettings::PlaySound(this, TEXT("FlashlightClick"), GetOwner()->GetActorLocation(), 0.4f);
+		bNewOn = false;
+	}
 	if (bOn != bNewOn)
 	{
 		bOn = bNewOn;
 		OnRep_On(); // на сервере OnRep сам не вызывается
+	}
+}
+
+bool UDarcFlashlightComponent::ServerUseSpareBattery()
+{
+	AActor* Wearer = GetOwner();
+	ADarcBatteryItem* Battery = Cast<ADarcBatteryItem>(ACarryableItem::FindItemHeldBy(Wearer));
+	if (const UDarcInventoryComponent* Inventory = Wearer ? Wearer->FindComponentByClass<UDarcInventoryComponent>() : nullptr)
+	{
+		for (int32 i = 0; i < UDarcInventoryComponent::NumSlots && !Battery; ++i)
+		{
+			Battery = Cast<ADarcBatteryItem>(Inventory->GetSlotItem(i));
+		}
+	}
+	if (!Battery)
+	{
+		return false;
+	}
+	Battery->ServerInsertInto(this);
+	return true;
+}
+
+void UDarcFlashlightComponent::ServerSetCharge(float NewCharge)
+{
+	if (GetOwner() && GetOwner()->HasAuthority())
+	{
+		Charge = FMath::Clamp(NewCharge, 0.f, 1.f);
+	}
+}
+
+void UDarcFlashlightComponent::FlickerFor(float Seconds)
+{
+	if (const UWorld* World = GetWorld())
+	{
+		FlickerUntil = FMath::Max(FlickerUntil, World->GetTimeSeconds() + Seconds);
 	}
 }
 
@@ -196,6 +240,17 @@ void UDarcFlashlightComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	const APawn* Pawn = Cast<APawn>(GetOwner());
+
+	// Сервер: включённый фонарь садит батарейку, в ноль — гаснет.
+	if (bOn && GetOwner() && GetOwner()->HasAuthority() && BatterySeconds > 0.f)
+	{
+		Charge = FMath::Max(0.f, Charge - DeltaTime / BatterySeconds);
+		if (Charge <= 0.f)
+		{
+			bOn = false;
+			OnRep_On();
+		}
+	}
 	PlaceInHand(); // один раз: фонарь в руке виден и выключенным
 	const bool bInHand = Housing && Housing->GetAttachSocketName() == FName(TEXT("hand_l"));
 	if (bInHand)
@@ -247,5 +302,15 @@ void UDarcFlashlightComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	{
 		Factor = FMath::Clamp(FMath::Pow(Hit.Distance / DimDistance, 1.5f), 0.12f, 1.f);
 	}
-	Spot->SetIntensity(Lumens * Factor);
+	// Батарейка ниже четверти — свет слабее и иногда проседает; рядом «тень» — мигает сильно.
+	const float Now = GetWorld()->GetTimeSeconds();
+	const bool bShadowFlicker = Now < FlickerUntil;
+	if (Now >= NextFlickerChange)
+	{
+		const float FlickerChance = bShadowFlicker ? 0.6f : (Charge < 0.25f ? FMath::Lerp(0.35f, 0.04f, Charge / 0.25f) : 0.f);
+		FlickerFactor = FMath::FRand() < FlickerChance ? FMath::FRandRange(bShadowFlicker ? 0.f : 0.15f, 0.5f) : 1.f;
+		NextFlickerChange = Now + FMath::FRandRange(0.04f, bShadowFlicker ? 0.12f : 0.25f);
+	}
+	const float ChargeFactor = Charge < 0.25f ? FMath::Lerp(0.4f, 1.f, Charge / 0.25f) : 1.f;
+	Spot->SetIntensity(Lumens * Factor * ChargeFactor * FlickerFactor);
 }

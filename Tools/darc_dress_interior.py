@@ -317,8 +317,6 @@ else:
             wall_decal(r, LEAKS, 130.0, 240.0, top - 120.0, "Leak")
             if has(r["name"], "Boiler", "Ventilation") and PUDDLE:
                 floor_decal(r, PUDDLE, 110.0, "Puddle")
-            if has(r["name"], "Generator", "Workshop", "Electrical", "UPS") and ok(LINE):
-                floor_decal(r, [LINE], 120.0, "FloorLine", margin=90.0)
         else:   # кабинеты, архивы
             for _ in range(decay):
                 floor_decal(r, PAPERS if k == "archive" else PAPERS + DIRT, 70.0, "Papers")

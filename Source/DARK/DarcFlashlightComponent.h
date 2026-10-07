@@ -1,6 +1,8 @@
 // DarcFlashlightComponent.h
 // Фонарик игрока (F): прожектор по направлению взгляда. Включение — через сервер
 // (Server RPC), состояние реплицируется — луч видят все игроки. Свет у каждой машины свой.
+// Батарейка: включённый фонарь садится (заряд считает сервер), ниже четверти — тускнеет и мигает,
+// в ноль — гаснет. Новая батарейка — подобрать её (E) или нажать F с батарейкой в инвентаре.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -24,6 +26,20 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Flashlight")
 	bool IsOn() const { return bOn; }
+
+	/** Заряд батарейки 0..1. */
+	UFUNCTION(BlueprintPure, Category = "Flashlight")
+	float GetCharge() const { return Charge; }
+
+	/** На сколько секунд включённого света хватает полной батарейки. */
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Flashlight")
+	float BatterySeconds = 420.f;
+
+	/** Сервер: поставить заряд (новая батарейка — 1). */
+	void ServerSetCharge(float NewCharge);
+
+	/** Своя машина: несколько секунд фонарь мигает (рядом «тень»). */
+	void FlickerFor(float Seconds);
 
 	/** Яркость (люмены), дальность (см) и угол конуса (градусы). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
@@ -69,6 +85,17 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_On)
 	bool bOn = false;
+
+	UPROPERTY(Replicated)
+	float Charge = 1.f;
+
+	/** Сервер: батарейка из инвентаря или из руки — в фонарь. false — батарейки нет. */
+	bool ServerUseSpareBattery();
+
+	/** Мигание: до какого времени и текущий множитель яркости (у каждой машины своё). */
+	float FlickerUntil = 0.f;
+	float FlickerFactor = 1.f;
+	float NextFlickerChange = 0.f;
 
 	UPROPERTY(Transient)
 	TObjectPtr<USpotLightComponent> Spot;

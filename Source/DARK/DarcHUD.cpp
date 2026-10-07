@@ -8,7 +8,6 @@
 #include "Interactable.h"
 #include "InteractionComponent.h"
 #include "DarcGrabComponent.h"
-#include "DarcHintComponent.h"
 #include "DarcFlashlightComponent.h"
 #include "DarcVitalsComponent.h"
 #include "DarcInventoryComponent.h"
@@ -111,6 +110,13 @@ void ADarcHUD::DrawHUD()
 		{
 			DrawHudTexture(TEXT("T_11_damage_vignette"), 0.f, 0.f, W, H, 0.f, 1.f, FLinearColor(1.f, 1.f, 1.f, Alpha));
 		}
+		// Страх: края экрана темнеют и медленно «дышат».
+		const float Fear = Vitals->GetFear();
+		const float FearAlpha = FMath::Clamp((Fear - 0.4f) * 1.3f, 0.f, 0.6f) * (0.85f + 0.15f * FMath::Sin(Now * 2.2f));
+		if (FearAlpha > 0.01f)
+		{
+			DrawHudTexture(TEXT("T_11_damage_vignette"), 0.f, 0.f, W, H, 0.f, 1.f, FLinearColor(0.f, 0.f, 0.f, FearAlpha));
+		}
 	}
 
 	// --- Прицел ---
@@ -135,11 +141,34 @@ void ADarcHUD::DrawHUD()
 		const float Stamina = Vitals->GetStamina01();
 		Bar(TEXT("T_03_stamina_frame"), TEXT("T_03_stamina_fill"), X, H - 40.f * S - StaminaH, StaminaW, StaminaH, 25.f / 1200.f, 1175.f / 1200.f, Stamina, Stamina > 0.99f ? 0.35f : 0.9f);
 
+		// Батарейка фонаря — справа от полосы здоровья: видна, пока фонарь горит или батарейка не полная.
+		if (const UDarcFlashlightComponent* Flashlight = Pawn->FindComponentByClass<UDarcFlashlightComponent>())
+		{
+			const float Charge = Flashlight->GetCharge();
+			if (Flashlight->IsOn() || Charge < 0.995f)
+			{
+				const bool bDead = Charge <= 0.f;
+				const bool bLow = Charge < 0.25f;
+				const float Blink = bLow ? 0.55f + 0.45f * FMath::Abs(FMath::Sin(Now * 3.f)) : 0.85f;
+				const FText Label = bDead ? UDarcGameplayLibrary::UIText(TEXT("HUD_BatteryDead"))
+					: FText::Format(UDarcGameplayLibrary::UIText(TEXT("HUD_Battery")), FText::AsNumber(FMath::CeilToInt(Charge * 100.f)));
+				DrawTextLine(Label, X + HealthW + 14.f * S, HealthY + HealthH * 0.2f,
+					bLow ? FLinearColor(1.f, 0.45f, 0.3f, Blink) : FLinearColor(1.f, 0.92f, 0.7f, Blink), 0.75f);
+			}
+		}
+
 		static const TMap<FName, FName> StatusIcons = {
 			{ TEXT("Fear"), TEXT("T_04_status_1_fear") }, { TEXT("Bleeding"), TEXT("T_04_status_2_bleeding") },
 			{ TEXT("Poison"), TEXT("T_04_status_3_poison") }, { TEXT("Infection"), TEXT("T_04_status_4_infection") } };
 		float IconX = X;
 		const float Icon = 40.f * S;
+		// Страх — свой у каждого игрока (не из серверного списка статусов).
+		if (Vitals->GetFear() > 0.35f)
+		{
+			DrawHudTexture(TEXT("T_04_status_1_fear"), IconX, HealthY - Icon - 6.f * S, Icon, Icon, 0.f, 1.f,
+				FLinearColor(1.f, 1.f, 1.f, FMath::Clamp((Vitals->GetFear() - 0.35f) * 4.f, 0.3f, 0.95f)));
+			IconX += Icon + 6.f * S;
+		}
 		for (const FName Status : Vitals->GetStatuses())
 		{
 			if (const FName* Texture = StatusIcons.Find(Status))
@@ -166,13 +195,7 @@ void ADarcHUD::DrawHUD()
 			DrawTextLine(FText::AsNumber(i + 1), X + 8.f * S, Y + 4.f * S, FLinearColor(1.f, 1.f, 1.f, 0.6f), 0.7f);
 			if (const ACarryableItem* Item = Inventory->GetSlotItem(i))
 			{
-				FText Label = Item->ItemName;
-				if (Label.IsEmpty())
-				{
-					const UDarcHintComponent* Hint = Item->FindComponentByClass<UDarcHintComponent>();
-					Label = Hint ? Hint->GetDisplayText() : FText::GetEmpty();
-				}
-				DrawTextLine(Label, X + Slot * 0.5f, Y + Slot * 0.42f, FLinearColor(1.f, 0.92f, 0.7f, bActive ? 1.f : 0.7f), 0.62f, true);
+				DrawTextLine(Item->ItemName, X + Slot * 0.5f, Y + Slot * 0.42f, FLinearColor(1.f, 0.92f, 0.7f, bActive ? 1.f : 0.7f), 0.62f, true);
 			}
 		}
 		// Подсказка клавиш — вместе со списком задач (Tab прячет и её).
@@ -188,25 +211,6 @@ void ADarcHUD::DrawHUD()
 			const bool bRadio = ADarcTool::HasTool(Pawn, EDarcToolType::Radio);
 			DrawTextLine(UDarcGameplayLibrary::UIText(bRadio ? TEXT("Voice_Radio") : TEXT("Voice_Talking")),
 				W * 0.5f, Y - 26.f * S, FLinearColor(0.6f, 1.f, 0.65f, 0.95f), 0.8f, true);
-		}
-	}
-
-	// --- Название под прицелом (ВРЕМЕННО, см. DarcHintComponent.h) ---
-	if (PlayerOwner && Pawn)
-	{
-		FVector ViewLocation;
-		FRotator ViewRotation;
-		PlayerOwner->GetPlayerViewPoint(ViewLocation, ViewRotation);
-		FHitResult Hit;
-		FCollisionQueryParams Params(SCENE_QUERY_STAT(DarcHintTrace), false, Pawn);
-		if (GetWorld()->LineTraceSingleByChannel(Hit, ViewLocation, ViewLocation + ViewRotation.Vector() * 350.f, ECC_Visibility, Params))
-		{
-			const UDarcHintComponent* Hint = Hit.GetActor() ? Hit.GetActor()->FindComponentByClass<UDarcHintComponent>() : nullptr;
-			const FText Label = Hint ? Hint->GetDisplayText() : FText::GetEmpty();
-			if (!Label.IsEmpty())
-			{
-				DrawTextLine(Label, W * 0.5f, H * 0.5f - 40.f, FLinearColor(1.f, 0.92f, 0.7f, 0.95f), 1.f, true);
-			}
 		}
 	}
 

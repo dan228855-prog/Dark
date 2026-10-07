@@ -98,6 +98,7 @@ void UTaskManagerComponent::StartMission(UDarcMissionDefinition* Mission, int32 
 	bMissionRunning = true;
 	if (ADarcGameState* GameState = Cast<ADarcGameState>(GetOwner()))
 	{
+		GameState->MissionLevel = FMath::Max(1, Mission->LevelIndex);
 		GameState->SetMissionPhase(EMissionPhase::InProgress);
 	}
 

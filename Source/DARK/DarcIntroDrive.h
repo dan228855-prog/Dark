@@ -207,6 +207,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Car")
 	bool IsRiding() const { return RideStartTime > 0.f && !bArrived; }
 
+	/** Сервер, консоль разработчика: пропустить поездку — все сразу выходят у здания. */
+	void DevSkipRide()
+	{
+		if (HasAuthority() && !bArrived)
+		{
+			bArrived = true;
+			OnRep_Arrived();
+		}
+	}
+
 	/** Куда тянуть кисть водителя (мировые координаты): обод руля слева (-1) / справа (+1). */
 	FVector GetHandGrip(float Side) const;
 

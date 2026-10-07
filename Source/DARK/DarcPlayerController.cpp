@@ -11,6 +11,8 @@
 #include "DarcVitalsComponent.h"
 #include "DarcInventoryComponent.h"
 #include "DarcShadowFigure.h"
+#include "DarcNoiseSubsystem.h"
+#include "DarcGameState.h"
 #include "DarcTool.h"
 #include "DarcAssetSettings.h"
 #include "GameFramework/Character.h"
@@ -73,10 +75,35 @@ void ADarcPlayerController::MaybeSpawnShadow()
 	{
 		return;
 	}
-	if (FMath::FRand() < ShadowChance)
+	// Чем дальше уровень — тем чаще; испуганному мерещится чаще; шум рядом её притягивает.
+	const int32 Level = ADarcGameState::GetMissionLevel(this);
+	const UDarcVitalsComponent* Vitals = MyPawn->FindComponentByClass<UDarcVitalsComponent>();
+	float Chance = ShadowChance * (1.f + 0.35f * (Level - 1)) + (Vitals ? Vitals->GetFear() * 0.1f : 0.f);
+	FVector NoiseLocation;
+	float Loudness = 0.f;
+	if (const UDarcNoiseSubsystem* Noise = GetWorld()->GetSubsystem<UDarcNoiseSubsystem>())
 	{
-		Shadow = ADarcShadowFigure::TrySpawnNear(this);
+		Noise->FindRecent(MyPawn->GetActorLocation(), 2500.f, 25.f, NoiseLocation, Loudness);
 	}
+	Chance += Loudness * 0.3f;
+	if (FMath::FRand() < Chance)
+	{
+		SpawnShadowNow();
+	}
+}
+
+void ADarcPlayerController::SpawnShadowNow()
+{
+	const APawn* MyPawn = GetPawn();
+	if (!MyPawn || Shadow.IsValid())
+	{
+		return;
+	}
+	FVector NoiseLocation;
+	float Loudness = 0.f;
+	const UDarcNoiseSubsystem* Noise = GetWorld()->GetSubsystem<UDarcNoiseSubsystem>();
+	const bool bNoise = Noise && Noise->FindRecent(MyPawn->GetActorLocation(), 2500.f, 25.f, NoiseLocation, Loudness);
+	Shadow = ADarcShadowFigure::TrySpawnNear(this, bNoise ? &NoiseLocation : nullptr);
 }
 
 void ADarcPlayerController::CopyTemplateInputMappings()

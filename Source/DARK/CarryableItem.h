@@ -161,5 +161,14 @@ protected:
     // Где предмет точно лежал на полу (начало уровня / последнее место, откуда его подняли).
     FTransform SafeTransform;
     FTimerHandle FallCheckTimer;
+
+    // Удар о пол/стену (упал, брошен, сбит): сервер решает, всем — звук и шум (тень тянется к шуму).
+    UFUNCTION()
+    void HandleMeshHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_Impact(float Volume);
+
+    float LastImpactTime = -10.f;
     static constexpr float FellThroughZ = -300.f;
 };

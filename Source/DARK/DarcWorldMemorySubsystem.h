@@ -283,6 +283,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "WorldMemory|Campaign")
 	bool HasCampaignFact(FName Fact) const { return CampaignFacts.Contains(Fact); }
+	const TSet<FName>& GetCampaignFacts() const { return CampaignFacts; }
 
 	/** Смертей команды за всю кампанию — на них завязана эскалация (логи, поведение духа). */
 	UFUNCTION(BlueprintPure, Category = "WorldMemory|Campaign")

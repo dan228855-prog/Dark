@@ -3,6 +3,8 @@
 #include "TaskManagerComponent.h"
 #include "RareEventManagerComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "Components/PrimitiveComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
@@ -17,6 +19,14 @@ void ADarcGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ADarcGameState, MissionPhase);
+    DOREPLIFETIME(ADarcGameState, MissionLevel);
+}
+
+int32 ADarcGameState::GetMissionLevel(const UObject* WorldContextObject)
+{
+    const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr;
+    const ADarcGameState* GS = World ? World->GetGameState<ADarcGameState>() : nullptr;
+    return GS ? FMath::Max(1, GS->MissionLevel) : 1;
 }
 
 void ADarcGameState::SetMissionPhase(EMissionPhase NewPhase)

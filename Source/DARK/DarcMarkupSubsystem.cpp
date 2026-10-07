@@ -1,8 +1,9 @@
 // DarcMarkupSubsystem.cpp
 #include "DarcMarkupSubsystem.h"
+#include "DarcBatteryItem.h"
+#include "DarcVoiceLog.h"
 #include "DarcAssetSettings.h"
 #include "DarcGameplayLibrary.h"
-#include "DarcHintComponent.h"
 #include "InteractableDoor.h"
 #include "CarryableItem.h"
 #include "DarcFuseBox.h"
@@ -95,7 +96,7 @@ namespace DarcMarkup
 	int32 Priority(FName Type)
 	{
 		static const TArray<FName> Order = {
-			TEXT("Point"), TEXT("Room"), TEXT("Item"), TEXT("Keycard"), TEXT("Drive"), TEXT("Module"), TEXT("Fuse"), TEXT("Tool"),
+			TEXT("Point"), TEXT("Room"), TEXT("Item"), TEXT("Keycard"), TEXT("Drive"), TEXT("Module"), TEXT("Fuse"), TEXT("Battery"), TEXT("Tool"),
 			TEXT("Junction"), TEXT("Cover"),
 			TEXT("Door"), TEXT("Lamp"), TEXT("FuseBox"), TEXT("Generator"), TEXT("Heavy"), TEXT("Inlet"),
 			TEXT("Slot"), TEXT("Terminal"), TEXT("Keypad"), TEXT("CardReader"), TEXT("Station"), TEXT("Npc"), TEXT("Anchor") };
@@ -373,8 +374,6 @@ void UDarcMarkupSubsystem::ConvertMarkup()
 	for (const FSpawned& Entry : Spawned)
 	{
 		Entry.Actor->FinishSpawning(Entry.Transform);
-		// ВРЕМЕННО: название/подсказка под прицелом (теги Name=Ключ, Hint=Ключ из ST_UI).
-		UDarcHintComponent::AddHint(Entry.Actor, Entry.Markup->GetName(TEXT("Name")), Entry.Markup->GetName(TEXT("Hint")));
 	}
 	UE_LOG(LogDarcMarkup, Log, TEXT("DARC markup: %d tagged actors, %d gameplay objects created"), All.Num(), Spawned.Num());
 }
@@ -410,6 +409,8 @@ AActor* UDarcMarkupSubsystem::SpawnFor(const FDarcMarkup& Markup, FTransform& Tr
 	else if (Is(TEXT("Anchor")))                           Class = ADarcRareEventAnchor::StaticClass();
 	else if (Is(TEXT("Room")))                             Class = ADarcRoomVolume::StaticClass();
 	else if (Is(TEXT("Tool")))                             Class = ADarcTool::StaticClass();
+	else if (Is(TEXT("Battery")))                          Class = ADarcBatteryItem::StaticClass();
+	else if (Is(TEXT("VoiceLog")))                         Class = ADarcVoiceLog::StaticClass();
 	else if (Is(TEXT("Junction")))                         Class = ADarcCableJunction::StaticClass();
 	else if (Is(TEXT("Cover")))                            Class = ADarcRemovableCover::StaticClass();
 	else if (Is(TEXT("Item")) || Is(TEXT("Keycard")) || Is(TEXT("Drive")) || Is(TEXT("Module")) || Is(TEXT("Fuse")))
@@ -532,6 +533,16 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Cover->Screws = FMath::Max(1, FMath::RoundToInt(M.GetFloat(TEXT("Screws"), Cover->Screws)));
 		Cover->TaskIdOnRemove = M.GetName(TEXT("Task"));
 		Cover->VisualSpec = CopyOf(Source);
+	}
+	else if (ADarcVoiceLog* Log = Cast<ADarcVoiceLog>(Actor))
+	{
+		Log->LogId = M.GetName(TEXT("Log"));
+		Log->NumLines = FMath::Max(1, FMath::RoundToInt(M.GetFloat(TEXT("Lines"), 1.f)));
+		Log->VisualSpec = CopyOf(Source);
+		if (Log->LogId.IsNone())
+		{
+			Warn(M, TEXT("VoiceLog without Log="));
+		}
 	}
 	else if (ADarcPowerLamp* Lamp = Cast<ADarcPowerLamp>(Actor))
 	{

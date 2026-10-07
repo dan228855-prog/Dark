@@ -20,7 +20,6 @@
 #include "DarcFuseBox.h"
 #include "DarcFuseItem.h"
 #include "DarcGameplayLibrary.h"
-#include "DarcHintComponent.h"
 #include "DarcBarrierGate.h"
 #include "DarcCablePlug.h"
 #include "Components/AudioComponent.h"
@@ -1007,7 +1006,11 @@ T* ADarcSliceBuilder::SpawnDeferred(const FVector& Location, const FRotator& Rot
 
 void ADarcSliceBuilder::AddHint(AActor* Actor, FName NameKey, FName HintKey)
 {
-	UDarcHintComponent::AddHint(Actor, NameKey, HintKey); // ВРЕМЕННО — см. DarcHintComponent.h
+	// Подсказок под прицелом больше нет (решение автора 07.10.2026); название остаётся у предметов — для инвентаря.
+	if (ACarryableItem* Item = Cast<ACarryableItem>(Actor); Item && !NameKey.IsNone() && Item->ItemName.IsEmpty())
+	{
+		Item->ItemName = UDarcGameplayLibrary::UIText(NameKey);
+	}
 }
 
 void ADarcSliceBuilder::Finish(AActor* Actor, const FVector& Location, const FRotator& Rotation)

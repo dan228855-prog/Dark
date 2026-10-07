@@ -1,5 +1,6 @@
 // DarcFuseBox.cpp
 #include "DarcFuseBox.h"
+#include "DarcNoiseSubsystem.h"
 #include "DarcAssetSettings.h"
 #include "Components/StaticMeshComponent.h"
 #include "DarcFuseItem.h"
@@ -245,6 +246,7 @@ void ADarcFuseBox::UpdateIndicators()
 void ADarcFuseBox::Multicast_FuseBlown_Implementation()
 {
 	UDarcAssetSettings::PlaySound(this, TEXT("FuseBlow"), GetActorLocation());
+	UDarcNoiseSubsystem::Report(this, GetActorLocation(), 0.8f);
 	OnFuseBlownFX();
 }
 

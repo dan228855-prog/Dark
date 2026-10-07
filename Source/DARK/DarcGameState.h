@@ -46,6 +46,13 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Mission")
     void SetMissionPhase(EMissionPhase NewPhase);
 
+    // Номер уровня выезда (1..7) — у всех машин: от него растут страх и частота «тени».
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Mission")
+    int32 MissionLevel = 1;
+
+    /** Номер уровня выезда в этом мире (1, если выезда нет). */
+    static int32 GetMissionLevel(const UObject* WorldContextObject);
+
     /** У каждого клиента, который слышит реплику, — HUD подписывается и показывает субтитр. */
     UPROPERTY(BlueprintAssignable, Category = "Subtitles")
     FOnDarcSubtitle OnSubtitle;
