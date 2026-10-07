@@ -127,11 +127,15 @@ void ADarcBaseCurator::BeginPlay()
 				}
 				Script.Append(Done->Return);
 			}
+			// Последствие — один раз: факт остаётся в кампании навсегда, а реплика звучит только
+			// при первом возвращении после него (отметка «<Факт>.Told»).
 			for (const TPair<FName, FName>& FactLine : ReturnFactLines)
 			{
-				if (Memory->HasCampaignFact(FactLine.Key))
+				const FName Told(*(FactLine.Key.ToString() + TEXT(".Told")));
+				if (Memory->HasCampaignFact(FactLine.Key) && !Memory->HasCampaignFact(Told))
 				{
 					Script.Add(FactLine.Value);
+					Memory->AddCampaignFact(Told);
 				}
 			}
 		}
