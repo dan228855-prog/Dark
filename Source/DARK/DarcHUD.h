@@ -9,6 +9,8 @@
 #include "GameFramework/HUD.h"
 #include "DarcHUD.generated.h"
 
+class UTexture2D;
+
 UCLASS()
 class DARK_API ADarcHUD : public AHUD
 {
@@ -23,6 +25,12 @@ protected:
 
 	void BindSubtitlesIfNeeded();
 	void DrawTextLine(const FText& Text, float X, float Y, const FLinearColor& Color, float Scale = 1.f, bool bCentered = false);
+
+	/** Картинка HUD по имени ассета (T_...), U0..U1 — какая часть по ширине. Нет ассета — ничего. */
+	void DrawHudTexture(FName Name, float X, float Y, float Width, float Height, float U0, float U1, const FLinearColor& Tint);
+
+	UPROPERTY(Transient)
+	TMap<FName, TObjectPtr<UTexture2D>> HudTextures;
 
 	struct FSubtitle
 	{

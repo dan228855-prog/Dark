@@ -57,6 +57,10 @@ protected:
 	void AddWallWithWindows(const FVector2D& A, const FVector2D& B, float Z0, float Z1, const TArray<float>& WindowCenters,
 		FName MaterialSlot, int32 LitEvery);
 	void ToggleBlinkLights();
+	/** Светящаяся надпись из String Table (вывески, таблички): читается и ночью. */
+	class UTextRenderComponent* AddSignText(const TCHAR* Key, const FVector& Location, float Size, const FColor& Color, const FRotator& Rotation);
+	/** Фасад: вывеска и фонарь над входом, настенные фонари на углах, бортик крыши — силуэт здания читается издалека. */
+	void BuildFacade();
 
 	// --- Игровые объекты (только сервер) ---
 	void BuildGameplay();

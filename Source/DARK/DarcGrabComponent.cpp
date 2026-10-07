@@ -163,13 +163,16 @@ void UDarcGrabComponent::ApplyTether(float DeltaTime)
 	}
 	Away /= Distance;
 
-	// Сопротивление нарастает от SoftStart до полной длины: движение «от предмета» гасится
-	// всё сильнее (плавно, как натягивающийся трос), к предмету и вбок — свободно.
+	// Сопротивление нарастает от SoftStart до полной длины: скорость «от предмета» (пятиться,
+	// таща его за собой) ограничивается всё сильнее, но не до нуля — до доли BackwardSpeedFactor
+	// от скорости с грузом. Раньше она гасилась полностью, и назад игрок почти не двигался.
+	// К предмету и вбок — свободно.
 	const float Tension = FMath::SmoothStep(0.f, 1.f, (Distance - SoftStart) / FMath::Max(TetherLength - SoftStart, 1.f));
 	const float Outward = FVector::DotProduct(Movement->Velocity, Away);
-	if (Outward > 0.f)
+	const float MaxOutward = Movement->MaxWalkSpeed * FMath::Lerp(1.f, BackwardSpeedFactor, Tension);
+	if (Outward > MaxOutward)
 	{
-		Movement->Velocity -= Away * Outward * Tension;
+		Movement->Velocity -= Away * (Outward - MaxOutward);
 	}
 	// Дальше полной длины (кадр, лаг, схватили издалека) — мягко подтягивает обратно.
 	if (Distance > TetherLength)

@@ -1,6 +1,7 @@
 // DarcSpiritCharacter.cpp
 #include "DarcSpiritCharacter.h"
 #include "DarcAssetSettings.h"
+#include "DarcGameUserSettings.h"
 #include "DarcFuseBox.h"
 #include "DarcGameState.h"
 #include "DarcPowerConsumerComponent.h"
@@ -45,12 +46,15 @@ void ADarcSpiritCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxisKey(EKeys::W, this, &ADarcSpiritCharacter::MoveForwardKey);
-	PlayerInputComponent->BindAxisKey(EKeys::S, this, &ADarcSpiritCharacter::MoveBackKey);
-	PlayerInputComponent->BindAxisKey(EKeys::D, this, &ADarcSpiritCharacter::MoveRightKey);
-	PlayerInputComponent->BindAxisKey(EKeys::A, this, &ADarcSpiritCharacter::MoveLeftKey);
-	PlayerInputComponent->BindAxisKey(EKeys::SpaceBar, this, &ADarcSpiritCharacter::MoveUpKey);
-	PlayerInputComponent->BindAxisKey(EKeys::LeftControl, this, &ADarcSpiritCharacter::MoveDownKey);
+	// Клавиши — те же, что игрок выбрал для ходьбы (вверх — прыжок, вниз — пригнуться).
+	const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get();
+	auto Key = [Settings](const TCHAR* Id, const FKey& Default) { return Settings ? Settings->GetKey(Id) : Default; };
+	PlayerInputComponent->BindAxisKey(Key(TEXT("MoveForward"), EKeys::W), this, &ADarcSpiritCharacter::MoveForwardKey);
+	PlayerInputComponent->BindAxisKey(Key(TEXT("MoveBack"), EKeys::S), this, &ADarcSpiritCharacter::MoveBackKey);
+	PlayerInputComponent->BindAxisKey(Key(TEXT("MoveRight"), EKeys::D), this, &ADarcSpiritCharacter::MoveRightKey);
+	PlayerInputComponent->BindAxisKey(Key(TEXT("MoveLeft"), EKeys::A), this, &ADarcSpiritCharacter::MoveLeftKey);
+	PlayerInputComponent->BindAxisKey(Key(TEXT("Jump"), EKeys::SpaceBar), this, &ADarcSpiritCharacter::MoveUpKey);
+	PlayerInputComponent->BindAxisKey(Key(TEXT("Crouch"), EKeys::LeftControl), this, &ADarcSpiritCharacter::MoveDownKey);
 	PlayerInputComponent->BindAxisKey(EKeys::MouseX, this, &ADarcSpiritCharacter::LookYaw);
 	PlayerInputComponent->BindAxisKey(EKeys::MouseY, this, &ADarcSpiritCharacter::LookPitch);
 }
@@ -62,8 +66,19 @@ void ADarcSpiritCharacter::MoveRightKey(float Value)   { AddMovementInput(FRotat
 void ADarcSpiritCharacter::MoveLeftKey(float Value)    { AddMovementInput(FRotationMatrix(GetControlRotation()).GetScaledAxis(EAxis::Y), -Value); }
 void ADarcSpiritCharacter::MoveUpKey(float Value)      { AddMovementInput(FVector::UpVector, Value); }
 void ADarcSpiritCharacter::MoveDownKey(float Value)    { AddMovementInput(FVector::UpVector, -Value); }
-void ADarcSpiritCharacter::LookYaw(float Value)        { AddControllerYawInput(Value); }
-void ADarcSpiritCharacter::LookPitch(float Value)      { AddControllerPitchInput(-Value); }
+// Чувствительность и инверсия — из настроек игрока.
+void ADarcSpiritCharacter::LookYaw(float Value)
+{
+	const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get();
+	AddControllerYawInput(Value * (Settings ? Settings->MouseSensitivity : 1.f));
+}
+
+void ADarcSpiritCharacter::LookPitch(float Value)
+{
+	const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get();
+	const float Scale = Settings ? Settings->MouseSensitivity * (Settings->bInvertMouseY ? -1.f : 1.f) : 1.f;
+	AddControllerPitchInput(-Value * Scale);
+}
 
 void ADarcSpiritCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

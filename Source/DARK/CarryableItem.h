@@ -32,6 +32,24 @@ public:
     UPROPERTY(ReplicatedUsing = OnRep_Holder, BlueprintReadOnly, Category = "Carry")
     AActor* CurrentHolder = nullptr;
 
+    // Предмет убран в инвентарь игрока (слоты 1–4): не в руке, скрыт, без коллизии, едет с игроком.
+    // CurrentHolder при этом пуст — механики «что в руках» убранный предмет не видят.
+    UPROPERTY(ReplicatedUsing = OnRep_Stowed, BlueprintReadOnly, Category = "Carry")
+    AActor* StowedBy = nullptr;
+
+    // Можно ли убрать предмет в инвентарь (вилка на проводе — нельзя).
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Carry")
+    bool bCanStow = true;
+
+    // Название в слоте инвентаря (ключ String Table из разметки Name=...).
+    UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Carry|Text")
+    FText ItemName;
+
+    // Сервер: убрать предмет из руки держателя в инвентарь / достать обратно в руку / выбросить из инвентаря.
+    void ServerStow(AActor* ToActor);
+    void ServerUnstowTo(AActor* ToActor);
+    void ServerDropFromStow(AActor* ByActor);
+
     // Имя сокета на скелете игрока, куда крепится предмет при переноске.
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FName CarrySocketName = TEXT("hand_r_socket");
@@ -57,6 +75,11 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
     FRotator FirstPersonGripRotation = FRotator::ZeroRotator;
+
+    // Хват в осях кости ладони: FirstPersonGripOffset/Rotation — положение и поворот относительно
+    // кости, а не от взгляда в момент подбора (карту выдают, пока игрок в машине, — вид был другой).
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Carry")
+    bool bGripInBoneSpace = false;
 
     // ID предмета для WorldMemory. Если пусто — имя актора в уровне.
     // Процедурный генератор и заспавненные в рантайме предметы обязаны задавать его явно.
@@ -90,6 +113,11 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Carry")
     void ForceDrop();
 
+    // Сервер: вытолкнуть предмет из устройства в мир (физический предмет в точке Location со
+    // скоростью Velocity) — например, носитель из разъёма после копирования.
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Carry")
+    void ServerEjectTo(const FVector& Location, const FVector& Velocity, AActor* ByActor);
+
 protected:
     virtual void BeginPlay() override;
     virtual void OnRep_AttachmentReplication() override;
@@ -100,6 +128,12 @@ protected:
 
     UFUNCTION()
     void OnRep_Holder();
+
+    UFUNCTION()
+    void OnRep_Stowed();
+
+    /** Убранный предмет: спрятать, выключить физику/коллизию, прицепить к игроку. */
+    void ApplyStowedState();
 
     // Сюда в Blueprint добавляете физическую attach-логику / выключение физики при подборе и т.п.
     UFUNCTION(BlueprintImplementableEvent, Category = "Carry")
@@ -115,5 +149,17 @@ protected:
     FTransform PickUpTransform;
 
     // Отпустить предмет на сервере и записать перемещение в память мира.
+    // Из руки игрока предмет выпадает перед ним (с физикой).
     void ServerRelease(AActor* ByActor);
+
+    // Поставить предмет перед игроком (на полшага, чуть выше пояса, не в стену).
+    void PlaceInFrontOf(const APawn* Pawn);
+
+    // Сервер, раз в секунду: свободный предмет провалился под карту — вернуть на место.
+    void CheckFellThrough();
+
+    // Где предмет точно лежал на полу (начало уровня / последнее место, откуда его подняли).
+    FTransform SafeTransform;
+    FTimerHandle FallCheckTimer;
+    static constexpr float FellThroughZ = -300.f;
 };

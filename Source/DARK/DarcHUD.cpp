@@ -10,6 +10,10 @@
 #include "DarcGrabComponent.h"
 #include "DarcHintComponent.h"
 #include "DarcFlashlightComponent.h"
+#include "DarcVitalsComponent.h"
+#include "DarcInventoryComponent.h"
+#include "DarcTool.h"
+#include "Engine/Texture2D.h"
 #include "GameFramework/PlayerController.h"
 #include "TaskManagerComponent.h"
 #include "CanvasItem.h"
@@ -58,6 +62,28 @@ void ADarcHUD::DrawTextLine(const FText& Text, float X, float Y, const FLinearCo
 	Canvas->DrawItem(Item);
 }
 
+void ADarcHUD::DrawHudTexture(FName Name, float X, float Y, float Width, float Height, float U0, float U1, const FLinearColor& Tint)
+{
+	// Картинки HUD — из RawAssets/Textures/UI/DARC_HUD (импорт в /Game/DARC/Imported/Textures/UI/DARC_HUD).
+	TObjectPtr<UTexture2D>* Cached = HudTextures.Find(Name);
+	if (!Cached)
+	{
+		// Имя с путём («Guard_Portrait/T_Guard_Front») — из UI-пака D.A.R.C., иначе — из DARC_HUD.
+		const FString Key = Name.ToString();
+		FString Folder = TEXT("DARC_HUD"), Asset = Key;
+		if (Key.Split(TEXT("/"), &Folder, &Asset))
+		{
+			Folder = TEXT("DARC_UI_Pack/") + Folder;
+		}
+		const FString Path = FString::Printf(TEXT("/Game/DARC/Imported/Textures/UI/%s/%s.%s"), *Folder, *Asset, *Asset);
+		Cached = &HudTextures.Add(Name, LoadObject<UTexture2D>(nullptr, *Path));
+	}
+	if (*Cached && Width > 0.5f && Height > 0.5f)
+	{
+		DrawTexture(*Cached, X, Y, Width, Height, U0, 0.f, U1 - U0, 1.f, Tint, BLEND_Translucent);
+	}
+}
+
 void ADarcHUD::DrawHUD()
 {
 	Super::DrawHUD();
@@ -72,8 +98,98 @@ void ADarcHUD::DrawHUD()
 	const float Now = GetWorld()->GetTimeSeconds();
 	APawn* Pawn = GetOwningPawn();
 
+	const float S = H / 1080.f; // элементы HUD нарисованы под 1080p
+
+	// --- Урон: вспышка по краям экрана, при малом здоровье — постоянная тень ---
+	const UDarcVitalsComponent* Vitals = Pawn ? Pawn->FindComponentByClass<UDarcVitalsComponent>() : nullptr;
+	if (Vitals)
+	{
+		const float Flash = FMath::Clamp(1.f - Vitals->GetSecondsSinceDamage() / 1.2f, 0.f, 1.f);
+		const float LowHealth = FMath::Clamp((0.5f - Vitals->GetHealth01()) * 1.2f, 0.f, 0.6f);
+		const float Alpha = FMath::Max(Flash * 0.85f, LowHealth);
+		if (Alpha > 0.01f)
+		{
+			DrawHudTexture(TEXT("T_11_damage_vignette"), 0.f, 0.f, W, H, 0.f, 1.f, FLinearColor(1.f, 1.f, 1.f, Alpha));
+		}
+	}
+
 	// --- Прицел ---
-	DrawRect(FLinearColor(1.f, 1.f, 1.f, 0.6f), W * 0.5f - 2.f, H * 0.5f - 2.f, 4.f, 4.f);
+	const float Cross = 22.f * S;
+	DrawHudTexture(TEXT("T_01_crosshair"), W * 0.5f - Cross * 0.5f, H * 0.5f - Cross * 0.5f, Cross, Cross, 0.f, 1.f, FLinearColor(1.f, 1.f, 1.f, 0.7f));
+
+	// --- Здоровье, выносливость, статусы (слева внизу) ---
+	if (Vitals)
+	{
+		const float X = 32.f * S;
+		// Полоса = рамка + заливка по доле (кадр заливки обрезается справа).
+		auto Bar = [this](FName Frame, FName Fill, float BX, float BY, float BW, float BH, float FillU0, float FillU1, float Fraction, float Alpha)
+		{
+			DrawHudTexture(Fill, BX + BW * FillU0, BY, BW * (FillU1 - FillU0) * Fraction, BH, FillU0, FillU0 + (FillU1 - FillU0) * Fraction, FLinearColor(1.f, 1.f, 1.f, Alpha));
+			DrawHudTexture(Frame, BX, BY, BW, BH, 0.f, 1.f, FLinearColor(1.f, 1.f, 1.f, Alpha));
+		};
+		const float HealthW = 360.f * S, HealthH = HealthW * 150.f / 1200.f;
+		const float StaminaW = 300.f * S, StaminaH = StaminaW * 120.f / 1200.f;
+		const float HealthY = H - 40.f * S - StaminaH - 8.f * S - HealthH;
+		Bar(TEXT("T_02_health_frame"), TEXT("T_02_health_fill"), X, HealthY, HealthW, HealthH, 30.f / 1200.f, 1170.f / 1200.f, Vitals->GetHealth01(), 0.9f);
+		// Выносливость полная — полоса приглушена, чтобы не мозолила глаза.
+		const float Stamina = Vitals->GetStamina01();
+		Bar(TEXT("T_03_stamina_frame"), TEXT("T_03_stamina_fill"), X, H - 40.f * S - StaminaH, StaminaW, StaminaH, 25.f / 1200.f, 1175.f / 1200.f, Stamina, Stamina > 0.99f ? 0.35f : 0.9f);
+
+		static const TMap<FName, FName> StatusIcons = {
+			{ TEXT("Fear"), TEXT("T_04_status_1_fear") }, { TEXT("Bleeding"), TEXT("T_04_status_2_bleeding") },
+			{ TEXT("Poison"), TEXT("T_04_status_3_poison") }, { TEXT("Infection"), TEXT("T_04_status_4_infection") } };
+		float IconX = X;
+		const float Icon = 40.f * S;
+		for (const FName Status : Vitals->GetStatuses())
+		{
+			if (const FName* Texture = StatusIcons.Find(Status))
+			{
+				DrawHudTexture(*Texture, IconX, HealthY - Icon - 6.f * S, Icon, Icon, 0.f, 1.f, FLinearColor(1.f, 1.f, 1.f, 0.95f));
+				IconX += Icon + 6.f * S;
+			}
+		}
+	}
+
+	// --- Инвентарь: 4 слота внизу по центру (1–4), активный — в руке ---
+	if (const UDarcInventoryComponent* Inventory = Pawn ? Pawn->FindComponentByClass<UDarcInventoryComponent>() : nullptr)
+	{
+		const float Slot = 72.f * S;
+		const float Gap = 8.f * S;
+		const float Total = UDarcInventoryComponent::NumSlots * Slot + (UDarcInventoryComponent::NumSlots - 1) * Gap;
+		const float Y = H - 28.f * S - Slot;
+		for (int32 i = 0; i < UDarcInventoryComponent::NumSlots; ++i)
+		{
+			const float X = (W - Total) * 0.5f + i * (Slot + Gap);
+			const bool bActive = i == Inventory->GetActiveSlot();
+			DrawHudTexture(bActive ? TEXT("T_05_inventory_selected") : TEXT("T_05_inventory_empty"), X, Y, Slot, Slot, 0.f, 1.f,
+				FLinearColor(1.f, 1.f, 1.f, bActive ? 0.95f : 0.6f));
+			DrawTextLine(FText::AsNumber(i + 1), X + 8.f * S, Y + 4.f * S, FLinearColor(1.f, 1.f, 1.f, 0.6f), 0.7f);
+			if (const ACarryableItem* Item = Inventory->GetSlotItem(i))
+			{
+				FText Label = Item->ItemName;
+				if (Label.IsEmpty())
+				{
+					const UDarcHintComponent* Hint = Item->FindComponentByClass<UDarcHintComponent>();
+					Label = Hint ? Hint->GetDisplayText() : FText::GetEmpty();
+				}
+				DrawTextLine(Label, X + Slot * 0.5f, Y + Slot * 0.42f, FLinearColor(1.f, 0.92f, 0.7f, bActive ? 1.f : 0.7f), 0.62f, true);
+			}
+		}
+		// Подсказка клавиш — вместе со списком задач (Tab прячет и её).
+		const ADarcPlayerController* DarcPC = Cast<ADarcPlayerController>(PlayerOwner);
+		if (DarcPC && DarcPC->IsTaskListVisible() && !DarcPC->IsTalking())
+		{
+			DrawTextLine(UDarcGameplayLibrary::UIText(TEXT("HUD_InventoryHint")), W * 0.5f, Y - 24.f * S,
+				FLinearColor(0.8f, 0.8f, 0.8f, 0.45f), 0.7f, true);
+		}
+		// Говорю (V): с рацией — в эфир, без — вслух рядом.
+		if (DarcPC && DarcPC->IsTalking())
+		{
+			const bool bRadio = ADarcTool::HasTool(Pawn, EDarcToolType::Radio);
+			DrawTextLine(UDarcGameplayLibrary::UIText(bRadio ? TEXT("Voice_Radio") : TEXT("Voice_Talking")),
+				W * 0.5f, Y - 26.f * S, FLinearColor(0.6f, 1.f, 0.65f, 0.95f), 0.8f, true);
+		}
+	}
 
 	// --- Название под прицелом (ВРЕМЕННО, см. DarcHintComponent.h) ---
 	if (PlayerOwner && Pawn)
@@ -153,8 +269,56 @@ void ADarcHUD::DrawHUD()
 	if (const UTaskManagerComponent* Tasks = UTaskManagerComponent::GetTaskManager(this); Tasks && (!PC || PC->IsTaskListVisible()))
 	{
 		float Y = 40.f;
-		for (const FDarcTaskState& Task : Tasks->GetVisibleTasks())
+		// По ходу прохождения: выполненное (галочка) и то, что можно делать сейчас; будущие задачи
+		// не показываем, пока не откроются. Внезапная задача («починить кабель») — прямо перед той,
+		// которую она блокирует, а не в конце списка.
+		const TArray<FDarcTaskState> All = Tasks->GetVisibleTasks();
+		auto Shown = [&All](const FDarcTaskState& T)
 		{
+			if (T.Status == EDarcTaskStatus::Locked)
+			{
+				return false;
+			}
+			// Подзадача — только пока её родитель открыт (выполнен родитель — путь уже выбран).
+			if (!T.Definition.ParentTaskId.IsNone())
+			{
+				const FDarcTaskState* Parent = All.FindByPredicate([&T](const FDarcTaskState& P) { return P.GetId() == T.Definition.ParentTaskId; });
+				return !Parent || Parent->Status == EDarcTaskStatus::Active;
+			}
+			return true;
+		};
+		TArray<const FDarcTaskState*> Ordered;
+		for (const FDarcTaskState& T : All)
+		{
+			if (T.bEmergent)
+			{
+				continue;
+			}
+			for (const FDarcTaskState& E : All)
+			{
+				if (E.bEmergent && T.Definition.Prerequisites.Contains(E.GetId()) && !Ordered.Contains(&E))
+				{
+					Ordered.Add(&E);
+				}
+			}
+			Ordered.Add(&T);
+		}
+		// Внезапные, которые ничего не блокируют, — перед первой незакрытой задачей.
+		int32 FirstOpen = Ordered.IndexOfByPredicate([](const FDarcTaskState* T) { return !T->IsClosed() && T->Status != EDarcTaskStatus::Locked; });
+		for (const FDarcTaskState& E : All)
+		{
+			if (E.bEmergent && !Ordered.Contains(&E))
+			{
+				Ordered.Insert(&E, FirstOpen == INDEX_NONE ? Ordered.Num() : FirstOpen);
+			}
+		}
+		for (const FDarcTaskState* TaskPtr : Ordered)
+		{
+			const FDarcTaskState& Task = *TaskPtr;
+			if (!Shown(Task))
+			{
+				continue;
+			}
 			const bool bChild = !Task.Definition.ParentTaskId.IsNone();
 			FLinearColor Color = FLinearColor(0.85f, 0.85f, 0.85f);
 			FName Mark = TEXT("HUD_TaskActive");
@@ -186,11 +350,32 @@ void ADarcHUD::DrawHUD()
 
 	// --- Субтитры ---
 	Subtitles.RemoveAll([Now](const FSubtitle& S) { return S.EndTime < Now; });
-	float SubY = H * 0.78f;
+	float SubY = H * 0.74f;
+	const FText GuardName = UDarcGameplayLibrary::UIText(TEXT("Speaker_Guard"));
 	for (const FSubtitle& Sub : Subtitles)
 	{
-		const FText Line = Sub.Speaker.IsEmpty() ? Sub.Line : FText::Format(UDarcGameplayLibrary::UIText(TEXT("HUD_SubtitleFormat")), Sub.Speaker, Sub.Line);
-		DrawTextLine(Line, W * 0.5f, SubY, FLinearColor(1.f, 0.95f, 0.8f), 1.1f, true);
-		SubY += 30.f;
+		if (Sub.Speaker.IsEmpty())
+		{
+			DrawTextLine(Sub.Line, W * 0.5f, SubY, FLinearColor(1.f, 0.95f, 0.8f), 1.1f, true);
+			SubY += 30.f;
+			continue;
+		}
+		// Реплика персонажа — плашка как в диалоговом окне D.A.R.C.: имя, ниже текст; у охранника портрет.
+		const bool bGuard = Sub.Speaker.EqualTo(GuardName);
+		const float PanelW = 780.f * S;
+		const float PanelH = (bGuard ? 92.f : 62.f) * S;
+		const float X0 = (W - PanelW) * 0.5f;
+		DrawRect(FLinearColor(0.015f, 0.025f, 0.045f, 0.82f), X0, SubY, PanelW, PanelH);
+		DrawRect(FLinearColor(0.35f, 0.55f, 0.85f, 0.6f), X0, SubY, PanelW, 2.f * S); // светлая кромка сверху
+		float TX = X0 + 16.f * S;
+		if (bGuard)
+		{
+			const float P = PanelH - 12.f * S;
+			DrawHudTexture(TEXT("Guard_Portrait/T_Guard_Front"), X0 + 6.f * S, SubY + 6.f * S, P, P, 0.f, 1.f, FLinearColor::White);
+			TX += P + 4.f * S;
+		}
+		DrawTextLine(Sub.Speaker, TX, SubY + 8.f * S, FLinearColor(0.55f, 0.75f, 1.f), 0.85f);
+		DrawTextLine(Sub.Line, TX, SubY + 34.f * S, FLinearColor(0.92f, 0.94f, 0.98f), 1.0f);
+		SubY += PanelH + 8.f * S;
 	}
 }

@@ -4,6 +4,10 @@
 #include "Net/UnrealNetwork.h"
 #include "Components/StaticMeshComponent.h"
 #include "DarcAssetSettings.h"
+#include "DarcTool.h"
+#include "DarcCableJunction.h"
+#include "GameFramework/Pawn.h"
+#include "TaskManagerComponent.h"
 
 AInteractableDoor::AInteractableDoor()
 {
@@ -42,6 +46,7 @@ void AInteractableDoor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     DOREPLIFETIME_CONDITION(AInteractableDoor, VisualSpec, COND_InitialOnly);
     DOREPLIFETIME(AInteractableDoor, bIsOpen);
     DOREPLIFETIME(AInteractableDoor, bIsLocked);
+    DOREPLIFETIME(AInteractableDoor, bPried);
 }
 
 bool AInteractableDoor::CanInteract_Implementation(AActor* Interactor) const
@@ -54,6 +59,34 @@ bool AInteractableDoor::CanInteract_Implementation(AActor* Interactor) const
 void AInteractableDoor::OnInteract_Implementation(AActor* Interactor)
 {
     // Этот код выполняется ТОЛЬКО на сервере (вызывается из InteractionComponent::Server_Interact).
+    if (bIsLocked && bCanPry && ADarcTool::GetHeldTool(Interactor) == EDarcToolType::Crowbar)
+    {
+        // Взлом: замок ломается, дверь распахивается, грохот слышно далеко.
+        bIsLocked = false;
+        bPried = true;
+        Multicast_Pried();
+        if (APawn* Pawn = Cast<APawn>(Interactor))
+        {
+            MakeNoise(1.f, Pawn, GetActorLocation()); // для будущего слуха угроз
+        }
+        if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+        {
+            Memory->RecordInteraction(GetMemoryId(), TEXT("Pried"), Interactor);
+        }
+        SetDoorOpen(true, Interactor);
+        if (!TaskIdOnPry.IsNone())
+        {
+            if (UTaskManagerComponent* Tasks = UTaskManagerComponent::GetTaskManager(this))
+            {
+                Tasks->CompleteTask(TaskIdOnPry, Interactor);
+            }
+        }
+        if (ADarcCableJunction* Junction = Cast<ADarcCableJunction>(PryBreaksJunction))
+        {
+            Junction->ServerDamage(Interactor);
+        }
+        return;
+    }
     if (bIsLocked)
     {
         Multicast_LockedAttempt(); // дёрнули ручку — звук «заперто» у всех рядом
@@ -87,13 +120,22 @@ void AInteractableDoor::SetLocked(bool bNewLocked)
 {
     if (HasAuthority())
     {
-        bIsLocked = bNewLocked;
+        bIsLocked = bNewLocked && !bPried; // сломанный ломом замок больше не запирается
     }
 }
 
 FText AInteractableDoor::GetInteractionPrompt_Implementation() const
 {
+    if (bIsLocked && bCanPry && !PromptPry.IsEmpty() && ADarcTool::LocalPlayerHolds(this, EDarcToolType::Crowbar))
+    {
+        return PromptPry;
+    }
     return bIsLocked ? PromptLocked : (bIsOpen ? PromptClose : PromptOpen);
+}
+
+void AInteractableDoor::Multicast_Pried_Implementation()
+{
+    UDarcAssetSettings::PlaySound(this, TEXT("DoorPry"), GetActorLocation(), 1.f);
 }
 
 void AInteractableDoor::OnRep_IsOpen()
@@ -126,4 +168,14 @@ void AInteractableDoor::BeginPlay()
     {
         SetActorTickEnabled(true); // дверь, открытая с самого начала, — довернуть створку
     }
+}
+
+void AInteractableDoor::RefreshUnlockFact()
+{
+    if (!HasAuthority() || UnlockFact.IsNone())
+    {
+        return;
+    }
+    const UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this);
+    SetLocked(!(Memory && Memory->HasCampaignFact(UnlockFact)));
 }

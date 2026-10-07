@@ -112,6 +112,36 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC|Text")
 	FText PromptHandOver;
 
+	/**
+	 * Охранник КПП «как в срезе»: имя, реплики (приветствие, выдача карты, приём носителя, окрик
+	 * из засады) и подсказки берутся из String Table сами — для NPC, поставленного на карту руками
+	 * или через MCP, где тексты FText задать неудобно. Пустые поля заполняются, заданные не трогаются.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC")
+	bool bGuardPreset = false;
+
+	// --- Засада: NPC выбегает из-за укрытия, когда игрок подходит ---
+
+	/** Включить засаду: NPC стоит в AmbushStart (скрыт), при подходе игрока выбегает на своё место. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC|Ambush")
+	bool bAmbush = false;
+
+	/** Откуда выбегает (мировые координаты, например за будкой). Конечная точка — место самого NPC. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC|Ambush")
+	FVector AmbushStart = FVector::ZeroVector;
+
+	/** На каком расстоянии от места NPC игрок «спугивает» засаду, см. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC|Ambush", meta = (ClampMin = "100"))
+	float AmbushTriggerRadius = 1100.f;
+
+	/** Сколько длится рывок до места, сек. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC|Ambush", meta = (ClampMin = "0.2"))
+	float AmbushRunSeconds = 1.1f;
+
+	/** Окрик на выбегании (String Table). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC|Lines")
+	TArray<FDarcNpcLine> AmbushLines;
+
 	/** Сервер: проиграть серию реплик (можно звать из Blueprint для своих сцен — куратор и факты кампании). */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "NPC")
 	void SayLines(const TArray<FDarcNpcLine>& Lines);
@@ -156,6 +186,29 @@ protected:
 
 	UPROPERTY(Replicated)
 	bool bGaveItem = false;
+
+	/** Засада сработала (у всех машин NPC выбегает по OnRep). */
+	UPROPERTY(ReplicatedUsing = OnRep_Ambush)
+	bool bAmbushTriggered = false;
+
+	UFUNCTION()
+	void OnRep_Ambush();
+
+	/** Сервер: проверить, подошёл ли игрок к засаде. */
+	void CheckAmbush();
+
+	/** Точка на земле под Point (трейс по статике). */
+	FVector OnGround(const FVector& Point) const;
+
+	/** Заполнить пустые тексты охранника из String Table. */
+	void ApplyGuardPreset();
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	FTransform AmbushEnd;
+	float AmbushTime = -1.f;
+	bool bAmbushDone = true;
+	FTimerHandle AmbushTimer;
 
 	bool bGreeted = false;
 	bool bAskedBeforeReceive = false;

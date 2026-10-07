@@ -74,8 +74,9 @@ bool ADarcItemSlot::CanInteract_Implementation(AActor* Interactor) const
 {
 	if (HasItem())
 	{
-		// Вынуть — только пустыми руками и если устройство разрешает.
-		return bAllowRemove && ACarryableItem::FindItemHeldBy(Interactor) == nullptr;
+		// Вынуть — если устройство разрешает; в руку — только пустыми руками
+		// (выталкиваемый предмет падает перед разъёмом — руки могут быть заняты).
+		return bAllowRemove && (bEjectOnRemove || ACarryableItem::FindItemHeldBy(Interactor) == nullptr);
 	}
 	return Accepts(ACarryableItem::FindItemHeldBy(Interactor));
 }
@@ -85,11 +86,21 @@ void ADarcItemSlot::OnInteract_Implementation(AActor* Interactor)
 	// Только сервер. Перепроверяем всё, что клиент видел в CanInteract.
 	if (ACarryableItem* Inserted = GetInsertedItem())
 	{
-		if (!bAllowRemove || ACarryableItem::FindItemHeldBy(Interactor))
+		if (!bAllowRemove || (!bEjectOnRemove && ACarryableItem::FindItemHeldBy(Interactor)))
 		{
 			return;
 		}
-		Inserted->ServerTransferTo(Interactor, Interactor);
+		if (bEjectOnRemove)
+		{
+			// Выдвигаем на 15 см от лицевой стороны разъёма (+X) и даём упасть перед ним.
+			const FVector Forward = GetActorForwardVector();
+			Inserted->ServerEjectTo(InsertPoint->GetComponentLocation() + Forward * 15.f, Forward * 120.f + FVector(0.f, 0.f, 60.f), Interactor);
+			UDarcAssetSettings::PlaySound(this, TEXT("CableDetach"), GetActorLocation());
+		}
+		else
+		{
+			Inserted->ServerTransferTo(Interactor, Interactor);
+		}
 		CompleteTaskIfSet(TaskIdOnRemove, Interactor);
 		OnSlotChanged.Broadcast(nullptr);
 		return;

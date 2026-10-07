@@ -53,6 +53,13 @@ public:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Slot")
 	bool bAllowRemove = true;
 
+	/**
+	 * E «извлекает» предмет: он выдвигается из разъёма и падает перед ним физическим
+	 * предметом (его поднимают отдельным E). Без флага предмет сразу идёт в руку.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Slot")
+	bool bEjectOnRemove = false;
+
 	/** Задача при вставке подходящего предмета (пусто — нет). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Slot|Tasks")
 	FName TaskIdOnInsert;

@@ -102,6 +102,7 @@ void UDarcWorldMemorySubsystem::EndMission(bool bSucceeded)
 	// В кампанию переносим только сводку. Точные позиции предметов, журнал
 	// взаимодействий и т.п. остаются доступны на базе до начала следующего выезда
 	// (чтобы база могла «вспомнить» что-то из только что пройденного), потом стираются.
+	bDebriefPending = true;
 	LastMissionSummary.LevelIndex = CurrentLevelIndex;
 	LastMissionSummary.bSucceeded = bSucceeded;
 	LastMissionSummary.Duration = GetMissionTime();
@@ -122,7 +123,15 @@ void UDarcWorldMemorySubsystem::ResetCampaign()
 	CampaignRareEvents.Reset();
 	CampaignDeaths = 0;
 	LastMissionSummary = FDarcMissionSummary();
+	bDebriefPending = false;
 	BeginMission(0, 0);
+}
+
+bool UDarcWorldMemorySubsystem::ConsumeMissionDebrief()
+{
+	const bool bPending = bDebriefPending && LastMissionSummary.LevelIndex > 0;
+	bDebriefPending = false;
+	return bPending;
 }
 
 // ---------------------------------------------------------------------------

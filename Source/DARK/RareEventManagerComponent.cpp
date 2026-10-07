@@ -455,7 +455,7 @@ FName URareEventManagerComponent::ApplyEcho(EDarcEchoAction Action)
 		const TArray<FName> Moved = Memory->GetMovedItems();
 		for (TActorIterator<ACarryableItem> It(GetWorld()); It; ++It)
 		{
-			if (Moved.Contains(It->GetMemoryId()) && !It->CurrentHolder && IsUnobserved(*It))
+			if (Moved.Contains(It->GetMemoryId()) && !It->CurrentHolder && !It->StowedBy && IsUnobserved(*It))
 			{
 				// «Снова слегка сдвинут»: 10–25 см в сторону и небольшой поворот.
 				const FVector Offset = FVector(Random.FRandRange(-1.f, 1.f), Random.FRandRange(-1.f, 1.f), 0.f).GetSafeNormal()

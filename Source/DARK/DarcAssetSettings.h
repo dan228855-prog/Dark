@@ -169,6 +169,12 @@ public:
 	 */
 	static UMaterialInterface* MakeColorMaterial(UObject* Outer, const FLinearColor& Color, float Glow = 0.f);
 
+	/**
+	 * Неосвещаемый материал текста движка (UnlitText): надписи (экраны, таблички, цифры на карте)
+	 * читаются и в темноте. Цвет — SetTextRenderColor у компонента.
+	 */
+	static UMaterialInterface* GetUnlitTextMaterial();
+
 	/** Модель/место/масштаб — как у актора карты (см. FDarcVisualSpec::CopyFrom). */
 	static void ApplyCopy(UStaticMeshComponent* Component, AActor* Source);
 
@@ -181,8 +187,9 @@ public:
 	/** Общее объёмное затухание для звуков без своих настроек (nullptr — у звука свои). */
 	static USoundAttenuation* GetDefaultAttenuation(USoundBase* Sound);
 
-	/** Проиграть звук слота в точке (у этой машины), объёмно. Пустой слот — тишина. */
-	static void PlaySound(const UObject* WorldContextObject, FName Slot, const FVector& Location, float Volume = 1.f);
+	/** Проиграть звук слота в точке (у этой машины), объёмно. Пустой слот — тишина.
+	 *  StartTime — с какой секунды файла начать (пропустить тишину в начале записи). */
+	static void PlaySound(const UObject* WorldContextObject, FName Slot, const FVector& Location, float Volume = 1.f, float StartTime = 0.f);
 
 	/** Зацикленный звук на компоненте (гул ламп, генератор). nullptr, если слота нет. */
 	static UAudioComponent* PlayLoopAttached(FName Slot, USceneComponent* AttachTo);

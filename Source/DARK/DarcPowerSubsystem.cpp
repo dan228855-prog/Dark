@@ -3,6 +3,8 @@
 #include "DarcPowerConsumerComponent.h"
 #include "DarcFuseBox.h"
 #include "DarcPowerInlet.h"
+#include "DarcGenerator.h"
+#include "DarcCableJunction.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -75,6 +77,12 @@ EDarcPowerSource UDarcPowerSubsystem::GetCircuitSource(FName CircuitId) const
 	return Found ? *Found : EDarcPowerSource::None;
 }
 
+EDarcPowerSource UDarcPowerSubsystem::GetRawCircuitSource(FName CircuitId) const
+{
+	const EDarcPowerSource* Found = RawSources.Find(CircuitId);
+	return Found ? *Found : EDarcPowerSource::None;
+}
+
 void UDarcPowerSubsystem::Recompute()
 {
 	if (!IsServer() || !GetWorld())
@@ -83,6 +91,25 @@ void UDarcPowerSubsystem::Recompute()
 	}
 
 	TMap<FName, EDarcPowerSource> NewSources;
+
+	// Перегрузка: генератор тянет ограниченное число вводов (Capacity). Подключили больше —
+	// он глохнет; запустить снова — на вводе, сначала отключив лишнее.
+	TMap<ADarcGenerator*, int32> GeneratorLoad;
+	for (TActorIterator<ADarcPowerInlet> It(GetWorld()); It; ++It)
+	{
+		if (It->ConnectedGenerator && It->ConnectedGenerator->bRunning)
+		{
+			GeneratorLoad.FindOrAdd(It->ConnectedGenerator) += FMath::Max(It->Load, 0);
+		}
+	}
+	for (const TPair<ADarcGenerator*, int32>& Pair : GeneratorLoad)
+	{
+		if (Pair.Value > Pair.Key->Capacity)
+		{
+			Pair.Key->TripOverload(); // SetRunning(false) → повторный Recompute уже без него
+			return;
+		}
+	}
 
 	// Сеть через щитки.
 	if (bMainsOn)
@@ -104,6 +131,18 @@ void UDarcPowerSubsystem::Recompute()
 		if (It->IsSupplying() && !It->CircuitId.IsNone() && !NewSources.Contains(It->CircuitId))
 		{
 			NewSources.Add(It->CircuitId, EDarcPowerSource::Generator);
+		}
+	}
+
+	// Повреждённая кабельная линия режет контур после источника (и щит, и генератор).
+	RawSources = NewSources;
+	CutCircuits.Reset();
+	for (TActorIterator<ADarcCableJunction> It(GetWorld()); It; ++It)
+	{
+		if (It->bDamaged && !It->CircuitId.IsNone())
+		{
+			CutCircuits.Add(It->CircuitId);
+			NewSources.Remove(It->CircuitId);
 		}
 	}
 

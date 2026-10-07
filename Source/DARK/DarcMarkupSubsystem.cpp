@@ -20,7 +20,11 @@
 #include "DarcRareEventAnchor.h"
 #include "DarcRoomVolume.h"
 #include "DarcSliceItems.h"
+#include "DarcTool.h"
+#include "DarcCableJunction.h"
+#include "DarcRemovableCover.h"
 #include "Components/BoxComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
@@ -91,7 +95,8 @@ namespace DarcMarkup
 	int32 Priority(FName Type)
 	{
 		static const TArray<FName> Order = {
-			TEXT("Point"), TEXT("Room"), TEXT("Item"), TEXT("Keycard"), TEXT("Drive"), TEXT("Module"), TEXT("Fuse"),
+			TEXT("Point"), TEXT("Room"), TEXT("Item"), TEXT("Keycard"), TEXT("Drive"), TEXT("Module"), TEXT("Fuse"), TEXT("Tool"),
+			TEXT("Junction"), TEXT("Cover"),
 			TEXT("Door"), TEXT("Lamp"), TEXT("FuseBox"), TEXT("Generator"), TEXT("Heavy"), TEXT("Inlet"),
 			TEXT("Slot"), TEXT("Terminal"), TEXT("Keypad"), TEXT("CardReader"), TEXT("Station"), TEXT("Npc"), TEXT("Anchor") };
 		const int32 Index = Order.IndexOfByPredicate([Type](const FName& N) { return N.IsEqual(Type, ENameCase::IgnoreCase); });
@@ -99,7 +104,10 @@ namespace DarcMarkup
 	}
 
 	/** Типы без своего игрового объекта (исходный актор остаётся надписью или скрывается). */
-	bool IsLocalOnly(FName Type) { return Type.IsEqual(TEXT("CodeSign"), ENameCase::IgnoreCase); }
+	bool IsLocalOnly(FName Type)
+	{
+		return Type.IsEqual(TEXT("CodeSign"), ENameCase::IgnoreCase) || Type.IsEqual(TEXT("Sign"), ENameCase::IgnoreCase);
+	}
 	bool IsHiddenMarker(FName Type) { return Type.IsEqual(TEXT("Room"), ENameCase::IgnoreCase) || Type.IsEqual(TEXT("Point"), ENameCase::IgnoreCase); }
 }
 
@@ -220,6 +228,32 @@ void UDarcMarkupSubsystem::ApplyLocalMarkup()
 		{
 			It->SetActorHiddenInGame(true);
 			It->SetActorEnableCollision(false);
+		}
+		else if (Markup.Type.IsEqual(TEXT("Sign"), ENameCase::IgnoreCase))
+		{
+			// Вывеска: текст из String Table (Key=…) на передней грани (+X актора), светлый,
+			// не зависит от освещения — читается и ночью. Перевод — как у всего UI.
+			FVector Origin, Extent;
+			It->GetActorBounds(true, Origin, Extent);
+			UTextRenderComponent* Text = NewObject<UTextRenderComponent>(*It);
+			Text->SetText(UDarcGameplayLibrary::UIText(*Markup.Get(TEXT("Key"), TEXT("Sign_DarcName"))));
+			Text->SetWorldSize(Markup.GetFloat(TEXT("Size"), 40.f));
+			Text->SetHorizontalAlignment(EHTA_Center);
+			Text->SetVerticalAlignment(EVRTA_TextCenter);
+			Text->SetTextRenderColor(FColor(235, 225, 200));
+			if (UMaterialInterface* Unlit = UDarcAssetSettings::GetUnlitTextMaterial())
+			{
+				Text->SetTextMaterial(Unlit);
+			}
+			Text->SetMobility(EComponentMobility::Movable);
+			Text->SetUsingAbsoluteScale(true);
+			Text->SetCastShadow(false);
+			Text->RegisterComponent();
+			const FVector Forward = It->GetActorForwardVector();
+			Text->SetWorldLocationAndRotation(
+				Origin + Forward * (FVector::DotProduct(Extent, Forward.GetAbs()) + 1.f) + FVector(0.f, 0.f, Markup.GetFloat(TEXT("Up"), 0.f)),
+				It->GetActorRotation());
+			It->AddInstanceComponent(Text);
 		}
 		else if (DarcMarkup::IsLocalOnly(Markup.Type))
 		{
@@ -375,6 +409,9 @@ AActor* UDarcMarkupSubsystem::SpawnFor(const FDarcMarkup& Markup, FTransform& Tr
 	else if (Is(TEXT("Npc")))                              Class = ADarcNpc::StaticClass();
 	else if (Is(TEXT("Anchor")))                           Class = ADarcRareEventAnchor::StaticClass();
 	else if (Is(TEXT("Room")))                             Class = ADarcRoomVolume::StaticClass();
+	else if (Is(TEXT("Tool")))                             Class = ADarcTool::StaticClass();
+	else if (Is(TEXT("Junction")))                         Class = ADarcCableJunction::StaticClass();
+	else if (Is(TEXT("Cover")))                            Class = ADarcRemovableCover::StaticClass();
 	else if (Is(TEXT("Item")) || Is(TEXT("Keycard")) || Is(TEXT("Drive")) || Is(TEXT("Module")) || Is(TEXT("Fuse")))
 	{
 		Class = DarcMarkup::ItemClass(Type.ToString());
@@ -435,6 +472,20 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Item->PromptPickUp = Txt(TEXT("Carry_PickUp"));
 		Item->PromptDrop = Txt(TEXT("Carry_Drop"));
 		Item->VisualSpec = CopyOf(Source);
+		// Название в слоте инвентаря — тот же ключ, что и подпись под прицелом (Name=...).
+		const FString NameKey = M.Get(TEXT("Name"));
+		if (!NameKey.IsEmpty())
+		{
+			Item->ItemName = Txt(NameKey);
+		}
+		if (ADarcTool* Tool = Cast<ADarcTool>(Item))
+		{
+			Tool->ToolType = ADarcTool::ParseType(M.Get(TEXT("Type"), TEXT("Crowbar")));
+			if (NameKey.IsEmpty())
+			{
+				Tool->ItemName = Txt(ADarcTool::NameKey(Tool->ToolType));
+			}
+		}
 		if (ADarcKeycard* Card = Cast<ADarcKeycard>(Item))
 		{
 			Card->BackMarking->CodeKey = M.GetName(TEXT("Code"), TEXT("CatalogCode"));
@@ -449,11 +500,43 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Door->PromptOpen = Txt(TEXT("Door_Open"));
 		Door->PromptClose = Txt(TEXT("Door_Close"));
 		Door->PromptLocked = Txt(TEXT("Door_Locked"));
+		Door->PromptPry = Txt(TEXT("Door_Pry"));
+		Door->bCanPry = !M.Has(TEXT("NoPry"));
+		Door->UnlockFact = M.GetName(TEXT("UnlockFact"));
+		Door->RefreshUnlockFact();
+		Door->PryBreaksJunction = Ref<AActor>(M, TEXT("PryBreaks"));
+		Door->TaskIdOnPry = M.GetName(TEXT("PryTask"));
 		Door->VisualSpec = CopyOf(Source);
+	}
+	else if (ADarcCableJunction* Junction = Cast<ADarcCableJunction>(Actor))
+	{
+		Junction->CircuitId = M.GetName(TEXT("Circuit"));
+		if (Junction->CircuitId.IsNone())
+		{
+			Warn(M, TEXT("Junction without Circuit="));
+		}
+		Junction->bDamaged = M.Has(TEXT("Damaged"));
+		Junction->RepairSteps = FMath::RoundToInt(M.GetFloat(TEXT("Steps"), Junction->RepairSteps));
+		Junction->ShockDamage = M.GetFloat(TEXT("Shock"), Junction->ShockDamage);
+		Junction->TaskIdOnDamage = M.GetName(TEXT("Task"));
+		if (!Junction->TaskIdOnDamage.IsNone())
+		{
+			Junction->TaskTitle = Txt(M.Get(TEXT("TaskTitle"), TEXT("Task_") + Junction->TaskIdOnDamage.ToString()));
+		}
+		Junction->BlocksTaskId = M.GetName(TEXT("Blocks"));
+		Junction->VisualSpec = CopyOf(Source);
+	}
+	else if (ADarcRemovableCover* Cover = Cast<ADarcRemovableCover>(Actor))
+	{
+		Cover->MemoryId = Id;
+		Cover->Screws = FMath::Max(1, FMath::RoundToInt(M.GetFloat(TEXT("Screws"), Cover->Screws)));
+		Cover->TaskIdOnRemove = M.GetName(TEXT("Task"));
+		Cover->VisualSpec = CopyOf(Source);
 	}
 	else if (ADarcPowerLamp* Lamp = Cast<ADarcPowerLamp>(Actor))
 	{
 		Lamp->Power->CircuitId = M.GetName(TEXT("Circuit"), TEXT("Building"));
+		Lamp->Lumens = M.GetFloat(TEXT("Lumens"), Lamp->Lumens);
 		Lamp->VisualSpec = CopyOf(Source);
 	}
 	else if (ADarcFuseBox* Box = Cast<ADarcFuseBox>(Actor))
@@ -478,6 +561,8 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 			Box->TaskOnBlow.bRequired = false;
 		}
 		Box->PromptInsertFuse = Txt(TEXT("Fuse_Insert"));
+		Box->PromptInsertFuseBreakerOn = Txt(TEXT("Fuse_InsertBreakerOn"));
+		Box->ShockDamage = M.GetFloat(TEXT("Shock"), Box->ShockDamage);
 		Box->PromptBreakerOn = Txt(TEXT("Breaker_On"));
 		Box->PromptBreakerOff = Txt(TEXT("Breaker_Off"));
 		Box->VisualSpec = CopyOf(Source);
@@ -494,6 +579,10 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Heavy->DeliveryRadius = M.GetFloat(TEXT("Radius"), Heavy->DeliveryRadius);
 		Heavy->TaskIdOnDelivered = M.GetName(TEXT("Task"));
 		Heavy->PromptReattachCable = Txt(TEXT("Heavy_ReattachCable"));
+		if (ADarcGenerator* Generator = Cast<ADarcGenerator>(Heavy))
+		{
+			Generator->Capacity = FMath::Max(1, FMath::RoundToInt(M.GetFloat(TEXT("Capacity"), Generator->Capacity)));
+		}
 		Heavy->VisualSpec = CopyOf(Source);
 	}
 	else if (ADarcPowerInlet* Inlet = Cast<ADarcPowerInlet>(Actor))
@@ -502,6 +591,9 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Inlet->CableLength = M.GetFloat(TEXT("Cable"), Inlet->CableLength);
 		Inlet->PromptConnect = Txt(TEXT("Inlet_Connect"));
 		Inlet->PromptDisconnect = Txt(TEXT("Inlet_Disconnect"));
+		Inlet->PromptTooFar = Txt(TEXT("Inlet_TooFar"));
+		Inlet->PromptRestart = Txt(TEXT("Inlet_Restart"));
+		Inlet->Load = FMath::Max(0, FMath::RoundToInt(M.GetFloat(TEXT("Load"), Inlet->Load)));
 		Inlet->VisualSpec = CopyOf(Source);
 	}
 	else if (ADarcTerminal* Terminal = Cast<ADarcTerminal>(Actor))
@@ -546,8 +638,9 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Slot->bAllowRemove = !M.Has(TEXT("Fixed"));
 		Slot->TaskIdOnInsert = M.GetName(TEXT("Task"));
 		Slot->TaskIdOnRemove = M.GetName(TEXT("TaskRemove"));
+		Slot->bEjectOnRemove = M.Has(TEXT("Eject")); // носитель выдвигается и падает перед разъёмом
 		Slot->PromptInsert = Txt(TEXT("Slot_Insert"));
-		Slot->PromptRemove = Txt(TEXT("Slot_Remove"));
+		Slot->PromptRemove = Txt(Slot->bEjectOnRemove ? TEXT("Slot_EjectDrive") : TEXT("Slot_Remove"));
 		Slot->VisualSpec = CopyOf(Source);
 	}
 	else if (ADarcDataTransferStation* Station = Cast<ADarcDataTransferStation>(Actor))
@@ -558,7 +651,14 @@ void UDarcMarkupSubsystem::Configure(AActor* Actor, const FDarcMarkup& M)
 		Station->Power->CircuitId = M.GetName(TEXT("Circuit"), Station->Power->CircuitId);
 		Station->AnomalyFlickerCircuit = M.GetName(TEXT("Flicker"), Station->AnomalyFlickerCircuit);
 		Station->TransferSeconds = M.GetFloat(TEXT("Seconds"), Station->TransferSeconds);
+		// Задачи «питание через щит / от генератора» — по факту питания станции.
+		Station->Power->TaskIdOnMainsPower = M.GetName(TEXT("TaskMains"));
+		Station->Power->TaskIdOnGeneratorPower = M.GetName(TEXT("TaskGenerator"));
 		Station->PromptStart = Txt(TEXT("Transfer_Start"));
+		Station->PromptNoPower = Txt(TEXT("Transfer_NoPower"));
+		Station->PromptNeedModule = Txt(TEXT("Transfer_NeedModule"));
+		Station->PromptInProgress = Txt(TEXT("Transfer_InProgress"));
+		Station->PromptTakeDrive = Txt(TEXT("Transfer_TakeDrive"));
 		Station->VisualSpec = CopyOf(Source);
 	}
 	else if (ADarcNpc* Npc = Cast<ADarcNpc>(Actor))

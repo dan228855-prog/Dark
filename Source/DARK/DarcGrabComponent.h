@@ -57,15 +57,19 @@ public:
 	 * игроком: игрок упирается и тянет, предмет идёт с той скоростью, на какую хватает сил.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
-	float TetherLength = 110.f;
+	float TetherLength = 140.f;
 
 	/** С какой доли длины привязи начинается сопротивление (дальше — всё туже, без «стены»). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
 	float TetherSoftStart = 0.5f;
 
-	/** Насколько замедляется ходьба, пока держишь тяжёлое (масса ≥ HeavyMassKg): 0.45 — до 45 %. */
+	/** Насколько замедляется ходьба, пока держишь тяжёлое (масса ≥ HeavyMassKg): 0.4 — до 40 %. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
-	float HeavyWalkSpeedFactor = 0.45f;
+	float HeavyWalkSpeedFactor = 0.4f;
+
+	/** Пятиться с натянутой привязью можно с этой долей скорости с грузом (вес чувствуется, но не «стена»). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
+	float BackwardSpeedFactor = 0.6f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab")
 	float HeavyMassKg = 150.f;

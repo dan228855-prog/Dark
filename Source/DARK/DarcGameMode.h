@@ -11,7 +11,7 @@
 
 class ADarcSpiritCharacter;
 
-UCLASS()
+UCLASS(Config = Game)
 class DARK_API ADarcGameMode : public AGameModeBase
 {
     GENERATED_BODY()
@@ -49,6 +49,17 @@ protected:
 
     void AutoStartMission();
     void WatchMissionEnd();
+    void ReturnToBase();
+
+    /** Карта базы: после выезда команда возвращается сюда (пусто — остаёмся на месте, как в срезе). */
+    UPROPERTY(Config, EditAnywhere, Category = "Base")
+    FString BaseMap;
+
+    /** Секунд от конца выезда до затемнения и переезда на базу. */
+    UPROPERTY(Config, EditAnywhere, Category = "Base")
+    float ReturnToBaseDelay = 8.f;
+
+    FTimerHandle ReturnTimer;
     FTimerHandle StartTimer;
     FTimerHandle EndWatchTimer;
     bool bEndLinesSaid = false;

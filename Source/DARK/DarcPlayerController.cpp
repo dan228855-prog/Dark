@@ -8,6 +8,17 @@
 #include "DarcFootstepComponent.h"
 #include "DarcFlashlightComponent.h"
 #include "DarcPlayerOutfitComponent.h"
+#include "DarcVitalsComponent.h"
+#include "DarcInventoryComponent.h"
+#include "DarcShadowFigure.h"
+#include "DarcTool.h"
+#include "DarcAssetSettings.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
+#include "Net/VoiceConfig.h"
+#include "Sound/SoundAttenuation.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -22,6 +33,16 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Widgets/Images/SImage.h"
+#include "Widgets/SOverlay.h"
+#include "Engine/Texture2D.h"
+#include "DarcGameUserSettings.h"
+#include "DarcSettingsMenu.h"
+#include "DarcBase.h"
+#include "EngineUtils.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
+#include "Engine/LocalPlayer.h"
 
 ADarcPlayerController::ADarcPlayerController()
 {
@@ -36,6 +57,26 @@ ADarcPlayerController* ADarcPlayerController::GetLocal(const UObject* WorldConte
 void ADarcPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	if (IsLocalController())
+	{
+		GetWorldTimerManager().SetTimer(VoiceTimer, this, &ADarcPlayerController::UpdateVoiceTalkers, 0.5f, true);
+		GetWorldTimerManager().SetTimer(ShadowTimer, this, &ADarcPlayerController::MaybeSpawnShadow, 20.f, true, 90.f);
+		ApplyVoiceMode();
+	}
+}
+
+void ADarcPlayerController::MaybeSpawnShadow()
+{
+	// Только живой на ногах (не «дух», не в машине) и только одна тень за раз.
+	APawn* MyPawn = GetPawn();
+	if (!MyPawn || Cast<ADarcSpiritCharacter>(MyPawn) || MyPawn->GetAttachParentActor() || Shadow.IsValid())
+	{
+		return;
+	}
+	if (FMath::FRand() < ShadowChance)
+	{
+		Shadow = ADarcShadowFigure::TrySpawnNear(this);
+	}
 }
 
 void ADarcPlayerController::CopyTemplateInputMappings()
@@ -67,16 +108,274 @@ void ADarcPlayerController::CopyTemplateInputMappings()
 void ADarcPlayerController::SetupInputComponent()
 {
 	CopyTemplateInputMappings(); // до Super: родитель добавляет контексты из этих массивов
+	// Родитель добавит копии раскладок — в них клавиши игрока (ApplyKeyBindings).
+	if (PlayerMappingContexts.Num() == 0)
+	{
+		for (TArray<UInputMappingContext*>* Contexts : { &DefaultMappingContexts, &MobileExcludedMappingContexts })
+		{
+			for (UInputMappingContext*& Context : *Contexts)
+			{
+				if (Context)
+				{
+					TemplateMappingContexts.Add(Context);
+					Context = DuplicateObject<UInputMappingContext>(Context, this);
+					PlayerMappingContexts.Add(Context);
+				}
+			}
+		}
+	}
 	Super::SetupInputComponent();
 
-	// Свои клавиши — прямой привязкой, без ассетов Input Action.
-	InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ADarcPlayerController::HandleInteract);
-	InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ADarcPlayerController::HandleToggleTasks);
-	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ADarcPlayerController::HandlePrimaryPressed);
-	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Released, this, &ADarcPlayerController::HandlePrimaryReleased);
-	InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ADarcPlayerController::HandleSecondary);
-	InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ADarcPlayerController::HandleSpiritBreaker);
-	InputComponent->BindKey(EKeys::G, IE_Pressed, this, &ADarcPlayerController::HandleDrop);
+	ApplyKeyBindings();
+}
+
+void ADarcPlayerController::ApplyKeyBindings()
+{
+	const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get();
+	auto Key = [Settings](FName Id) { return Settings ? Settings->GetKey(Id) : FKey(); };
+
+	// Свои клавиши — прямой привязкой, без ассетов Input Action. Клавиши — из настроек игрока.
+	if (InputComponent)
+	{
+		InputComponent->KeyBindings.Reset();
+		InputComponent->BindKey(Key(TEXT("Interact")), IE_Pressed, this, &ADarcPlayerController::HandleInteract);
+		InputComponent->BindKey(Key(TEXT("Tasks")), IE_Pressed, this, &ADarcPlayerController::HandleToggleTasks);
+		InputComponent->BindKey(Key(TEXT("Grab")), IE_Pressed, this, &ADarcPlayerController::HandlePrimaryPressed);
+		InputComponent->BindKey(Key(TEXT("Grab")), IE_Released, this, &ADarcPlayerController::HandlePrimaryReleased);
+		InputComponent->BindKey(Key(TEXT("Push")), IE_Pressed, this, &ADarcPlayerController::HandleSecondary);
+		InputComponent->BindKey(Key(TEXT("Flashlight")), IE_Pressed, this, &ADarcPlayerController::HandleSpiritBreaker);
+		InputComponent->BindKey(Key(TEXT("Drop")), IE_Pressed, this, &ADarcPlayerController::HandleDrop);
+		InputComponent->BindKey(Key(TEXT("Sprint")), IE_Pressed, this, &ADarcPlayerController::HandleSprintPressed);
+		InputComponent->BindKey(Key(TEXT("Sprint")), IE_Released, this, &ADarcPlayerController::HandleSprintReleased);
+		InputComponent->BindKey(Key(TEXT("Slot1")), IE_Pressed, this, &ADarcPlayerController::HandleSlot1);
+		InputComponent->BindKey(Key(TEXT("Slot2")), IE_Pressed, this, &ADarcPlayerController::HandleSlot2);
+		InputComponent->BindKey(Key(TEXT("Slot3")), IE_Pressed, this, &ADarcPlayerController::HandleSlot3);
+		InputComponent->BindKey(Key(TEXT("Slot4")), IE_Pressed, this, &ADarcPlayerController::HandleSlot4);
+		InputComponent->BindKey(Key(TEXT("Crouch")), IE_Pressed, this, &ADarcPlayerController::HandleCrouchPressed);
+		InputComponent->BindKey(Key(TEXT("Crouch")), IE_Released, this, &ADarcPlayerController::HandleCrouchReleased);
+		InputComponent->BindKey(Key(TEXT("Talk")), IE_Pressed, this, &ADarcPlayerController::HandleTalkPressed);
+		InputComponent->BindKey(Key(TEXT("Talk")), IE_Released, this, &ADarcPlayerController::HandleTalkReleased);
+		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ADarcPlayerController::HandlePause);
+	}
+
+	// Ходьба и прыжок — раскладка шаблона: в копии меняем клавиши по умолчанию на клавиши игрока.
+	for (int32 Index = 0; Index < TemplateMappingContexts.Num() && Index < PlayerMappingContexts.Num(); ++Index)
+	{
+		const UInputMappingContext* Template = TemplateMappingContexts[Index];
+		UInputMappingContext* Copy = PlayerMappingContexts[Index];
+		if (!Template || !Copy || Template->GetMappings().Num() != Copy->GetMappings().Num())
+		{
+			continue;
+		}
+		for (int32 M = 0; M < Copy->GetMappings().Num(); ++M)
+		{
+			const FKey DefaultKey = Template->GetMappings()[M].Key;
+			FKey NewKey = DefaultKey;
+			for (const FDarcKeyAction& Action : UDarcGameUserSettings::GetKeyActions())
+			{
+				if (Action.bEnhancedInput && Action.DefaultKey == DefaultKey)
+				{
+					NewKey = Key(Action.Id);
+					break;
+				}
+			}
+			Copy->GetMapping(M).Key = NewKey;
+		}
+	}
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		Subsystem->RequestRebuildControlMappings();
+	}
+}
+
+void ADarcPlayerController::ApplyVoiceMode()
+{
+	const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get();
+	if (!IsLocalController() || !Settings)
+	{
+		return;
+	}
+	if (Settings->bOpenMic)
+	{
+		bTalking = true;
+		StartTalking();
+	}
+	else if (bTalking)
+	{
+		bTalking = false;
+		StopTalking();
+	}
+}
+
+void ADarcPlayerController::HandlePause()
+{
+	if (TerminalWidget.IsValid())
+	{
+		CloseTerminalUI(true); // Esc в терминале — просто закрыть терминал
+		return;
+	}
+	SetPauseMenuOpen(true);
+}
+
+void ADarcPlayerController::SetPauseMenuOpen(bool bOpen)
+{
+	if (bOpen)
+	{
+		if (UDarcSettingsLibrary::IsPauseMenuOpen())
+		{
+			return;
+		}
+		UDarcSettingsLibrary::OpenPauseMenu(this);
+		SetShowMouseCursor(true);
+		SetInputMode(FInputModeUIOnly());
+		// В одиночной игре время останавливается; в кооперативе мир идёт дальше.
+		if (GetNetMode() == NM_Standalone)
+		{
+			SetPause(true);
+		}
+		return;
+	}
+	SetPause(false);
+	SetShowMouseCursor(false);
+	SetInputMode(FInputModeGameOnly());
+}
+
+void ADarcPlayerController::HandleSlot1() { SelectInventorySlot(0); }
+void ADarcPlayerController::HandleSlot2() { SelectInventorySlot(1); }
+void ADarcPlayerController::HandleSlot3() { SelectInventorySlot(2); }
+void ADarcPlayerController::HandleSlot4() { SelectInventorySlot(3); }
+
+void ADarcPlayerController::SelectInventorySlot(int32 Index)
+{
+	if (UDarcInventoryComponent* Inventory = GetPawn() ? GetPawn()->FindComponentByClass<UDarcInventoryComponent>() : nullptr)
+	{
+		Inventory->SelectSlot(Index);
+	}
+}
+
+void ADarcPlayerController::HandleCrouchPressed()
+{
+	// Пока Ctrl зажат — пригнулся. Отпустил в низком проходе — встанет сам, когда будет место.
+	if (ACharacter* MyCharacter = Cast<ACharacter>(GetPawn()); MyCharacter && !Cast<ADarcSpiritCharacter>(MyCharacter))
+	{
+		MyCharacter->GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+		MyCharacter->Crouch();
+	}
+}
+
+void ADarcPlayerController::HandleCrouchReleased()
+{
+	if (ACharacter* MyCharacter = Cast<ACharacter>(GetPawn()))
+	{
+		MyCharacter->UnCrouch();
+	}
+}
+
+void ADarcPlayerController::HandleTalkPressed()
+{
+	if (const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get(); Settings && Settings->bOpenMic)
+	{
+		return; // открытый микрофон — голос идёт и так
+	}
+	bTalking = true;
+	StartTalking();
+	// С рацией — щелчок тангенты у себя (напарник с рацией слышит голос по радио, без расстояния).
+	if (GetPawn() && ADarcTool::HasTool(GetPawn(), EDarcToolType::Radio))
+	{
+		UDarcAssetSettings::PlaySound(this, TEXT("RadioClick"), GetPawn()->GetActorLocation(), 0.5f);
+	}
+}
+
+void ADarcPlayerController::HandleTalkReleased()
+{
+	if (const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get(); Settings && Settings->bOpenMic)
+	{
+		return;
+	}
+	bTalking = false;
+	StopTalking();
+}
+
+void ADarcPlayerController::UpdateVoiceTalkers()
+{
+	const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+	if (!GS || !PlayerState)
+	{
+		return;
+	}
+	if (!VoiceAttenuation)
+	{
+		// Голос рядом: слышно отчётливо до 3 м, тише к 20 м, сквозь стены — глуше.
+		VoiceAttenuation = NewObject<USoundAttenuation>(this);
+		FSoundAttenuationSettings& A = VoiceAttenuation->Attenuation;
+		A.bAttenuate = true;
+		A.bSpatialize = true;
+		A.AttenuationShape = EAttenuationShape::Sphere;
+		A.AttenuationShapeExtents = FVector(300.f, 0.f, 0.f);
+		A.FalloffDistance = 1700.f;
+		A.bEnableOcclusion = true;
+		A.OcclusionLowPassFilterFrequency = 1200.f;
+		A.OcclusionVolumeAttenuation = 0.45f;
+	}
+	const bool bIHaveRadio = GetPawn() && ADarcTool::HasTool(GetPawn(), EDarcToolType::Radio);
+	for (APlayerState* PS : GS->PlayerArray)
+	{
+		if (!PS || PS == PlayerState)
+		{
+			continue;
+		}
+		UVOIPTalker* Talker = Talkers.FindRef(PS);
+		if (!Talker)
+		{
+			Talker = UVOIPTalker::CreateTalkerForPlayer(PS);
+			if (!Talker)
+			{
+				continue;
+			}
+			Talkers.Add(PS, Talker);
+		}
+		// Рации у обоих — голос по радио (без расстояния, «в ухе»); иначе — из персонажа рядом.
+		APawn* Other = PS->GetPawn();
+		const bool bRadio = bIHaveRadio && Other && ADarcTool::HasTool(Other, EDarcToolType::Radio);
+		Talker->Settings.ComponentToAttachTo = (!bRadio && Other) ? Other->GetRootComponent() : nullptr;
+		Talker->Settings.AttenuationSettings = bRadio ? nullptr : VoiceAttenuation.Get();
+	}
+	for (auto It = Talkers.CreateIterator(); It; ++It)
+	{
+		if (!IsValid(It.Key()) || !GS->PlayerArray.Contains(It.Key()))
+		{
+			It.RemoveCurrent();
+		}
+	}
+}
+
+void ADarcPlayerController::HandleSprintPressed()
+{
+	if (UDarcVitalsComponent* Vitals = GetPawn() ? GetPawn()->FindComponentByClass<UDarcVitalsComponent>() : nullptr)
+	{
+		Vitals->SetSprintPressed(true);
+	}
+}
+
+void ADarcPlayerController::HandleSprintReleased()
+{
+	if (UDarcVitalsComponent* Vitals = GetPawn() ? GetPawn()->FindComponentByClass<UDarcVitalsComponent>() : nullptr)
+	{
+		Vitals->SetSprintPressed(false);
+	}
+}
+
+void ADarcPlayerController::SetPawn(APawn* InPawn)
+{
+	Super::SetPawn(InPawn);
+
+	if (InPawn && IsLocalController())
+	{
+		if (const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get())
+		{
+			Settings->ApplyFieldOfView(InPawn);
+		}
+	}
 }
 
 void ADarcPlayerController::OnPossess(APawn* InPawn)
@@ -98,7 +397,8 @@ void ADarcPlayerController::OnPossess(APawn* InPawn)
 void ADarcPlayerController::CheckFallSafety()
 {
 	APawn* MyPawn = GetPawn();
-	if (!MyPawn || !HasAuthority())
+	// Сидит в машине (привязан к ней) — машина едет по рельефу, это не падение.
+	if (!MyPawn || !HasAuthority() || MyPawn->GetAttachParentActor())
 	{
 		return;
 	}
@@ -139,12 +439,21 @@ void ADarcPlayerController::EnsureInteractionComponent(APawn* InPawn)
 	EnsureComponent<UDarcFootstepComponent>(InPawn, TEXT("Footsteps"));
 	EnsureComponent<UDarcFlashlightComponent>(InPawn, TEXT("Flashlight"));
 	EnsureComponent<UDarcPlayerOutfitComponent>(InPawn, TEXT("Outfit"));
+	EnsureComponent<UDarcVitalsComponent>(InPawn, TEXT("Vitals"));
+	EnsureComponent<UDarcInventoryComponent>(InPawn, TEXT("Inventory"));
+	// Пригибаться (Ctrl) — для вентиляции и низких проходов; у клиента включается при нажатии.
+	if (ACharacter* MyCharacter = Cast<ACharacter>(InPawn))
+	{
+		MyCharacter->GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+	}
 }
 
 void ADarcPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	CloseTerminalUI(false);
 	GetWorldTimerManager().ClearTimer(FallSafetyTimer);
+	GetWorldTimerManager().ClearTimer(VoiceTimer);
+	GetWorldTimerManager().ClearTimer(ShadowTimer);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -249,24 +558,62 @@ void ADarcPlayerController::OpenTerminalUI(ADarcTerminal* Terminal)
 	CloseTerminalUI(false);
 	OpenTerminal = Terminal;
 
+	// Оформление из UI-пака D.A.R.C.: экран ЭЛТ с развёрткой и сканлайны поверх (картинки без текста —
+	// весь текст окна из String Table). Нет картинок — остаётся тёмная подложка.
+	auto SetupBrush = [this](FSlateBrush& Brush, const TCHAR* Path)
+	{
+		UTexture2D* Texture = LoadObject<UTexture2D>(nullptr, Path);
+		if (Texture)
+		{
+			TerminalTextures.AddUnique(Texture);
+			Brush.SetResourceObject(Texture);
+			Brush.ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
+			Brush.DrawAs = ESlateBrushDrawType::Image;
+		}
+		return Texture != nullptr;
+	};
+	const bool bScreen = SetupBrush(TerminalScreenBrush, TEXT("/Game/DARC/Imported/Textures/UI/DARC_UI_Pack/Crops/T_Screen_Scan.T_Screen_Scan"));
+	const bool bScan = SetupBrush(TerminalScanBrush, TEXT("/Game/DARC/Imported/Textures/UI/DARC_UI_Pack/Crops/T_Scanlines.T_Scanlines"));
+	const FLinearColor TextColor(0.72f, 0.88f, 1.f);
+
 	TerminalWidget =
 		SNew(SBox)
 		.HAlign(HAlign_Center)
 		.VAlign(VAlign_Center)
 		[
 			SNew(SBox)
-			.WidthOverride(720.f)
+			.WidthOverride(760.f)
 			[
+				// Корпус: тёмно-серая рамка, внутри — экран.
 				SNew(SBorder)
-				.BorderBackgroundColor(FLinearColor(0.f, 0.f, 0.f, 0.92f))
-				.Padding(24.f)
+				.BorderBackgroundColor(FLinearColor(0.09f, 0.1f, 0.12f, 0.98f))
+				.Padding(10.f)
+				[
+				SNew(SOverlay)
+				+ SOverlay::Slot()
+				[
+					SNew(SImage)
+					.Image(bScreen ? &TerminalScreenBrush : nullptr)
+					.ColorAndOpacity(bScreen ? FLinearColor(0.55f, 0.6f, 0.7f, 1.f) : FLinearColor(0.f, 0.02f, 0.04f, 0.95f))
+				]
+				+ SOverlay::Slot()
+				[
+					SNew(SImage)
+					.Image(bScan ? &TerminalScanBrush : nullptr)
+					.ColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, bScan ? 0.12f : 0.f))
+					.Visibility(EVisibility::HitTestInvisible)
+				]
+				+ SOverlay::Slot()
+				.Padding(26.f)
 				[
 					SNew(SVerticalBox)
 					+ SVerticalBox::Slot().AutoHeight().Padding(0.f, 0.f, 0.f, 12.f)
 					[
 						SAssignNew(TerminalScreen, STextBlock)
 						.Text(BuildTerminalScreenText())
-						.ColorAndOpacity(FLinearColor(0.55f, 1.f, 0.6f))
+						.ColorAndOpacity(TextColor)
+						.ShadowColorAndOpacity(FLinearColor(0.2f, 0.5f, 1.f, 0.35f))
+						.ShadowOffset(FVector2D(0.f, 0.f))
 						.AutoWrapText(true)
 					]
 					+ SVerticalBox::Slot().AutoHeight().Padding(0.f, 0.f, 0.f, 8.f)
@@ -290,6 +637,7 @@ void ADarcPlayerController::OpenTerminalUI(ADarcTerminal* Terminal)
 							}
 						})
 					]
+				]
 				]
 			]
 		];
@@ -360,5 +708,25 @@ void ADarcPlayerController::RefreshTerminalUI()
 	if (TerminalScreen.IsValid())
 	{
 		TerminalScreen->SetText(BuildTerminalScreenText());
+	}
+}
+
+void ADarcPlayerController::Client_OpenMissionSelect_Implementation()
+{
+	ADarcMissionTerminal::OpenSelectionUI(this);
+}
+
+void ADarcPlayerController::Server_SelectMission_Implementation(int32 Level)
+{
+	// Проверка на сервере: игрок стоит у терминала, уровень открыт (это проверяет куратор).
+	const APawn* MyPawn = GetPawn();
+	bool bNearTerminal = false;
+	for (TActorIterator<ADarcMissionTerminal> It(GetWorld()); It && MyPawn; ++It)
+	{
+		bNearTerminal |= FVector::Dist(It->GetActorLocation(), MyPawn->GetActorLocation()) < 400.f;
+	}
+	if (ADarcBaseCurator* Curator = bNearTerminal ? ADarcBaseCurator::Find(this) : nullptr)
+	{
+		Curator->SelectLevel(Level);
 	}
 }

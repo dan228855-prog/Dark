@@ -15,12 +15,15 @@
 #include "DarcHUD.h"
 #include "DarcPlayerController.h"
 #include "DarcSliceBuilder.h"
+#include "DarcBase.h"
+#include "Camera/PlayerCameraManager.h"
 #include "DarcMarkupSubsystem.h"
 #include "RareEventManagerComponent.h"
 #include "Engine/DataTable.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
+#include "DarcInventoryComponent.h"
 
 ADarcGameMode::ADarcGameMode()
 {
@@ -79,7 +82,8 @@ void ADarcGameMode::StartPlay()
         }
     }
 
-    if (UDarcAssetSettings::Get()->bAutoStartMission)
+    // На базе (есть куратор) задач выезда нет.
+    if (UDarcAssetSettings::Get()->bAutoStartMission && !ADarcBaseCurator::Find(this))
     {
         GetWorldTimerManager().SetTimer(StartTimer, this, &ADarcGameMode::AutoStartMission, 3.f, false);
     }
@@ -129,12 +133,24 @@ void ADarcGameMode::AutoStartMission()
 void ADarcGameMode::WatchMissionEnd()
 {
     ADarcGameState* GS = GetGameState<ADarcGameState>();
-    if (!GS || GS->MissionPhase != EMissionPhase::Completed || bEndLinesSaid)
+    if (!GS || bEndLinesSaid || (GS->MissionPhase != EMissionPhase::Completed && GS->MissionPhase != EMissionPhase::Failed))
     {
         return;
     }
     bEndLinesSaid = true;
     GetWorldTimerManager().ClearTimer(EndWatchTimer);
+
+    // Есть база — разговор с куратором там (DarcBaseCurator: приём данных, последствия выезда).
+    if (!BaseMap.IsEmpty() && !ADarcBaseCurator::Find(this))
+    {
+        GS->Say(FText::GetEmpty(), UDarcGameplayLibrary::UIText(TEXT("Mission_ReturnToBase")), 5.f, FVector::ZeroVector, 0.f);
+        GetWorldTimerManager().SetTimer(ReturnTimer, this, &ADarcGameMode::ReturnToBase, ReturnToBaseDelay, false);
+        return;
+    }
+    if (GS->MissionPhase != EMissionPhase::Completed)
+    {
+        return;
+    }
 
     // Возвращение на базу в срезе — разговором с куратором по рации (сама база — следующий этап).
     TArray<FName> Lines = { TEXT("Curator_GotIt"), TEXT("Curator_Good"), TEXT("Curator_NextLater") };
@@ -186,6 +202,11 @@ void ADarcGameMode::KillPlayer(AController* Victim, AActor* Cause)
     {
         Held->ForceDrop();
     }
+    // Инвентарь тоже высыпается рядом с телом.
+    if (UDarcInventoryComponent* Inventory = Body->FindComponentByClass<UDarcInventoryComponent>())
+    {
+        Inventory->ServerDropAll();
+    }
 
     // 2. Состояние и память (до смены пешки — чтобы память знала, кто это был).
     PS->SetAlive(false);
@@ -235,4 +256,21 @@ bool ADarcGameMode::AnyPlayerAlive() const
         }
     }
     return false;
+}
+
+void ADarcGameMode::ReturnToBase()
+{
+    // Затемнение у всех и переезд всего сервера (кооператив едет вместе).
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (APlayerController* PC = It->Get())
+        {
+            PC->ClientSetCameraFade(true, FColor::Black, FVector2D(0.f, 1.f), 1.5f, true);
+        }
+    }
+    FTimerHandle Travel;
+    GetWorldTimerManager().SetTimer(Travel, [this]()
+    {
+        GetWorld()->ServerTravel(BaseMap + (GetNetMode() == NM_ListenServer ? TEXT("?listen") : TEXT("")), true);
+    }, 1.8f, false);
 }

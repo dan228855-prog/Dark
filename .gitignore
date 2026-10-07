@@ -28,3 +28,10 @@ Plugins/**/Intermediate/
 # Исключение — текстовые строки локализации (String Table из CSV), они нужны коду.
 /Content/*
 !/Content/Localization/
+
+# Скачанные плагины апскейлеров (DLSS/FSR/Streamline, ~2.4 ГБ) — ставятся заново по docs, в git не храним
+/Plugins/DLSS/
+/Plugins/FSR/
+/Plugins/Streamline*/
+# Исходники моделей (как RawAssets)
+/SourceArt/

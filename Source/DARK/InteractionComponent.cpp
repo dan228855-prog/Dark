@@ -41,6 +41,13 @@ AActor* UInteractionComponent::FindInteractableInView() const
 	if (UDarcGameplayLibrary::TraceAim(OwnerPawn, InteractionRange, Hit))
 	{
 		AActor* HitActor = Hit.GetActor();
+		// Часть объекта с тегом NoInteract — не «рабочая» (корпус сервера): E — только по
+		// кнопке/разъёму, а не с любого бока двухметрового шкафа.
+		const UPrimitiveComponent* HitComponent = Hit.GetComponent();
+		if (HitComponent && HitComponent->ComponentHasTag(TEXT("NoInteract")))
+		{
+			return nullptr;
+		}
 		if (HitActor && HitActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
 		{
 			if (IInteractable::Execute_CanInteract(HitActor, Owner))

@@ -41,6 +41,10 @@ public:
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_State, BlueprintReadOnly, Category = "Power")
 	bool bBreakerOn = true;
 
+	/** Урон от удара током при вставке предохранителя под напряжением. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power")
+	float ShockDamage = 25.f;
+
 	/** Какие контуры выбивает предохранитель, сгоревший в этом щитке. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power")
 	TArray<FName> CollateralCircuits;

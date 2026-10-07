@@ -26,6 +26,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Power")
 	void SetRunning(bool bNewRunning);
 
+	/** Сколько нагрузки (сумма Load подключённых вводов) тянет генератор. Больше — перегрузка, глохнет. */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Power", meta = (ClampMin = "1"))
+	int32 Capacity = 1;
+
+	/** Сервер: перегрузка — заглохнуть с хлопком и сообщением рядом. */
+	void TripOverload();
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -34,6 +41,9 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent> RunningLoop;
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_Overload();
 
 	/** Звук запуска/работы/остановки, дым — Blueprint. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Power")

@@ -10,7 +10,7 @@
 class USpotLightComponent;
 class UStaticMeshComponent;
 
-UCLASS(ClassGroup = (DARC), meta = (BlueprintSpawnableComponent))
+UCLASS(ClassGroup = (DARC), Config = Game, meta = (BlueprintSpawnableComponent))
 class DARK_API UDarcFlashlightComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -27,7 +27,7 @@ public:
 
 	/** Яркость (люмены), дальность (см) и угол конуса (градусы). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
-	float Lumens = 900.f;
+	float Lumens = 100.f;
 
 	/** Ближе этого (см) к стене луч плавно тускнеет — без пересвета «в упор». */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
@@ -38,6 +38,21 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
 	float ConeAngle = 24.f;
+
+	/**
+	 * Фонарь в левой руке: сдвиг и поворот корпуса от кости кисти hand_l в её осях (луч всегда по
+	 * взгляду). Поворот (0,0,0) — корпус смотрит по взгляду; любой другой — зафиксирован в кисти.
+	 * Оба можно менять у компонента Flashlight во время игры — применяются каждый кадр.
+	 * Настраивается в Config/DefaultGame.ini, раздел [/Script/DARK.DarcFlashlightComponent].
+	 */
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Flashlight")
+	FVector HandOffset = FVector(0.16f, -3.5f, -3.f);
+
+	UPROPERTY(EditAnywhere, Config, BlueprintReadWrite, Category = "Flashlight")
+	FRotator HandRotation = FRotator::ZeroRotator;
+
+	/** Заново вложить фонарь в руку (поза рук сменилась — например, игрок вышел из машины). */
+	void ResetHandPlacement();
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

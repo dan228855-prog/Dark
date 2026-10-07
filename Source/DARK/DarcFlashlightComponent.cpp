@@ -34,7 +34,7 @@ void UDarcFlashlightComponent::BeginPlay()
 	{
 		return;
 	}
-	Spot = NewObject<USpotLightComponent>(GetOwner(), TEXT("FlashlightBeam"));
+	Spot = NewObject<USpotLightComponent>(GetOwner(), MakeUniqueObjectName(GetOwner(), USpotLightComponent::StaticClass(), TEXT("FlashlightBeam")));
 	Spot->SetMobility(EComponentMobility::Movable);
 	Spot->SetUsingAbsoluteLocation(true);
 	Spot->SetUsingAbsoluteRotation(true);
@@ -61,10 +61,11 @@ void UDarcFlashlightComponent::BuildHousing()
 	}
 	auto MakePart = [Character](const TCHAR* Name, const TCHAR* Shape)
 	{
-		UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(Character, Name);
+		UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(Character, MakeUniqueObjectName(Character, UStaticMeshComponent::StaticClass(), Name));
 		Part->SetMobility(EComponentMobility::Movable);
 		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Part->SetCastShadow(false);
+		Part->SetReceivesDecals(false); // декали дороги на фонаре в руке «плывут»
 		Part->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Engine/BasicShapes/%s.%s"), Shape, Shape)));
 		return Part;
 	};
@@ -85,6 +86,12 @@ void UDarcFlashlightComponent::BuildHousing()
 	UpdateLensGlow();
 }
 
+void UDarcFlashlightComponent::ResetHandPlacement()
+{
+	bPlacedInHand = false;
+	PlaceInHand();
+}
+
 void UDarcFlashlightComponent::PlaceInHand()
 {
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
@@ -98,25 +105,23 @@ void UDarcFlashlightComponent::PlaceInHand()
 	bPlacedForLocal = Character->IsLocallyControlled();
 
 	// Своему игроку — в левую руку рук от первого лица (рисуется вместе с ними); остальным —
-	// в левую руку модели тела. Корпус — лучом по взгляду; положение считаем один раз и
-	// дальше оно держится за кость руки.
+	// в левую руку модели тела. Смещение — в осях кости кисти: раньше оно считалось по взгляду
+	// в первый кадр (игрок ещё сидел в машине), и фонарь оказывался над тыльной стороной ладони.
 	const ADARKCharacter* FirstPersonCharacter = Cast<ADARKCharacter>(Character);
 	USkeletalMeshComponent* Hand = Character->IsLocallyControlled() && FirstPersonCharacter
 		? FirstPersonCharacter->GetFirstPersonMesh() : Character->GetMesh();
 	const FName Bone(TEXT("hand_l"));
-	FVector Eyes;
-	FRotator View;
-	UDarcGameplayLibrary::GetAimViewPoint(Character, Eyes, View);
 	if (Hand && Hand->DoesSocketExist(Bone))
 	{
 		Housing->AttachToComponent(Hand, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Bone);
-		const FRotationMatrix Axes(View);
-		Housing->SetWorldLocationAndRotation(Hand->GetSocketLocation(Bone) + Axes.GetUnitAxis(EAxis::X) * 4.f + Axes.GetUnitAxis(EAxis::Z) * 1.5f,
-			FRotationMatrix::MakeFromZ(View.Vector()).Rotator());
+		Housing->SetRelativeLocation(HandOffset);
 	}
 	else
 	{
 		// Нет руки — слева внизу у камеры.
+		FVector Eyes;
+		FRotator View;
+		UDarcGameplayLibrary::GetAimViewPoint(Character, Eyes, View);
 		const FRotationMatrix Axes(View);
 		Housing->SetWorldLocationAndRotation(Eyes + Axes.GetUnitAxis(EAxis::X) * 38.f - Axes.GetUnitAxis(EAxis::Y) * 17.f - Axes.GetUnitAxis(EAxis::Z) * 16.f,
 			FRotationMatrix::MakeFromZ(View.Vector()).Rotator());
@@ -192,10 +197,21 @@ void UDarcFlashlightComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	const APawn* Pawn = Cast<APawn>(GetOwner());
 	PlaceInHand(); // один раз: фонарь в руке виден и выключенным
-	if (Housing && Pawn)
+	const bool bInHand = Housing && Housing->GetAttachSocketName() == FName(TEXT("hand_l"));
+	if (bInHand)
 	{
-		// Держится за руку (положение), а смотрит всегда туда же, куда игрок: раньше поворот
-		// считался один раз, пока руки ещё стояли в исходной позе, и фонарь смотрел вверх.
+		// Каждый кадр из настроек — HandOffset/HandRotation можно крутить у компонента Flashlight
+		// прямо во время игры и сразу видеть результат.
+		Housing->SetRelativeLocation(HandOffset);
+	}
+	if (bInHand && !HandRotation.IsNearlyZero())
+	{
+		// Поворот задан — корпус зафиксирован в кисти (в осях кости hand_l), луч всё равно по взгляду.
+		Housing->SetRelativeRotation(HandRotation);
+	}
+	else if (Housing && Pawn)
+	{
+		// Поворот не задан — корпус смотрит туда же, куда игрок.
 		FVector AimEyes;
 		FRotator AimView;
 		UDarcGameplayLibrary::GetAimViewPoint(Pawn, AimEyes, AimView);

@@ -33,6 +33,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Barrier")
 	float OpenSeconds = 2.2f;
 
+	/** С какой секунды играть звук мотора: в записи ~0.3 с тишины и тихое начало — без пропуска
+	 *  скрип слышался заметно позже, чем стрела начинала подниматься. */
+	UPROPERTY(EditAnywhere, Category = "Barrier")
+	float MotorSoundStartTime = 0.5f;
+
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:

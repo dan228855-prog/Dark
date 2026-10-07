@@ -23,7 +23,7 @@ public class DARK : ModuleRules
 			"DeveloperSettings"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] { "PhysicsCore", "AnimationCore", "MoviePlayer", "EngineSettings" });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"DARK",
@@ -34,6 +34,18 @@ public class DARK : ModuleRules
 			"DARK/Variant_Shooter/UI",
 			"DARK/Variant_Shooter/Weapons"
 		});
+
+		// Масштабирование и генерация кадров: DLSS / Reflex (плагины NVIDIA) — только Windows.
+		// FSR управляется консольными переменными, зависимость не нужна.
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[] { "DLSSBlueprint", "StreamlineDLSSGBlueprint", "StreamlineReflexBlueprint" });
+			PublicDefinitions.Add("DARC_WITH_NVIDIA=1");
+		}
+		else
+		{
+			PublicDefinitions.Add("DARC_WITH_NVIDIA=0");
+		}
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "DARKCharacter.h"
+#include "DarcGameUserSettings.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -91,6 +92,13 @@ void ADARKCharacter::DoAim(float Yaw, float Pitch)
 {
 	if (GetController())
 	{
+		// чувствительность и инверсия — из настроек игрока
+		if (const UDarcGameUserSettings* Settings = UDarcGameUserSettings::Get())
+		{
+			Yaw *= Settings->MouseSensitivity;
+			Pitch *= Settings->MouseSensitivity * (Settings->bInvertMouseY ? -1.f : 1.f);
+		}
+
 		// pass the rotation inputs
 		AddControllerYawInput(Yaw);
 		AddControllerPitchInput(Pitch);

@@ -1,6 +1,7 @@
 // DarcAssetSettings.cpp
 #include "DarcAssetSettings.h"
 #include "DarcTaskTypes.h"
+#include "Interactable.h"
 #include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DataTable.h"
@@ -269,12 +270,12 @@ USoundAttenuation* UDarcAssetSettings::GetDefaultAttenuation(USoundBase* Sound)
 	return Attenuation.Get();
 }
 
-void UDarcAssetSettings::PlaySound(const UObject* WorldContextObject, FName Slot, const FVector& Location, float Volume)
+void UDarcAssetSettings::PlaySound(const UObject* WorldContextObject, FName Slot, const FVector& Location, float Volume, float StartTime)
 {
 	if (USoundBase* Sound = FindSoundVariant(Slot))
 	{
 		UGameplayStatics::PlaySoundAtLocation(WorldContextObject, Sound, Location, FRotator::ZeroRotator,
-			Volume, FMath::FRandRange(0.95f, 1.05f), 0.f, GetDefaultAttenuation(Sound));
+			Volume, FMath::FRandRange(0.95f, 1.05f), StartTime, GetDefaultAttenuation(Sound));
 	}
 }
 
@@ -306,6 +307,16 @@ UMaterialInterface* UDarcAssetSettings::MakeColorMaterial(UObject* Outer, const 
 		Instance->SetScalarParameterValue(TEXT("Intensity"), Glow);
 	}
 	return Instance;
+}
+
+UMaterialInterface* UDarcAssetSettings::GetUnlitTextMaterial()
+{
+	static TStrongObjectPtr<UMaterialInterface> Material;
+	if (!Material.IsValid())
+	{
+		Material.Reset(LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/EngineMaterials/UnlitText.UnlitText")));
+	}
+	return Material.Get();
 }
 
 void UDarcAssetSettings::EnsurePhysicsCollision(UStaticMeshComponent* Component, const FDarcVisualSpec& Spec)
@@ -372,6 +383,19 @@ void UDarcAssetSettings::ApplyCopy(UStaticMeshComponent* Component, AActor* Sour
 	Component->SetWorldScale3D(Extent / 50.f);
 	Component->SetWorldLocation(Origin, false, nullptr, ETeleportType::TeleportPhysics);
 	Component->SetHiddenInGame(true);
+	// Невидимая коробка нужна только взгляду (навести и нажать E) — ходить сквозь неё можно.
+	// Было: якоря событий на Target Point давали кубы 2.5 м невидимой стены посреди комнат.
+	const AActor* Owner = Component->GetOwner();
+	if (Owner && Owner->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+	{
+		Component->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		Component->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Component->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	}
+	else
+	{
+		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void FDarcVisualSpec::ApplyTo(UStaticMeshComponent* Component) const

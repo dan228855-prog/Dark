@@ -10,7 +10,10 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "TimerManager.h"
+#include "UObject/Package.h"
+#include "UObject/StrongObjectPtr.h"
 
 ADarcHeavyObject::ADarcHeavyObject()
 {
@@ -61,6 +64,18 @@ void ADarcHeavyObject::BeginPlay()
 	Collision->SetSimulatePhysics(true);
 	Collision->SetMassOverrideInKg(NAME_None, MassKg, true);
 	Collision->SetAngularDamping(1.5f);
+	// Трение пониже стандартного (0.7): с ним тяжёлое «прилипало» к полу и почти не шло за
+	// пятящимся игроком. Вес по-прежнему чувствуется — массой и скоростью ходьбы с грузом.
+	{
+		static TStrongObjectPtr<UPhysicalMaterial> Sliding;
+		if (!Sliding.IsValid())
+		{
+			Sliding.Reset(NewObject<UPhysicalMaterial>(GetTransientPackage(), TEXT("DarcHeavySliding")));
+			Sliding->Friction = 0.45f;
+			Sliding->StaticFriction = 0.5f;
+		}
+		Collision->SetPhysMaterialOverride(Sliding.Get());
+	}
 	ApplyCableDrag();
 	BuildCableVisual();
 

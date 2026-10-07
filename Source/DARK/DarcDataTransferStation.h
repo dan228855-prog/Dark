@@ -4,7 +4,8 @@
 // «TRANSFER READY» → передача → пауза «CHECKING DATA...» → «TRANSFER COMPLETE».
 // Пропало питание во время передачи — передача встаёт и продолжится с того же места,
 // когда питание вернут (ошибка → новая проблема, а не провал).
-// Тексты статусов на экране — в Blueprint из String Table по состоянию.
+// Экран (статус + проценты) и кнопка «Пуск» под разъёмом носителя строятся кодом у каждой машины;
+// тексты — из String Table. Корпус сервера на E не реагирует (тег NoInteract) — только кнопка.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -51,12 +52,26 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transfer")
 	TObjectPtr<UDarcPowerConsumerComponent> Power;
 
+	/** Кнопка «Пуск» — под разъёмом носителя; E по ней запускает передачу. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transfer")
+	TObjectPtr<UStaticMeshComponent> StartButton;
+
+	/** Экран над разъёмом носителя: статус и проценты. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transfer")
+	TObjectPtr<UStaticMeshComponent> ScreenPanel;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transfer")
+	TObjectPtr<class UTextRenderComponent> ScreenTitle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transfer")
+	TObjectPtr<class UTextRenderComponent> ScreenDetail;
+
 	/** Слот интерфейсного модуля. Без модуля — «EXTERNAL STORAGE NOT READY». */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Transfer")
 	TObjectPtr<ADarcItemSlot> InterfaceSlot;
 
-	/** Слот носителя. Вынуть носитель можно только после завершения передачи. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer")
+	/** Слот носителя. Вынуть носитель можно только после завершения передачи. Экран и кнопка — рядом с ним. */
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_DriveSlot, BlueprintReadOnly, Category = "Transfer")
 	TObjectPtr<ADarcItemSlot> DriveSlot;
 
 	/** Чистое время передачи без паузы, сек. */
@@ -95,6 +110,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer|Text")
 	FText PromptStart;
 
+	/** Подсказки кнопки, пока запустить нельзя / уже идёт / готово (String Table). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer|Text")
+	FText PromptNoPower;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer|Text")
+	FText PromptNeedModule;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer|Text")
+	FText PromptInProgress;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Transfer|Text")
+	FText PromptTakeDrive;
+
 	// --- IInteractable ---
 	virtual bool CanInteract_Implementation(AActor* Interactor) const override;
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
@@ -112,6 +140,15 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Transfer();
+
+	UFUNCTION()
+	void OnRep_DriveSlot();
+
+	/** Поставить экран и кнопку у разъёма носителя (у каждой машины по своей модели). */
+	void LayoutControls();
+
+	/** Экран и цвет кнопки по состоянию. */
+	void UpdateScreen();
 
 	/** Экран сервера: показать состояние и процент (у всех клиентов). */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Transfer")

@@ -11,6 +11,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "DarcAssetSettings.h"
 #include "EngineUtils.h"
+#include "DarcGameplayLibrary.h"
+#include "TimerManager.h"
+#include "DarcInventoryComponent.h"
 
 ACarryableItem::ACarryableItem()
 {
@@ -31,17 +34,24 @@ void ACarryableItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME_CONDITION(ACarryableItem, VisualSpec, COND_InitialOnly);
     DOREPLIFETIME(ACarryableItem, CurrentHolder);
+    DOREPLIFETIME(ACarryableItem, StowedBy);
+    DOREPLIFETIME_CONDITION(ACarryableItem, ItemName, COND_InitialOnly);
 }
 
 bool ACarryableItem::CanInteract_Implementation(AActor* Interactor) const
 {
+    // Убранный в инвентарь предмет скрыт — взаимодействовать не с чем.
+    if (StowedBy)
+    {
+        return false;
+    }
     // Свой предмет можно положить обратно.
     if (CurrentHolder == Interactor)
     {
         return true;
     }
-    // Поднять можно только свободный предмет и только пустыми руками — два предмета сразу не носим.
-    return CurrentHolder == nullptr && FindItemHeldBy(Interactor) == nullptr;
+    // Свободный предмет можно поднять и с занятыми руками — тогда он заменит то, что в руках.
+    return CurrentHolder == nullptr;
 }
 
 void ACarryableItem::OnInteract_Implementation(AActor* Interactor)
@@ -52,10 +62,104 @@ void ACarryableItem::OnInteract_Implementation(AActor* Interactor)
         ServerRelease(Interactor);
         return;
     }
-
-    if (CurrentHolder == nullptr && FindItemHeldBy(Interactor) == nullptr)
+    if (CurrentHolder != nullptr)
     {
-        ServerTransferTo(Interactor, Interactor);
+        return;
+    }
+
+    if (StowedBy)
+    {
+        return;
+    }
+
+    // Руки заняты — старый предмет уходит в свободный слот инвентаря, а если слотов нет —
+    // выпадает перед игроком (с физикой). Два предмета в руке сразу не носим.
+    UDarcInventoryComponent* Inventory = Interactor ? Interactor->FindComponentByClass<UDarcInventoryComponent>() : nullptr;
+    if (Inventory)
+    {
+        Inventory->ServerPrepareForPickup();
+    }
+    else if (ACarryableItem* Previous = FindItemHeldBy(Interactor); Previous && Previous != this)
+    {
+        Previous->ServerRelease(Interactor);
+    }
+    ServerTransferTo(Interactor, Interactor);
+    if (Inventory)
+    {
+        Inventory->ServerNoteHeld(this);
+    }
+}
+
+void ACarryableItem::ServerStow(AActor* ToActor)
+{
+    if (!HasAuthority() || !ToActor || CurrentHolder != ToActor || !bCanStow)
+    {
+        return;
+    }
+    DetachFromHolder();
+    CurrentHolder = nullptr;
+    StowedBy = ToActor;
+    ApplyStowedState();
+}
+
+void ACarryableItem::ServerUnstowTo(AActor* ToActor)
+{
+    if (!HasAuthority() || !ToActor || StowedBy != ToActor)
+    {
+        return;
+    }
+    StowedBy = nullptr;
+    SetActorHiddenInGame(false);
+    CurrentHolder = ToActor;
+    OnRep_Holder();
+}
+
+void ACarryableItem::ServerDropFromStow(AActor* ByActor)
+{
+    if (!HasAuthority() || !StowedBy)
+    {
+        return;
+    }
+    AActor* Previous = StowedBy;
+    StowedBy = nullptr;
+    SetActorHiddenInGame(false);
+    DetachFromHolder();
+    if (const APawn* Pawn = Cast<APawn>(Previous))
+    {
+        PlaceInFrontOf(Pawn);
+    }
+    if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+    {
+        Memory->RecordItemMoved(GetMemoryId(), PickUpTransform, GetActorTransform(), ByActor ? ByActor : Previous);
+    }
+}
+
+void ACarryableItem::ApplyStowedState()
+{
+    SetFirstPersonRendering(false);
+    if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()))
+    {
+        Body->SetSimulatePhysics(false);
+    }
+    SetActorEnableCollision(false);
+    if (StowedBy && StowedBy->GetRootComponent())
+    {
+        AttachToComponent(StowedBy->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+    }
+    SetActorHiddenInGame(true);
+}
+
+void ACarryableItem::OnRep_Stowed()
+{
+    if (StowedBy)
+    {
+        ApplyStowedState();
+        return;
+    }
+    SetActorHiddenInGame(false);
+    if (!CurrentHolder)
+    {
+        DetachFromHolder(); // выброшен из инвентаря — снова физический предмет в мире
     }
 }
 
@@ -75,6 +179,10 @@ void ACarryableItem::ServerTransferTo(AActor* NewHolder, AActor* ByActor)
     if (!CurrentHolder)
     {
         PickUpTransform = GetActorTransform();
+        if (PickUpTransform.GetLocation().Z > FellThroughZ)
+        {
+            SafeTransform = PickUpTransform;
+        }
     }
 
     CurrentHolder = NewHolder;
@@ -88,8 +196,15 @@ void ACarryableItem::ServerRelease(AActor* ByActor)
         return;
     }
 
+    AActor* PreviousHolder = CurrentHolder;
     DetachFromHolder();
     CurrentHolder = nullptr;
+    if (APawn* Pawn = Cast<APawn>(PreviousHolder))
+    {
+        // Из руки предмет выпадает перед игроком, а не там, где была кость руки: та может
+        // оказаться в стене или у самого пола — тогда предмет проваливался сквозь него.
+        PlaceInFrontOf(Pawn);
+    }
     OnRep_Holder();
 
     if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
@@ -110,8 +225,67 @@ void ACarryableItem::ForceDrop()
     ServerRelease(CurrentHolder);
 }
 
+void ACarryableItem::ServerEjectTo(const FVector& Location, const FVector& Velocity, AActor* ByActor)
+{
+    if (!HasAuthority() || !CurrentHolder)
+    {
+        return;
+    }
+    ServerRelease(ByActor ? ByActor : CurrentHolder);
+    SetActorLocation(Location, false, nullptr, ETeleportType::ResetPhysics);
+    if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()); Body && Body->IsSimulatingPhysics())
+    {
+        Body->SetPhysicsLinearVelocity(Velocity);
+    }
+}
+
+void ACarryableItem::PlaceInFrontOf(const APawn* Pawn)
+{
+    if (!Pawn || !GetWorld())
+    {
+        return;
+    }
+    FVector Eyes;
+    FRotator View;
+    UDarcGameplayLibrary::GetAimViewPoint(Pawn, Eyes, View);
+    const FRotator Facing(0.f, View.Yaw, 0.f);
+    const FVector Forward = Facing.Vector();
+
+    // Чуть выше пояса и на полшага вперёд; упёрлись в стену — оставляем перед ней.
+    const FVector From = Pawn->GetActorLocation() + FVector(0.f, 0.f, 20.f);
+    FVector Target = From + Forward * 45.f;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(DarcDropItem), false, Pawn);
+    Params.AddIgnoredActor(this);
+    FHitResult Hit;
+    if (GetWorld()->LineTraceSingleByChannel(Hit, From, Target, ECC_Visibility, Params))
+    {
+        Target = Hit.Location - Forward * 10.f;
+    }
+    SetActorLocationAndRotation(Target, Facing, false, nullptr, ETeleportType::ResetPhysics);
+}
+
+void ACarryableItem::CheckFellThrough()
+{
+    // Страховка (сервер): свободный предмет провалился под карту — возвращаем туда, где его
+    // последний раз брали (или где он лежал с начала уровня). Ключевые предметы не теряются.
+    if (CurrentHolder || StowedBy || GetActorLocation().Z > FellThroughZ)
+    {
+        return;
+    }
+    if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()))
+    {
+        Body->SetPhysicsLinearVelocity(FVector::ZeroVector);
+        Body->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+    }
+    SetActorLocationAndRotation(SafeTransform.GetLocation() + FVector(0.f, 0.f, 10.f), SafeTransform.GetRotation(), false, nullptr, ETeleportType::ResetPhysics);
+}
+
 void ACarryableItem::AttachToHolder(AActor* Holder)
 {
+    // Предмет мог прийти из руки (вид от первого лица) — в слоте/у NPC он рисуется в мире.
+    // Без этого вставленный модуль/вилка оставались «у лица» и ездили вместе с игроком.
+    SetFirstPersonRendering(false);
+
     // Пока предмет в руке или в слоте — без физики и без коллизии: иначе физическое тело
     // оторвётся от руки, а трейс взгляда упрётся в предмет вместо слота под ним.
     if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(GetRootComponent()))
@@ -147,12 +321,22 @@ void ACarryableItem::AttachToHolder(AActor* Holder)
             // длинной стороной поперёк взгляда. Положение считаем один раз в мире от камеры и
             // запоминаем относительно кости: дальше предмет двигается вместе с рукой.
             AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Palm);
+            if (bGripInBoneSpace)
+            {
+                SetActorRelativeLocation(FirstPersonGripOffset);
+                SetActorRelativeRotation(FirstPersonGripRotation);
+                SetFirstPersonRendering(true);
+                return;
+            }
             const FVector Forward = Camera->GetForwardVector();
             const FVector Right = Camera->GetRightVector();
             const FVector Up = Camera->GetUpVector();
             const FVector PalmLocation = Arms->GetSocketLocation(Palm);
-            SetActorLocationAndRotation(PalmLocation - Forward * 1.5f - Up * 2.5f + Right * FirstPersonGripOffset.Y,
-                FRotationMatrix::MakeFromZX(-Forward, Right).Rotator());
+            // Поправки хвата (настраиваются у предмета: FirstPersonGripOffset — вперёд/вправо/вверх
+            // по взгляду, см; FirstPersonGripRotation — доворот предмета).
+            SetActorLocationAndRotation(PalmLocation + Forward * (FirstPersonGripOffset.X - 1.5f)
+                + Right * FirstPersonGripOffset.Y + Up * (FirstPersonGripOffset.Z - 2.5f),
+                FRotationMatrix::MakeFromZX(-Forward, Right).ToQuat() * FirstPersonGripRotation.Quaternion());
             SetFirstPersonRendering(true);
             return;
         }
@@ -216,6 +400,12 @@ void ACarryableItem::SetFirstPersonRendering(bool bFirstPerson)
     GetComponents<UPrimitiveComponent>(Parts);
     for (UPrimitiveComponent* Part : Parts)
     {
+        // Части, стоящие в мире сами по себе (провод и розетка у вилки — абсолютные
+        // координаты), остаются в мире: иначе розетка и провод рисовались «у лица» игрока.
+        if (Part->IsUsingAbsoluteLocation())
+        {
+            continue;
+        }
         Part->SetFirstPersonPrimitiveType(bFirstPerson ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::None);
     }
 }
@@ -240,6 +430,12 @@ void ACarryableItem::OnRep_Holder()
 {
     // Вызывается на клиентах при получении новой реплики CurrentHolder,
     // и вручную на сервере из OnInteract_Implementation.
+    // Убран в инвентарь (CurrentHolder опустел вместе с появлением StowedBy) — не «выпал».
+    if (!CurrentHolder && StowedBy)
+    {
+        ApplyStowedState();
+        return;
+    }
     if (CurrentHolder)
     {
         AttachToHolder(CurrentHolder);
@@ -273,8 +469,24 @@ ACarryableItem* ACarryableItem::FindItemHeldBy(const AActor* Holder)
 void ACarryableItem::BeginPlay()
 {
     Super::BeginPlay();
+    // Предмет поставлен на карту руками (не сборщиком) — подсказки из String Table по умолчанию.
+    if (PromptPickUp.IsEmpty())
+    {
+        PromptPickUp = UDarcGameplayLibrary::UIText(TEXT("Carry_PickUp"));
+    }
+    if (PromptDrop.IsEmpty())
+    {
+        PromptDrop = UDarcGameplayLibrary::UIText(TEXT("Carry_Drop"));
+    }
     VisualSpec.bLocalUV = true; // предмет двигается — текстура не должна «плыть» по нему
     VisualSpec.ApplyTo(Mesh); // модель — у каждой машины сама
+    // Декали дороги/пола на переносимом предмете тоже «плывут».
+    TArray<UPrimitiveComponent*> Parts;
+    GetComponents<UPrimitiveComponent>(Parts);
+    for (UPrimitiveComponent* Part : Parts)
+    {
+        Part->SetReceivesDecals(false);
+    }
     UDarcAssetSettings::EnsurePhysicsCollision(Mesh, VisualSpec);
 
     // Мелкий предмет не сталкивается с персонажем: на него не встать, он не «везёт» игрока
@@ -284,8 +496,17 @@ void ACarryableItem::BeginPlay()
     Mesh->CanCharacterStepUpOn = ECB_No;
     Mesh->SetAngularDamping(2.f);
     Mesh->SetLinearDamping(0.3f);
+    // Тонкие предметы (карта — полсантиметра) при падении «проскакивали» пол за один кадр
+    // физики — непрерывная проверка столкновений это исключает.
+    Mesh->SetUseCCD(true);
     if (bPhysicsWhenFree && !CurrentHolder && Mesh->GetStaticMesh())
     {
         Mesh->SetSimulatePhysics(true);
+    }
+
+    if (HasAuthority())
+    {
+        SafeTransform = GetActorTransform();
+        GetWorldTimerManager().SetTimer(FallCheckTimer, this, &ACarryableItem::CheckFellThrough, 1.f, true, 1.f);
     }
 }

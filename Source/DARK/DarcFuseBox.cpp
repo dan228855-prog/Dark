@@ -13,6 +13,8 @@
 #include "TaskManagerComponent.h"
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
+#include "DarcTool.h"
+#include "DarcCableJunction.h"
 
 ADarcFuseBox::ADarcFuseBox()
 {
@@ -58,20 +60,25 @@ void ADarcFuseBox::OnInteract_Implementation(AActor* Interactor)
 	// Только сервер (вызов из InteractionComponent::Server_Interact).
 	ADarcFuseItem* HeldFuse = Cast<ADarcFuseItem>(ACarryableItem::FindItemHeldBy(Interactor));
 
+	// Тестер: состояние контура (напряжение, откуда, обрыв линии) — щиток не трогаем.
+	if (ADarcTool::GetHeldTool(Interactor) == EDarcToolType::Tester)
+	{
+		if (ADarcGameState* GS = GetWorld()->GetGameState<ADarcGameState>())
+		{
+			GS->Say(FText::GetEmpty(), ADarcCableJunction::MakeTesterReport(this, CircuitId, false), 4.f, GetActorLocation(), 1200.f);
+		}
+		return;
+	}
+
 	if (!bHasFuse && HeldFuse)
 	{
-		// Под напряжением вставлять нельзя: первое E выключает рубильник, второе — вставляет.
-		// Раньше E с предохранителем в руках всегда вставлял его — при включённом рубильнике он
-		// сгорал, а выключить рубильник с предохранителем в руках было нечем (E занят вставкой).
+		// Вставили под напряжением (рубильник включён) — удар током: урон, предохранитель
+		// выпадает из руки (цел, его можно поднять), дуга выбивает соседние контуры.
+		// Выключить рубильник — пустой рукой: предохранитель можно убрать в карман (1–4).
 		if (bBreakerOn)
 		{
-			bBreakerOn = false;
-			if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
-			{
-				Memory->RecordInteraction(CircuitId, TEXT("BreakerOff"), Interactor);
-			}
-			NotifyStateChanged();
-			TellNearby(TEXT("Fuse_BreakerOffNowInsert"));
+			ADarcCableJunction::ShockPlayer(Interactor, this, ShockDamage, TEXT("Fuse_Shock"));
+			HandleBlowFromMistake(Interactor);
 			return;
 		}
 
@@ -248,10 +255,14 @@ FText ADarcFuseBox::GetInteractionPrompt_Implementation() const
 	// предохранитель», даже когда E переключал рубильник.
 	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
 	const APawn* LocalPawn = PC ? PC->GetPawn() : nullptr;
+	if (ADarcTool::GetHeldTool(LocalPawn) == EDarcToolType::Tester)
+	{
+		return UDarcGameplayLibrary::UIText(TEXT("Tester_Check"));
+	}
 	const bool bHoldingFuse = Cast<ADarcFuseItem>(ACarryableItem::FindItemHeldBy(LocalPawn)) != nullptr;
 	if (!bHasFuse && bHoldingFuse)
 	{
-		// Под напряжением E сначала выключает рубильник — так и пишем.
+		// Под напряжением — предупреждение: вставка ударит током.
 		return (bBreakerOn && !PromptInsertFuseBreakerOn.IsEmpty()) ? PromptInsertFuseBreakerOn : PromptInsertFuse;
 	}
 	return bBreakerOn ? PromptBreakerOff : PromptBreakerOn;

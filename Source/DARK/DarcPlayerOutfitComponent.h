@@ -18,8 +18,16 @@ class DARK_API UDarcPlayerOutfitComponent : public UActorComponent
 public:
 	UDarcPlayerOutfitComponent();
 
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 protected:
 	virtual void BeginPlay() override;
+
+	/** Присед, вид от первого лица: камера висит на голове рук шаблона, а у их аниматора приседа нет —
+	    руки с камерой опускаются на столько же, на сколько опустилась голова тела в анимации приседа. */
+	TOptional<FVector> FirstPersonBaseLocation;
+	float StandingHeadAboveFeet = -1.f;
+	float CrouchOffset = 0.f;
 
 	UPROPERTY(Transient)
 	TObjectPtr<USkeletalMeshComponent> Outfit;
@@ -27,4 +35,11 @@ protected:
 	/** Та же модель для вида от первого лица (только у самого игрока). */
 	UPROPERTY(Transient)
 	TObjectPtr<USkeletalMeshComponent> OutfitFirstPerson;
+
+	/** Руки от первого лица видны, только когда заняты: правая — что-то в руке, левая — фонарик включён.
+	    Пустые руки не мелькают перед экраном при ходьбе. */
+	void UpdateArmsVisibility();
+	FTimerHandle ArmsTimer;
+	TOptional<bool> bRightShown;
+	TOptional<bool> bLeftShown;
 };

@@ -41,14 +41,33 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Connected, BlueprintReadOnly, Category = "Power")
 	TObjectPtr<ADarcGenerator> ConnectedGenerator;
 
+	/** Нагрузка на генератор (см. ADarcGenerator::Capacity): сервер + свет на одном генераторе — перегрузка. */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Power", meta = (ClampMin = "0"))
+	int32 Load = 1;
+
+	/** Генератор подключён, но заглох (перегрузка) — E запускает его снова. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
+	FText PromptRestart;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
 	FText PromptConnect;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
 	FText PromptDisconnect;
 
+	/** Подсказка, когда ни один генератор не достаёт кабелем (его нужно подтащить ближе). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Power|Text")
+	FText PromptTooFar;
+
+	/** Лампа на вводе: зелёная — питание идёт от генератора, красная — нет. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<UStaticMeshComponent> StatusLamp;
+
 	/** Сервер: даёт ли ввод питание сейчас (генератор подключён, работает и кабель достаёт). */
 	bool IsSupplying() const;
+
+	/** Ближайший генератор, до которого достаёт кабель (и на сервере, и у клиента — для подсказки). */
+	ADarcGenerator* FindGeneratorInRange() const;
 
 	/** Сервер: разорвать соединение, если кабель не достаёт. Вызывает подсистема питания. */
 	void ValidateConnection();
@@ -70,4 +89,16 @@ protected:
 	void OnConnectionChanged(ADarcGenerator* Generator);
 
 	bool IsInCableRange(const ADarcGenerator* Generator) const;
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	/** Видимый кабель от ввода к подключённому генератору (у каждой машины свой). */
+	void UpdateCableVisual();
+	void UpdateStatusLamp();
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> CableSegments;
+
+	/** Что сейчас показывает лампа (чтобы не пересоздавать материал каждый кадр). Начально — «неизвестно». */
+	TOptional<bool> bLampShowsSupply;
 };

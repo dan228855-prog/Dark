@@ -34,6 +34,10 @@ public:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Lamp")
 	bool bStreetLight = false;
 
+	/** Яркость комнатной лампы, люмены (разметка: Lumens=). Уличный фонарь — свой. */
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = "Lamp")
+	float Lumens = 4000.f;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lamp")
 	TObjectPtr<UPointLightComponent> Light;
 
@@ -62,6 +66,13 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent> Hum;
+
+	/** Рассеиватель: светится / погашен. */
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInterface> GlowOnMaterial;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInterface> GlowOffMaterial;
 
 	FTimerHandle FlickerTimer;
 	float FlickerEndTime = 0.f;

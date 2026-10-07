@@ -348,6 +348,10 @@ void ADarcSliceBuilder::AddTree(const FVector2D& Location, float Height, float R
 			Tree->SetRootComponent(Mesh);
 			Mesh->SetSkeletalMeshAsset(TreeMesh);
 			Mesh->bNoSkeletonUpdate = true;
+			// Рисовать как статичную модель в исходной позе: без скиннинга и буферов кеша
+			// скиннинга на видеокарте. Сотня скелетных елей съедала видеопамять (вылет
+			// «Out of video memory» на 6 ГБ), а сами ели и так не шевелятся.
+			Mesh->bRenderStatic = true;
 			Mesh->SetVisibleInRayTracing(false); // десятки деревьев переполняли память трассировки лучей
 			Mesh->SetComponentTickEnabled(false);
 			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -487,25 +491,14 @@ void ADarcSliceBuilder::BuildExterior()
 		GetWorld()->SpawnActor<ADarcBarrierGate>(ADarcBarrierGate::StaticClass(), FTransform(FVector(FenceX + 40.f, 300.f, 0.f)), GateParams);
 	}
 
-	// Вывеска D.A.R.C. на заборе слева от ворот (текст — из String Table).
-	AddShape(TEXT("Cube"), FVector(FenceX - 6.f, -750.f, 150.f), FVector(6.f, 600.f, 170.f), FLinearColor(0.02f, 0.02f, 0.025f));
-	auto AddSignText = [this](const TCHAR* Key, const FVector& Location, float Size)
-	{
-		UTextRenderComponent* Text = NewObject<UTextRenderComponent>(this);
-		Text->SetMobility(EComponentMobility::Movable);
-		Text->SetupAttachment(RootComponent);
-		Text->SetText(UDarcGameplayLibrary::UIText(Key));
-		Text->SetWorldSize(Size);
-		Text->SetHorizontalAlignment(EHTA_Center);
-		Text->SetVerticalAlignment(EVRTA_TextCenter);
-		Text->SetTextRenderColor(FColor(170, 170, 165));
-		Text->RegisterComponent();
-		// Текст читается со стороны -X (оттуда подходят игроки).
-		Text->SetWorldLocationAndRotation(Location, FRotator(0.f, 180.f, 0.f));
-		AddInstanceComponent(Text);
-	};
-	AddSignText(TEXT("Sign_DarcName"), FVector(FenceX - 10.f, -750.f, 175.f), 70.f);
-	AddSignText(TEXT("Sign_DarcSub"), FVector(FenceX - 10.f, -750.f, 115.f), 16.f);
+	// Вывеска D.A.R.C. на заборе слева от ворот (текст — из String Table). Раньше тёмные буквы
+	// обычным материалом на тёмной доске ночью не читались вовсе — теперь буквы светятся
+	// (неосвещаемый материал), а доску сверху подсвечивает лампа.
+	AddShape(TEXT("Cube"), FVector(FenceX - 6.f, -750.f, 150.f), FVector(6.f, 600.f, 170.f), FLinearColor(0.02f, 0.025f, 0.04f));
+	AddSignText(TEXT("Sign_DarcName"), FVector(FenceX - 10.f, -750.f, 178.f), 80.f, FColor(235, 225, 200), FRotator(0.f, 180.f, 0.f));
+	AddSignText(TEXT("Sign_DarcSub"), FVector(FenceX - 10.f, -750.f, 112.f), 20.f, FColor(190, 190, 185), FRotator(0.f, 180.f, 0.f));
+	AddShape(TEXT("Cube"), FVector(FenceX - 30.f, -750.f, 248.f), FVector(50.f, 300.f, 6.f), Dark); // козырёк лампы вывески
+	AddLight(FVector(FenceX - 60.f, -750.f, 240.f), FLinearColor(1.f, 0.85f, 0.65f), 900.f, 500.f);
 
 	// Будка: тёплое окно к дороге и натриевый фонарь на столбе между будкой и воротами.
 	if (UStaticMeshComponent* BoothWindow = AddShape(TEXT("Cube"), FVector(-1052.f, 400.f, 150.f), FVector(4.f, 110.f, 80.f), WarmWindow, FRotator::ZeroRotator, false))
@@ -654,6 +647,70 @@ void ADarcSliceBuilder::BuildExterior()
 	}
 }
 
+UTextRenderComponent* ADarcSliceBuilder::AddSignText(const TCHAR* Key, const FVector& Location, float Size, const FColor& Color, const FRotator& Rotation)
+{
+	UTextRenderComponent* Text = NewObject<UTextRenderComponent>(this);
+	Text->SetMobility(EComponentMobility::Movable);
+	Text->SetupAttachment(RootComponent);
+	Text->SetText(UDarcGameplayLibrary::UIText(Key));
+	Text->SetWorldSize(Size);
+	Text->SetHorizontalAlignment(EHTA_Center);
+	Text->SetVerticalAlignment(EVRTA_TextCenter);
+	Text->SetTextMaterial(UDarcAssetSettings::GetUnlitTextMaterial());
+	Text->SetTextRenderColor(Color);
+	Text->SetCastShadow(false);
+	Text->RegisterComponent();
+	// Текст «смотрит» вдоль своей +X: поворот задаёт, с какой стороны его читают.
+	Text->SetWorldLocationAndRotation(Location, Rotation);
+	AddInstanceComponent(Text);
+	return Text;
+}
+
+void ADarcSliceBuilder::BuildFacade()
+{
+	// Здание ночью издалека читалось как плоская серая коробка с белыми квадратами окон.
+	// Добавляем то, что делает его узнаваемым: подсвеченный вход с вывеской, фонари на углах,
+	// бортик крыши (чёткий верхний край на фоне неба).
+	const FLinearColor Dark(0.03f, 0.03f, 0.035f);
+	const FLinearColor Sodium(1.f, 0.55f, 0.25f);
+	const FLinearColor Warm(1.f, 0.78f, 0.55f);
+	const FRotator FaceWest(0.f, 180.f, 0.f);
+
+	// Вход (западная стена, проём по центру): козырёк, вывеска над ним и фонарь.
+	AddShape(TEXT("Cube"), FVector(-45.f, 0.f, 240.f), FVector(90.f, 220.f, 10.f), Dark);
+	AddShape(TEXT("Cube"), FVector(-14.f, 0.f, 272.f), FVector(4.f, 240.f, 40.f), FLinearColor(0.02f, 0.025f, 0.04f), FRotator::ZeroRotator, false);
+	AddSignText(TEXT("Sign_DarcName"), FVector(-17.f, 0.f, 272.f), 30.f, FColor(235, 225, 200), FaceWest);
+	if (UStaticMeshComponent* EntranceLamp = AddShape(TEXT("Cube"), FVector(-60.f, 0.f, 233.f), FVector(30.f, 30.f, 4.f), Warm, FRotator::ZeroRotator, false))
+	{
+		EntranceLamp->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(EntranceLamp, Warm, 10.f));
+	}
+	AddLight(FVector(-70.f, 0.f, 220.f), Warm, 1800.f, 900.f);
+
+	// Настенные фонари на углах фасада и над длинными стенами — пятна света на бетоне.
+	// Точка фонаря на стене и куда от стены (наружу) вынесен свет.
+	const TPair<FVector, FVector> WallLights[] = {
+		{ FVector(-15.f, -760.f, 280.f), FVector(-60.f, 0.f, -20.f) },  // фасад, левый угол
+		{ FVector(-15.f, 760.f, 280.f),  FVector(-60.f, 0.f, -20.f) },  // фасад, правый угол
+		{ FVector(1700.f, -815.f, 280.f), FVector(0.f, -60.f, -20.f) }, // южная стена
+		{ FVector(1700.f, 815.f, 280.f),  FVector(0.f, 60.f, -20.f) },  // северная стена
+	};
+	for (const TPair<FVector, FVector>& Wall : WallLights)
+	{
+		if (UStaticMeshComponent* Fixture = AddShape(TEXT("Cube"), Wall.Key, FVector(18.f, 18.f, 10.f), Sodium, FRotator::ZeroRotator, false))
+		{
+			Fixture->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(Fixture, Sodium, 8.f));
+		}
+		AddLight(Wall.Key + Wall.Value, Sodium, 1400.f, 1300.f);
+	}
+
+	// Бортик крыши по периметру.
+	constexpr float RoofTop = 300.f * 2.f + 22.f + 25.f;
+	AddBox(FVector(-30.f, -830.f, RoofTop), FVector(3430.f, -810.f, RoofTop + 45.f), TEXT("WallOutside"));
+	AddBox(FVector(-30.f, 810.f, RoofTop), FVector(3430.f, 830.f, RoofTop + 45.f), TEXT("WallOutside"));
+	AddBox(FVector(-30.f, -810.f, RoofTop), FVector(-10.f, 810.f, RoofTop + 45.f), TEXT("WallOutside"));
+	AddBox(FVector(3410.f, -810.f, RoofTop), FVector(3430.f, 810.f, RoofTop + 45.f), TEXT("WallOutside"));
+}
+
 void ADarcSliceBuilder::AddRoom(const FVector2D& Min, const FVector2D& Max)
 {
 	// Пол комнаты (поверх земли) — отдельным материалом.
@@ -736,14 +793,21 @@ void ADarcSliceBuilder::AddWallWithWindows(const FVector2D& A, const FVector2D& 
 		Box(Cursor, W0, Z0, Z1, 0.f, MaterialSlot);
 		Box(W0, W1, Z0, Sill, 0.f, MaterialSlot);
 		Box(W0, W1, Head, Z1, 0.f, MaterialSlot);
-		// Стекло — тонкое, по центру стены; горящие окна — светящаяся панель за стеклом.
-		const FVector GlassCenter = bAlongX ? FVector(Center, Fixed, (Sill + Head) * 0.5f) : FVector(Fixed, Center, (Sill + Head) * 0.5f);
-		const FVector GlassSize = bAlongX ? FVector(WindowWidth, 3.f, Head - Sill) : FVector(3.f, WindowWidth, Head - Sill);
+		// Рама: тёмная коробка во весь проём, стекло — чуть меньше и с импостом посередине.
+		// Издалека окно читается как окно (с переплётом), а не как ровный светящийся квадрат.
+		const FVector OpeningCenter = bAlongX ? FVector(Center, Fixed, (Sill + Head) * 0.5f) : FVector(Fixed, Center, (Sill + Head) * 0.5f);
+		const FLinearColor FrameColor(0.05f, 0.05f, 0.055f);
+		AddShape(TEXT("Cube"), OpeningCenter, bAlongX ? FVector(WindowWidth, 2.f, Head - Sill) : FVector(2.f, WindowWidth, Head - Sill), FrameColor);
+		AddShape(TEXT("Cube"), OpeningCenter, bAlongX ? FVector(6.f, 5.f, Head - Sill) : FVector(5.f, 6.f, Head - Sill), FrameColor, FRotator::ZeroRotator, false);
+		// Стекло — тонкое, по центру стены, внутри рамы; горящие окна — светящаяся панель за стеклом.
+		const FVector GlassCenter = OpeningCenter;
+		const FVector GlassSize = bAlongX ? FVector(WindowWidth - 12.f, 3.f, Head - Sill - 12.f) : FVector(3.f, WindowWidth - 12.f, Head - Sill - 12.f);
 		const bool bLit = LitEvery > 0 && (Index++ % LitEvery) == 0;
 		if (UStaticMeshComponent* Glass = AddShape(TEXT("Cube"), GlassCenter, GlassSize, FLinearColor::Black))
 		{
 			Glass->SetMaterial(0, bLit
-				? UDarcAssetSettings::MakeColorMaterial(Glass, FLinearColor(1.f, 0.62f, 0.3f), 3.f)
+				// Тёплый, но не «выбеленный»: при 3.0 окна издалека сливались в белые квадраты.
+				? UDarcAssetSettings::MakeColorMaterial(Glass, FLinearColor(1.f, 0.6f, 0.28f), 1.4f)
 				: UDarcAssetSettings::MakeColorMaterial(Glass, FLinearColor(0.02f, 0.025f, 0.03f)));
 		}
 		Cursor = W1;
@@ -862,6 +926,7 @@ void ADarcSliceBuilder::BuildGeometry()
 
 	// Улица у КПП: дорога, забор, шлагбаум, вывеска, лес, холмы, тарелка, вышка, машина.
 	BuildExterior();
+	BuildFacade();
 
 	// Разметка на полу серверной: сюда катить стойку (точка доставки задачи MoveServerRack).
 	AddShape(TEXT("Cube"), FVector(3150.f, 450.f, 3.f), FVector(150.f, 150.f, 1.f), FLinearColor(0.8f, 0.6f, 0.05f), FRotator::ZeroRotator, false);
@@ -890,17 +955,8 @@ void ADarcSliceBuilder::BuildGeometry()
 	{
 		const FVector PlatePos(1000.f, -788.f, 160.f);
 		AddShape(TEXT("Cube"), PlatePos, FVector(70.f, 3.f, 45.f), FLinearColor(0.05f, 0.05f, 0.055f), FRotator::ZeroRotator, false);
-		UTextRenderComponent* Label = NewObject<UTextRenderComponent>(this);
-		Label->SetMobility(EComponentMobility::Movable);
-		Label->SetupAttachment(RootComponent);
-		Label->SetText(UDarcGameplayLibrary::UIText(TEXT("Sign_ServerCode")));
-		Label->SetWorldSize(7.f);
-		Label->SetHorizontalAlignment(EHTA_Center);
-		Label->SetVerticalAlignment(EVRTA_TextCenter);
-		Label->SetTextRenderColor(FColor(200, 200, 190));
-		Label->RegisterComponent();
-		Label->SetWorldLocationAndRotation(PlatePos + FVector(0.f, 2.5f, 12.f), FRotator(0.f, 90.f, 0.f));
-		AddInstanceComponent(Label);
+		// Надпись и цифры — светящимся материалом: в тёмной кладовой их видно и без фонарика.
+		AddSignText(TEXT("Sign_ServerCode"), PlatePos + FVector(0.f, 2.5f, 12.f), 6.f, FColor(210, 210, 200), FRotator(0.f, 90.f, 0.f));
 
 		UDarcCodeTextComponent* CodeText = NewObject<UDarcCodeTextComponent>(this);
 		CodeText->CodeKey = TEXT("ServerDoorCode");
@@ -991,7 +1047,9 @@ ADarcPowerLamp* ADarcSliceBuilder::SpawnLamp(const FVector& Location, FName Circ
 	ADarcPowerLamp* Lamp = SpawnDeferred<ADarcPowerLamp>(Location);
 	Lamp->Power->CircuitId = CircuitId;
 	Lamp->bStreetLight = bStreetLight;
-	Lamp->VisualSpec = bStreetLight ? Vis(TEXT("StreetLamp"), FVector(50.f, 30.f, 15.f)) : Vis(TEXT("Lamp"), FVector(80.f, 17.f, 6.f));
+	// Комнатная лампа — реальный размер светильника 120 × 20 × 11 см (модель вписывается 1:1).
+	// Было 80 × 17 × 6: модель вписывалась поперёк своей длинной оси и раздувалась до 0.8 × 2.4 м.
+	Lamp->VisualSpec = bStreetLight ? Vis(TEXT("StreetLamp"), FVector(50.f, 30.f, 15.f)) : Vis(TEXT("Lamp"), FVector(120.f, 20.f, 11.f));
 	Finish(Lamp, Location);
 	return Lamp;
 }
@@ -1264,8 +1322,9 @@ void ADarcSliceBuilder::BuildGameplay()
 		DriveSlot->AcceptedClass = ADarcDataDrive::StaticClass();
 		DriveSlot->InitialItem = Drive;
 		DriveSlot->TaskIdOnRemove = TEXT("TakeDrive");
+		DriveSlot->bEjectOnRemove = true; // носитель выдвигается и падает перед сервером — его поднимают E
 		DriveSlot->PromptInsert = Txt(TEXT("Slot_Insert"));
-		DriveSlot->PromptRemove = Txt(TEXT("Slot_Remove"));
+		DriveSlot->PromptRemove = Txt(TEXT("Slot_EjectDrive"));
 		DriveSlot->VisualSpec = Vis(TEXT("Socket"), FVector(6.f, 30.f, 14.f));
 		Finish(DriveSlot, DriveLoc, FaceWest);
 		AddHint(DriveSlot, TEXT("Name_DriveSlot"), TEXT("Hint_DriveSlot"));
@@ -1275,19 +1334,31 @@ void ADarcSliceBuilder::BuildGameplay()
 		Station->InterfaceSlot = InterfaceSlot;
 		Station->DriveSlot = DriveSlot;
 		Station->TaskIdOnComplete = TEXT("CopyArchive");
+		// Этап «Подать питание на сервер» закрывается по факту питания станции — от щита или
+		// генератора. Раньше задачи не были назначены, и этап не засчитывался никогда.
+		Station->Power->TaskIdOnMainsPower = TEXT("PowerViaPanel");
+		Station->Power->TaskIdOnGeneratorPower = TEXT("PowerViaGenerator");
 		Station->PromptStart = Txt(TEXT("Transfer_Start"));
+		Station->PromptNoPower = Txt(TEXT("Transfer_NoPower"));
+		Station->PromptNeedModule = Txt(TEXT("Transfer_NeedModule"));
+		Station->PromptInProgress = Txt(TEXT("Transfer_InProgress"));
+		Station->PromptTakeDrive = Txt(TEXT("Transfer_TakeDrive"));
 		Station->VisualSpec = Vis(TEXT("ServerRackStatic"), FVector(80.f, 120.f, 200.f), TEXT("ServerMaterial"));
 		Finish(Station, StationLoc, FaceWest);
 		AddHint(Station, TEXT("Name_Server"), TEXT("Hint_Server"));
 
-		// Ввод питания — в серверной, на восточной стене, лицом в зал.
-		const FVector InletLoc(3388.f, -450.f, 40.f);
-		ADarcPowerInlet* Inlet = SpawnDeferred<ADarcPowerInlet>(InletLoc, FaceWest);
+		// Ввод резервного питания сервера — в коридоре, рядом со щитком серверной (слева от него),
+		// лицом в коридор. Генератор подключают «к щиту»: туда игроки и идут с ним, а не ищут
+		// ввод в запертой серверной. Питание всё равно идёт в обход щитка, по своему вводу.
+		const FRotator FaceCorridor(0.f, 90.f, 0.f);
+		const FVector InletLoc(1890.f, -140.f, 40.f);
+		ADarcPowerInlet* Inlet = SpawnDeferred<ADarcPowerInlet>(InletLoc, FaceCorridor);
 		Inlet->CircuitId = TEXT("Server");
 		Inlet->PromptConnect = Txt(TEXT("Inlet_Connect"));
 		Inlet->PromptDisconnect = Txt(TEXT("Inlet_Disconnect"));
+		Inlet->PromptTooFar = Txt(TEXT("Inlet_TooFar"));
 		Inlet->VisualSpec = Vis(TEXT("PowerInlet"), FVector(10.f, 30.f, 30.f));
-		Finish(Inlet, InletLoc, FaceWest);
+		Finish(Inlet, InletLoc, FaceCorridor);
 		AddHint(Inlet, TEXT("Name_Inlet"), TEXT("Hint_Inlet"));
 
 		// Консоль сервера: работает, только когда сервер запитан. Здесь виден «лишний файл».

@@ -18,6 +18,7 @@ namespace DarcCable
 ADarcCablePlug::ADarcCablePlug()
 {
 	PrimaryActorTick.bCanEverTick = true; // провод перерисовывается каждый кадр (вилка двигается)
+	bCanStow = false; // вилка на проводе — в карман не убрать
 }
 
 void ADarcCablePlug::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

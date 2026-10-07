@@ -53,6 +53,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Power")
 	EDarcPowerSource GetCircuitSource(FName CircuitId) const;
 
+	/** Сервер: источник «до обрыва» — что было бы на контуре, будь линия цела (для тестера и удара током). */
+	EDarcPowerSource GetRawCircuitSource(FName CircuitId) const;
+
+	/** Сервер: на контуре повреждена кабельная линия (ADarcCableJunction). */
+	bool IsCircuitCut(FName CircuitId) const { return CutCircuits.Contains(CircuitId); }
+
 	/**
 	 * Сервер: кратко моргнуть всеми потребителями контура (аномалии, «дух»).
 	 * Состояние питания не меняется — это только показ у всех клиентов.
@@ -75,5 +81,7 @@ protected:
 
 	bool bMainsOn = true;
 	TMap<FName, EDarcPowerSource> CircuitSources;
+	TMap<FName, EDarcPowerSource> RawSources;
+	TSet<FName> CutCircuits;
 	TArray<TWeakObjectPtr<UDarcPowerConsumerComponent>> Consumers;
 };

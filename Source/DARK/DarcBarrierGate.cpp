@@ -36,6 +36,8 @@ void ADarcBarrierGate::BeginPlay()
 		Part->SetRelativeScale3D(Size / 100.f);
 		Part->SetMaterial(0, UDarcAssetSettings::MakeColorMaterial(Part, Color));
 		Part->SetCollisionProfileName(bCollide ? TEXT("BlockAll") : TEXT("NoCollision"));
+		// Подвижная часть: декали дороги на ней «плывут».
+		Part->SetReceivesDecals(false);
 		Part->RegisterComponent();
 		return Part;
 	};
@@ -88,7 +90,7 @@ void ADarcBarrierGate::Tick(float DeltaSeconds)
 
 	if (bSomeoneNear && !bWasOpening && OpenAlpha < 0.05f)
 	{
-		UDarcAssetSettings::PlaySound(this, TEXT("BarrierMotor"), Base, 0.7f);
+		UDarcAssetSettings::PlaySound(this, TEXT("BarrierMotor"), Base, 0.7f, MotorSoundStartTime);
 	}
 	bWasOpening = bSomeoneNear;
 }

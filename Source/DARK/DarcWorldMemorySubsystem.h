@@ -294,6 +294,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "WorldMemory|Campaign")
 	FDarcMissionSummary GetLastMissionSummary() const { return LastMissionSummary; }
 
+	/** База: итог последнего выезда ещё не обсуждён с куратором — вернёт true один раз после выезда. */
+	bool ConsumeMissionDebrief();
+
 	/** Полный сброс кампании (новая игра). */
 	UFUNCTION(BlueprintCallable, Category = "WorldMemory|Campaign")
 	void ResetCampaign();
@@ -326,6 +329,7 @@ protected:
 	UPROPERTY() TSet<FName> CampaignFacts;
 	UPROPERTY() TSet<FName> CampaignRareEvents;
 	UPROPERTY() FDarcMissionSummary LastMissionSummary;
+	UPROPERTY() bool bDebriefPending = false;
 	UPROPERTY() int32 CampaignDeaths = 0;
 
 	/** Ограничение журнала взаимодействий, чтобы память не росла бесконечно. */

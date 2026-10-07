@@ -54,6 +54,32 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Door")
     void SetLocked(bool bNewLocked);
 
+    /** База: дверь заперта, пока в кампании нет этого факта (пусто — не зависит). Разметка `UnlockFact=`. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door")
+    FName UnlockFact;
+
+    /** Сервер: перепроверить UnlockFact (после выдачи фактов на базе). */
+    void RefreshUnlockFact();
+
+    // Запертую дверь можно взломать ломом: громко, замок сломан навсегда, дверь распахивается.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Pry")
+    bool bCanPry = true;
+
+    // Последствие взлома: эта кабельная линия (ADarcCableJunction) рвётся — кабель шёл за дверью.
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Pry")
+    TObjectPtr<AActor> PryBreaksJunction;
+
+    // Задача, которая засчитывается взломом (например, EnterServerRoom — третий путь в серверную).
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Pry")
+    FName TaskIdOnPry;
+
+    // Замок сломан ломом (дверь больше не запирается, видно всем).
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Door|Pry")
+    bool bPried = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door|Text")
+    FText PromptPry;
+
     // ID двери для WorldMemory. Если пусто — берётся имя актора в уровне (оно стабильно
     // для расставленных вручную дверей). Процедурный генератор обязан задавать его явно.
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Door")
@@ -96,6 +122,9 @@ protected:
 
     UFUNCTION(NetMulticast, Unreliable)
     void Multicast_LockedAttempt();
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_Pried();
 
     // Дёрнули запертую дверь — звук ручки/замка (Blueprint).
     UFUNCTION(BlueprintImplementableEvent, Category = "Door")

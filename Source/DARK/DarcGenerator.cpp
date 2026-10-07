@@ -4,6 +4,9 @@
 #include "DarcPowerSubsystem.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/AudioComponent.h"
+#include "DarcGameState.h"
+#include "DarcGameplayLibrary.h"
+#include "DarcWorldMemorySubsystem.h"
 
 ADarcGenerator::ADarcGenerator()
 {
@@ -16,6 +19,7 @@ void ADarcGenerator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ADarcGenerator, bRunning);
+	DOREPLIFETIME_CONDITION(ADarcGenerator, Capacity, COND_InitialOnly);
 }
 
 void ADarcGenerator::SetRunning(bool bNewRunning)
@@ -32,6 +36,29 @@ void ADarcGenerator::SetRunning(bool bNewRunning)
 	{
 		Power->Recompute();
 	}
+}
+
+void ADarcGenerator::TripOverload()
+{
+	if (!HasAuthority() || !bRunning)
+	{
+		return;
+	}
+	Multicast_Overload();
+	if (ADarcGameState* GS = GetWorld()->GetGameState<ADarcGameState>())
+	{
+		GS->Say(FText::GetEmpty(), UDarcGameplayLibrary::UIText(TEXT("Generator_Overload")), 5.f, GetActorLocation(), 1500.f);
+	}
+	if (UDarcWorldMemorySubsystem* Memory = UDarcWorldMemorySubsystem::GetWorldMemory(this))
+	{
+		Memory->RecordInteraction(GetFName(), TEXT("GeneratorOverload"), nullptr);
+	}
+	SetRunning(false);
+}
+
+void ADarcGenerator::Multicast_Overload_Implementation()
+{
+	UDarcAssetSettings::PlaySound(this, TEXT("FuseBlow"), GetActorLocation());
 }
 
 void ADarcGenerator::OnRep_Running()
