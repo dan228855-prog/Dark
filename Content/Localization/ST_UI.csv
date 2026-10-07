@@ -77,7 +77,7 @@ Terminal_InputHint,"Введите код или команду, Enter — от�
 Screen_ArchiveTitle,АРХИВ ОБЪЕКТА — ОПИСЬ
 Screen_ArchiveList,arc_0001.bin … arc_0416.bin — 416 файлов по описи
 Screen_ExtraFileHint,"arc_0417.bin — НЕ ЗНАЧИТСЯ В ОПИСИ. Введите COPY, чтобы скопировать."
-HUD_PromptFormat,[E] {0}
+HUD_PromptFormat,{0} — E
 HUD_SpiritHint,"Вы погибли. ЛКМ — мигнуть светом, F — рубильник, ПКМ — толкнуть предмет"
 HUD_SpiritCooldown,…силы восстанавливаются…
 HUD_TaskActive,[ ] {0}
@@ -85,7 +85,7 @@ HUD_TaskDone,[x] {0}
 HUD_TaskFailed,[!] {0}
 HUD_TaskLocked,  - {0}
 HUD_SubtitleFormat,{0}: {1}
-HUD_Grab,[ЛКМ] Схватить
+HUD_Grab,Схватить — ЛКМ
 HUD_Holding,"Держите ЛКМ — тащить, отпустите — бросить на месте, ПКМ — толкнуть"
 Sign_DarcName,D.A.R.C.
 Sign_DarcSub,ИССЛЕДОВАНИЯ И ОБРАБОТКА
@@ -99,13 +99,13 @@ Hint_Keypad,код от серверной — на табличке в клад
 Name_InterfaceSlot,Разъём интерфейса стойки
 Hint_InterfaceSlot,вставьте интерфейсный модуль (E)
 Name_Drive,Носитель с архивом
-Hint_Drive,после копирования извлеките и отнесите охраннику
+Hint_Drive,поднимите (E) и отнесите охраннику
 Name_DriveSlot,Разъём носителя
-Hint_DriveSlot,"извлеките носитель, когда архив скопирован"
+Hint_DriveSlot,"после копирования нажмите E — носитель выдвинется, затем поднимите его"
 Name_Server,Сервер
-Hint_Server,"вставьте модуль, подайте питание и скопируйте архив"
-Name_Inlet,Ввод питания
-Hint_Inlet,подключите сюда переносной генератор (он в кладовой)
+Hint_Server,"вставьте модуль в стойку, подайте питание и нажмите «Пуск» под разъёмом носителя"
+Name_Inlet,Ввод резервного питания сервера
+Hint_Inlet,подтащите сюда переносной генератор из кладовой и нажмите E
 Name_Console,Консоль сервера
 Hint_Console,"работает, когда сервер запитан"
 Name_Rack,Серверная стойка
@@ -121,21 +121,237 @@ Hint_Fuse,вставьте в щиток серверной — сначала �
 Name_InterfaceModule,Интерфейсный модуль
 Hint_InterfaceModule,вставьте в разъём на лицевой стороне серверной стойки
 Name_Generator,Переносной генератор
-Hint_Generator,дотащите до ввода питания в серверной и подключите (в дверь проходит боком)
+Hint_Generator,тащите (ЛКМ) к вводу питания у электрощита в коридоре и подключите там (E); в дверь проходит боком
 Name_TechCabinet,Технический шкаф
 Fuse_Installed,Предохранитель установлен. Теперь включите рубильник (E).
 Fuse_BlownBreakerOn,Предохранитель сгорел: рубильник был включён. Нужен новый предохранитель.
 Sign_ServerCode,КОД ДОСТУПА — СЕРВЕРНАЯ
-HUD_FlashlightHint,[F] Фонарик
+HUD_FlashlightHint,Фонарик — F
 Heavy_CableTooFar,Кабель не достаёт — подкатите ближе к розетке
 Name_FuseBox_Server,Щиток серверной
 Name_FuseBox_Corridor,Щиток коридора
 Name_FuseBox_Building,Щиток здания
-Hint_FuseBox_NoFuse,"нет предохранителя: выключите рубильник, вставьте предохранитель, включите рубильник"
-Fuse_InsertBreakerOn,Выключить рубильник (перед установкой предохранителя)
+Hint_FuseBox_NoFuse,"нет предохранителя: рубильник выключают пустой рукой (предохранитель — в карман, 1–4), потом вставить и включить"
+Fuse_InsertBreakerOn,Вставить предохранитель — рубильник ПОД НАПРЯЖЕНИЕМ!
 Name_CablePlug,Кабель питания стойки
 Hint_CablePlug,"возьмите вилку (E), поднесите к серверной стойке и подключите"
 Heavy_PlugIn,Подключить кабель питания
 Heavy_Unplug,Отключить кабель питания
 Fuse_BreakerOffNowInsert,Рубильник выключен. Теперь вставьте предохранитель (E).
-HUD_DropHint,[G] Положить
+HUD_DropHint,Положить — G
+Slot_EjectDrive,Извлечь носитель
+Transfer_NoPower,Нет питания — сначала подайте питание на сервер
+Transfer_NeedModule,Вставьте интерфейсный модуль в разъём серверной стойки
+Transfer_InProgress,Идёт копирование…
+Transfer_TakeDrive,Копирование завершено — извлеките носитель из разъёма над кнопкой
+Screen_InsertModule,ПОДКЛЮЧИТЕ ИНТЕРФЕЙСНЫЙ МОДУЛЬ
+Screen_PressStart,НАЖМИТЕ «ПУСК» ПОД РАЗЪЁМОМ
+Screen_PercentFormat,{0}%
+Screen_RemoveDrive,ИЗВЛЕКИТЕ НОСИТЕЛЬ
+Inlet_TooFar,Генератор далеко — подтащите его сюда (кабель 6 м)
+Inlet_TooFarSay,Кабель генератора не достаёт. Подтащите генератор ближе к щиту.
+Guard_Ambush,Эй! Стоять! Кто такие?
+Door_Pry,Взломать ломом (громко)
+Fuse_Shock,Удар током! Рубильник был включён — дуга выбила соседние линии.
+Name_Crowbar,Лом
+Name_Wrench,Гаечный ключ
+Name_Tester,Тестер
+Name_Radio,Рация
+Hint_Crowbar,"взламывает запертые двери, срывает решётки — быстро, но громко"
+Hint_Wrench,"чинит порванные линии, тихо откручивает решётки"
+Hint_Tester,"E по щитку или линии — есть ли напряжение и откуда"
+Hint_Radio,"рация у обоих — голос (V) слышно на любом расстоянии"
+Name_Junction,Распаечная коробка
+Hint_Junction,"кабель сервера; порван — чинится гаечным ключом, руками не трогать"
+Junction_Intact,Линия цела.
+Junction_RepairStep,Затягиваю клеммы… осталось {0}
+Junction_Repaired,Линия восстановлена.
+Junction_Shock,Удар током! Оголённый кабель под напряжением.
+Junction_NeedWrench,Кабель порван. Нужен гаечный ключ.
+Junction_PromptIntact,Кабельная линия
+Junction_PromptRepair,Починить линию (ключ)
+Junction_PromptDamaged,Порванный кабель — не трогать руками
+Tester_Check,Проверить тестером
+Tester_Report,"Тестер, «{0}»: {1}"
+Tester_Mains,напряжение есть (сеть)
+Tester_Generator,напряжение есть (генератор)
+Tester_None,напряжения нет
+Tester_CutLive,"обрыв линии! До обрыва — напряжение, осторожно"
+Tester_CutDead,"обрыв линии, напряжения нет"
+Circuit_Server,Сервер
+Circuit_ServerLights,Свет серверной
+Circuit_Corridor,Коридор
+Circuit_Building,Здание
+Generator_Overload,Генератор заглох — перегрузка! Отключите лишний ввод и запустите снова.
+Inlet_Restart,Запустить генератор
+Name_LightInlet,Ввод освещения серверной
+Hint_LightInlet,"второй ввод: свет и сервер разом генератор не потянет"
+Cover_NeedTool,Прикручено. Нужен лом или гаечный ключ.
+Cover_Pry,Сорвать ломом (громко)
+Cover_Unscrew,Откручивать ключом (винтов: {0})
+Cover_Screwed,Решётка прикручена
+Name_VentGrille,Решётка вентиляции
+Hint_VentGrille,"за ней — короб в серверную; лезть пригнувшись (Ctrl)"
+Task_RepairServerCable,Починить кабель серверной
+Voice_Talking,Говорю
+Voice_Radio,В эфире (рация)
+HUD_InventoryHint,1–4 — слоты   Ctrl — пригнуться   V — голос
+Loading_Text,Загрузка…
+Settings_Title,Настройки
+Settings_Graphics,Графика
+Settings_WindowMode,Режим экрана
+Settings_Fullscreen,Полный экран
+Settings_Borderless,Окно без рамки
+Settings_Windowed,Окно
+Settings_Resolution,Разрешение
+Settings_Quality,Качество графики
+Settings_QLow,Низкое
+Settings_QMedium,Среднее
+Settings_QHigh,Высокое
+Settings_QEpic,Ультра
+Settings_QCinematic,Кинематографическое
+Settings_VSync,Вертикальная синхронизация
+Settings_FpsLimit,Ограничение кадров
+Settings_FpsUnlimited,Без ограничения
+Settings_Brightness,Яркость
+Settings_Controls,Управление
+Settings_Sensitivity,Чувствительность мыши
+Settings_InvertY,Инверсия по вертикали
+Settings_Fov,Поле зрения
+Settings_Audio,Звук
+Settings_Volume,Общая громкость
+Settings_Apply,Применить
+Settings_Defaults,По умолчанию
+Settings_Back,Назад
+Settings_Interface,Интерфейс
+Settings_Language,Язык
+Settings_LangRu,Русский
+Settings_LangEn,English
+Settings_QCustom,Своё
+Settings_ResolutionScale,Масштаб разрешения
+Settings_AAMethod,Сглаживание
+Settings_AAOff,Выкл.
+Settings_AADefault,По умолчанию
+Settings_GraphicsAdvanced,Графика: подробно
+Settings_QShadows,Тени
+Settings_QViewDistance,Дальность прорисовки
+Settings_QTextures,Текстуры
+Settings_QEffects,Эффекты
+Settings_QPostProcess,Постобработка
+Settings_QFoliage,Растительность
+Settings_QShading,Затенение
+Settings_QGI,Глобальное освещение
+Settings_QReflections,Отражения
+Settings_QAntiAliasing,Качество сглаживания
+Settings_Keys,Клавиши
+Settings_PressKey,Нажмите клавишу…
+Settings_VolMusic,Музыка
+Settings_VolEffects,Эффекты
+Settings_VolVoice,Голоса игроков
+Settings_VolRadio,Радио и рация
+Settings_VoiceChat,Голосовая связь
+Settings_VoiceMode,Режим микрофона
+Settings_VoicePTT,По кнопке
+Settings_VoiceOpen,Открытый микрофон
+Settings_MicGain,Усиление микрофона
+Key_MoveForward,Вперёд
+Key_MoveBack,Назад
+Key_MoveLeft,Влево
+Key_MoveRight,Вправо
+Key_Jump,Прыжок
+Key_Sprint,Бег
+Key_Crouch,Пригнуться
+Key_Interact,Взаимодействие
+Key_Grab,Взять / держать
+Key_Push,Толкнуть / бросить
+Key_Flashlight,Фонарик
+Key_Drop,Положить
+Key_Tasks,Список задач
+Key_Talk,Говорить (рация)
+Key_Slot1,Слот 1
+Key_Slot2,Слот 2
+Key_Slot3,Слот 3
+Key_Slot4,Слот 4
+Pause_Title,Пауза
+Pause_Resume,Продолжить
+Pause_Settings,Настройки
+Pause_MainMenu,В главное меню
+Pause_Quit,Выйти из игры
+Loading_Poster,БЕЗОПАСНОСТЬ НАЧИНАЕТСЯ С ТЕБЯ
+Loading_Whisper,"Я вижу, как ты стараешься.
+Ты думаешь, что я где-то далеко.
+Но я всегда рядом.
+
+— D.A.R.C."
+Loading_BriefTitle,D.A.R.C.
+Loading_Brief,"Сегодня ваша задача:
+- Извлечь и доставить данные с объекта.
+- Работать в команде.
+- Соблюдать протокол безопасности.
+
+Подробности в прикреплённом файле.
+Удачи."
+Loading_BriefFooter,D.A.R.C. | Операционный отдел
+Settings_Upscaler,Масштабирование
+Settings_UpscalerMode,Режим масштабирования
+Settings_UpQuality,Качество
+Settings_UpBalanced,Баланс
+Settings_UpPerformance,Производительность
+Settings_UpUltraPerformance,Макс. производительность
+Settings_FrameGen,Генерация кадров
+Settings_FGDynamic,DLSS: динамическая
+Settings_On,Вкл.
+Settings_Off,Выкл.
+Settings_ReflexBoost,Вкл. + ускорение
+Curator_Name,Куратор
+Curator_L1_Brief_1,"Добрый вечер. Объект — старый исследовательский комплекс, седьмой участок."
+Curator_L1_Brief_2,Задача — извлечь данные с рабочего сервера и доставить их сюда.
+Curator_L1_Brief_3,Пропуск и инструкции получите на месте. Машина в гараже.
+Curator_Ret_Got,Получили?
+Curator_Ret_Good,Хорошо.
+Curator_Ret_Later,Следующее задание получите позже.
+Curator_L3_Ret,Вы ничего необычного не заметили?
+Curator_L4_Ret,Ничего необычного на объекте не произошло.
+Curator_L6_Ret,Следующий объект.
+Curator_Failed,Задание не выполнено. Отчёт отправлен наверх.
+Curator_NoNewMissions,Новых объектов пока нет. Можете повторить прошлый выезд — терминал у стены.
+Curator_SelectStory,Возвращаемся к плану.
+Curator_SelectReplay,Повторный выезд. Принято.
+Base_GoToCar,Задание получено. Машина ждёт в гараже.
+Base_CarEnter,Сесть в машину
+Base_CarWaiting,В машине {0} из {1}. Ждём остальных.
+Base_ScreenFormat,"ОБЪЕКТ {0}
+{1}"
+Base_MissionTitle,Объекты
+Base_MissionPrompt,Выбрать объект
+Base_MissionLine,{0}. {1} — {2}
+Base_MissionDone,"пройден, повторить"
+Base_MissionNext,следующий
+Base_MissionClassified,{0}. ЗАСЕКРЕЧЕНО
+Mission_1_Name,Плановое списание
+Mission_2_Name,Засекречено
+Mission_3_Name,Засекречено
+Mission_4_Name,Засекречено
+Mission_5_Name,Засекречено
+Mission_6_Name,Засекречено
+Mission_7_Name,Засекречено
+Base_DoorRestRoom,Комната отдыха
+Base_DoorLobby,Приёмная
+Base_DoorArchive,Архив
+Base_DoorEquipment,Снаряжение
+Base_DoorEvidence,Хранилище
+Base_DoorBriefing,Переговорная
+Base_DoorMedbay,Медпункт
+Base_DoorTech,Техническое помещение
+Base_DoorServer,Серверная
+Base_DoorRestricted,Посторонним вход воспрещён
+Mission_ReturnToBase,Задание завершено. Возвращаемся на базу.
+Room_WorkRoom,РАБОЧАЯ КОМНАТА
+Room_Office_2A,КАБИНЕТ 2А
+Room_TechRoom,ТЕХПОМЕЩЕНИЕ
+Room_UPS_Batteries,АККУМУЛЯТОРНАЯ
+Room_Storage_2,КЛАДОВАЯ
+Room_ServerSector,СЕРВЕРНАЯ
+Room_Records,ЗАПИСИ
+Room_Electrical,ЭЛЕКТРОЩИТОВАЯ
+Room_Security,ОХРАНА

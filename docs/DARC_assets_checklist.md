@@ -530,3 +530,19 @@
 Анимации: https://www.mixamo.com · https://quaternius.com
 Шрифты и иконки: https://fonts.google.com · https://fonts.google.com/icons · https://kenney.nl/assets · https://game-icons.net
 Апскейл: https://upscayl.org/download
+
+## Импорт 07.10.2026 (папка автора conent) — лицензии
+
+| Модель (папка `RawAssets/Meshes/…` → `/Game/DARC/Imported/Meshes/…`) | Лицензия |
+|---|---|
+| `1971_gaz-24_volga_lp` → `VolgaCar/SM_Volga` (собрана в Blender в одну модель, без выставленных рядом деталей) | Sketchfab Standard — коммерция можно; автор KrStolorz |
+| `modlarStreetLamp` → `StreetLamps/*` (набор: столбы и плафоны отдельно) | Sketchfab Standard — коммерция можно; автор Cnodax |
+| `data-center-rack` → `ServerRack/SM_ServerRack` | **не проверена** (в архиве нет license.txt) |
+| `electric-box-42` → `ElectricBox/SM_ElectricBox` | **не проверена** |
+| `fuse` → `Fuse/SM_Fuse` | **не проверена** |
+| `retro-computer-setup-free` → `RetroComputer/SM_RetroComputer` | **не проверена** |
+| `wall-computer` → `WallComputer/SM_WallComputer` | **не проверена** |
+| `old-rusted-modular-pipes` → `ModularPipes/SM_ModularPipes` | **не проверена** |
+| Радио: `Neon Fever`, `Neon Fever21`, `Neoner`, `Я курьер ночной смены, бро` → `CarRadio_10…13` | от автора |
+
+До релиза найти страницы «не проверенных» моделей и убедиться, что лицензия разрешает коммерческое использование.

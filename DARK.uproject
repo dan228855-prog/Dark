@@ -17,6 +17,10 @@
 	],
 	"Plugins": [
 		{
+			"Name": "ProceduralVegetationEditor",
+			"Enabled": true
+		},
+		{
 			"Name": "ModelingToolsEditorMode",
 			"Enabled": true,
 			"TargetAllowList": [
@@ -52,6 +56,48 @@
 		{
 			"Name": "AllToolsets",
 			"Enabled": true
+		},
+		{
+			"Name": "StreamlineNGXCommon",
+			"Enabled": true,
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "DLSS",
+			"Enabled": true,
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "StreamlineCore",
+			"Enabled": true,
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "StreamlineReflex",
+			"Enabled": true,
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "StreamlineDLSSG",
+			"Enabled": true,
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "FSR",
+			"Enabled": true,
+			"PlatformAllowList": [
+				"Win64"
+			]
 		}
 	]
 }

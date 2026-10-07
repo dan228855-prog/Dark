@@ -1,4 +1,92 @@
 file_or_set,status,asset
+Meshes\Barricade\low-poly-barricade-game-ready\textures\Barricade_Ambient_occlusion.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/Barricade/low_poly_barricade_game_ready/textures/T_Barricade_Ambient_occlusion
+Meshes\Barricade\low-poly-barricade-game-ready\textures\Barricade_BaseColor.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/Barricade/low_poly_barricade_game_ready/textures/T_Barricade_BaseColor
+Meshes\Barricade\low-poly-barricade-game-ready\textures\Barricade_Metallic.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/Barricade/low_poly_barricade_game_ready/textures/T_Barricade_Metallic
+Meshes\Barricade\low-poly-barricade-game-ready\textures\Barricade_Normal.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/Barricade/low_poly_barricade_game_ready/textures/T_Barricade_Normal
+Meshes\Barricade\low-poly-barricade-game-ready\textures\Barricade_Roughness.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/Barricade/low_poly_barricade_game_ready/textures/T_Barricade_Roughness
+Meshes\car\bmw-x7-m60i\source\black.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_black
+Meshes\car\bmw-x7-m60i\source\carbon_interior.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_carbon_interior
+Meshes\car\bmw-x7-m60i\source\carpet.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_carpet
+Meshes\car\bmw-x7-m60i\source\inmx7m60i_dashscrn.png,переимпортирована (файл изменился),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_inmx7m60i_dashscrn
+Meshes\car\bmw-x7-m60i\source\leather1.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_leather1
+Meshes\car\bmw-x7-m60i\source\logobmw.png,переимпортирована (файл изменился),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_logobmw
+Meshes\car\bmw-x7-m60i\textures\carbon_interior.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_carbon_interior
+Meshes\car\bmw-x7-m60i\textures\carpet.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_carpet
+Meshes\car\bmw-x7-m60i\textures\inmx7m60i_dashscrn.png,переимпортирована (файл изменился),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_inmx7m60i_dashscrn
+Meshes\car\bmw-x7-m60i\textures\leather1.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_leather1
+Meshes\car\bmw-x7-m60i\textures\logobmw.png,переимпортирована (файл изменился),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_logobmw
+Meshes\grass\clovers-plants-foliage\textures\T_Clovers_D.tga.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/clovers_plants_foliage/textures/T_Clovers_D_tga
+Meshes\grass\clovers-plants-foliage\textures\T_Clovers_N.tga.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/clovers_plants_foliage/textures/T_Clovers_N_tga
+Meshes\grass\clovers-plants-foliage\textures\T_Clovers_Roughness.tga.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/clovers_plants_foliage/textures/T_Clovers_Roughness_tga
+Meshes\grass\ferns-lowpoly-model\textures\ferns_1.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/ferns_lowpoly_model/textures/T_ferns_1
+Meshes\grass\ferns-lowpoly-model\textures\NormalMap_(1).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/ferns_lowpoly_model/textures/T_NormalMap_1
+Meshes\grass\flower\source\lavendar.fbm\Lavender Flowers.G03.watermarked.2k.png,импортирована,/Game/DARC/Imported/Textures/Meshes/grass/flower/source/lavendar_fbm/T_Lavender_Flowers_G03_watermarked_2k
+Meshes\grass\flower\textures\Lavender Flowers.G03.watermarked.2k.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/flower/textures/T_Lavender_Flowers_G03_watermarked_2k
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Checker_with_dec_texture.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Checker_with_dec_texture
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_cards_AO.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_AO
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_cards_MRAO.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_MRAO
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_cards_Normal.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_Normal
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_cards_RGBA.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_RGBA
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_cards_Roughness.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_Roughness
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_cards_SubsurfaceAmount.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_SubsurfaceAmount
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_tall_cards_SubsurfaceAmount.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_cards_SubsurfaceAmount
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_tall_card_AO.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_AO
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_tall_card_MRAO.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_MRAO
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_tall_card_Normal.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_Normal
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_tall_card_RGBA.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_RGBA
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\Grass_tall_card_Roughness.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_Roughness
+Meshes\grass\grass-pack-lowpoly-game-ready\textures\man_ref.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_man_ref
+Meshes\grass\grass-patches-squares\textures\SF_Grass_Dif.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_patches_squares/textures/T_SF_Grass_Dif
+Meshes\grass\grass-patches-squares\textures\SF_Grass_N.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_patches_squares/textures/T_SF_Grass_N
+Meshes\grass\grass-vegitation-mix\source\Grass Vegitation mix.fbm\1300954650.png,импортирована,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_1300954650
+Meshes\grass\grass-vegitation-mix\source\Grass Vegitation mix.fbm\2785131480.png,импортирована,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_2785131480
+Meshes\grass\grass-vegitation-mix\source\Grass Vegitation mix.fbm\3457643232.png,импортирована,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_3457643232
+Meshes\grass\grass-vegitation-mix\source\Grass Vegitation mix.fbm\383085165.png,импортирована,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_383085165
+Meshes\grass\grass-vegitation-mix\source\Grass Vegitation mix.fbm\534945782.png,импортирована,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_534945782
+Meshes\grass\grass-vegitation-mix\textures\1300954650.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_1300954650
+Meshes\grass\grass-vegitation-mix\textures\2785131480.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_2785131480
+Meshes\grass\grass-vegitation-mix\textures\336840439.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_336840439
+Meshes\grass\grass-vegitation-mix\textures\3457643232.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_3457643232
+Meshes\grass\grass-vegitation-mix\textures\383085165.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_383085165
+Meshes\grass\grass-vegitation-mix\textures\534945782.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_534945782
+Meshes\grass\grass-vegitation-mix\textures\internal_ground_ao_texture.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_internal_ground_ao_texture
+Meshes\grass\plant-shrub\source\red-baron-grass-ornamental-Va7qqJC-600.jpg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/plant_shrub/source/T_red_baron_grass_ornamental_Va7qqJC_600
+Meshes\grass\plant-shrub\textures\internal_ground_ao_texture.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/plant_shrub/textures/T_internal_ground_ao_texture
+Meshes\grass\plant-shrub\textures\kisspng-flower-plant-tree-shrub-texture-ma.jpg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/plant_shrub/textures/T_kisspng_flower_plant_tree_shrub_texture_ma
+Meshes\grass\scanned-plants-and-grass-free-download\textures\5_leaf_ground_plant_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_5_leaf_ground_plant_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\5_leaf_ground_plant_n_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_5_leaf_ground_plant_n_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\dandelion_alpha_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_dandelion_alpha_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\dandelion_Normal_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_dandelion_Normal_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Grass_Blades_alpha_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Grass_Blades_alpha_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Grass_Blades_normal_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Grass_Blades_normal_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Grass_Cloves_alpha_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Grass_Cloves_alpha_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Grass_Cloves_normal_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Grass_Cloves_normal_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Ground_Cover_Bunch_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Ground_Cover_Bunch_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Ground_Cover_Bunch_n_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Ground_Cover_Bunch_n_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\internal_ground_ao_texture.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_internal_ground_ao_texture
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Purple_Flower_alpha_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Purple_Flower_alpha_256
+Meshes\grass\scanned-plants-and-grass-free-download\textures\Purple_Flower_n_(256).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Purple_Flower_n_256
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\source\moss rock 14 sketchfab\moss rock 14 (4096).jpg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/source/moss_rock_14_sketchfab/T_moss_rock_14_4096
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\source\moss rock 14 sketchfab\moss rock 14_heights (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/source/moss_rock_14_sketchfab/T_moss_rock_14_heights_4096
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\source\moss rock 14 sketchfab\moss rock 14_normal (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/source/moss_rock_14_sketchfab/T_moss_rock_14_normal_4096
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\source\moss rock 14 sketchfab\moss rock 14_roughness (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/source/moss_rock_14_sketchfab/T_moss_rock_14_roughness_4096
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\textures\internal_ground_ao_texture.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/textures/T_internal_ground_ao_texture
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\textures\moss rock 14 (4096).jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/textures/T_moss_rock_14_4096
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\textures\moss rock 14_normal (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/textures/T_moss_rock_14_normal_4096
+Meshes\rock\moss-rock-14-free-rock-pack-vol2\textures\moss rock 14_roughness (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/textures/T_moss_rock_14_roughness_4096
+Meshes\rock\obj-nat-rock-01\textures\32f934c788da4a389c2601f2c466e13e.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/obj_nat_rock_01/textures/T_32f934c788da4a389c2601f2c466e13e
+Meshes\rock\obj-nat-rock-01\textures\8b1ab5bc781b40a48fae2331aba07932.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/obj_nat_rock_01/textures/T_8b1ab5bc781b40a48fae2331aba07932
+Meshes\rock\rock\textures\internal_ground_ao_texture.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/rock/textures/T_internal_ground_ao_texture
+Meshes\rock\rock\textures\rock_ao.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/rock/textures/T_rock_ao
+Meshes\rock\rock\textures\rock_color.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/rock/textures/T_rock_color
+Meshes\rock\rock\textures\rock_normal.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/rock/textures/T_rock_normal
+Meshes\rock\square-rock-cracked-updated-materials\source\finished\squarerockcracked (4096).jpg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/source/finished/T_squarerockcracked_4096
+Meshes\rock\square-rock-cracked-updated-materials\source\finished\squarerockcracked normal (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/source/finished/T_squarerockcracked_normal_4096
+Meshes\rock\square-rock-cracked-updated-materials\source\finished\squarerockcracked roughness (4096).jpg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/source/finished/T_squarerockcracked_roughness_4096
+Meshes\rock\square-rock-cracked-updated-materials\textures\internal_ground_ao_texture.jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/textures/T_internal_ground_ao_texture
+Meshes\rock\square-rock-cracked-updated-materials\textures\squarerockcracked (4096).jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/textures/T_squarerockcracked_4096
+Meshes\rock\square-rock-cracked-updated-materials\textures\squarerockcracked normal (4096).png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/textures/T_squarerockcracked_normal_4096
+Meshes\rock\square-rock-cracked-updated-materials\textures\squarerockcracked roughness (4096).jpeg,уже в проекте,/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/textures/T_squarerockcracked_roughness_4096
 Meshes\satellite-radio-telescope-from-votv\textures\ao_rotDn.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_ao_rotDn
 Meshes\satellite-radio-telescope-from-votv\textures\tex_base0.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base0
 Meshes\satellite-radio-telescope-from-votv\textures\tex_base1.png,уже в проекте,/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base1
@@ -248,17 +336,16 @@ Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_diff_4k.jpg,�
 Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_disp_4k.png,уже в проекте,/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_disp_4k
 Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_nor_gl_4k.exr,уже в проекте,/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_nor_gl_4k
 Textures\white_rough_plaster_4k.blend\textures\white_rough_plaster_rough_4k.jpg,уже в проекте,/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_rough_4k
-T_ao_rotDn,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_ao_rotDn
-T_tex_base0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base0
-T_tex_base1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base1
-T_tex_base2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base2
-T_tex_base3,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base3
-T_tex_base4,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base4
-T_tex_base5,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base5
-T_tex_base6,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base6
-T_tex_dish0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish0
-T_tex_dish1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish1
-T_tex_dish2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish2
+T_logobmw,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_logobmw
+T_inmx7m60i_dashscrn,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_inmx7m60i_dashscrn
+T_logobmw,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_logobmw
+T_inmx7m60i_dashscrn,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_inmx7m60i_dashscrn
+T_534945782,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_534945782
+T_383085165,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_383085165
+T_3457643232,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_3457643232
+T_2785131480,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_2785131480
+T_1300954650,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/source/Grass_Vegitation_mix_fbm/T_1300954650
+T_Lavender_Flowers_G03_watermarked_2k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/flower/source/lavendar_fbm/T_Lavender_Flowers_G03_watermarked_2k
 T_komputer_komplekt_001_metallicRoughness,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/072e7111ef104bc4a62bd66dc9edf42d/textures/T_komputer_komplekt_001_metallicRoughness
 T_Asphalt010,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Asphalt010_4K_JPG/T_Asphalt010
 T_Asphalt010_4K_JPG_Displacement,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Asphalt010_4K_JPG/T_Asphalt010_4K_JPG_Displacement
@@ -308,6 +395,66 @@ T_IndoorEnvironmentHDRI015_12K_HDR,роль не распознана по им�
 T_IndoorEnvironmentHDRI015_12K_TONEMAPPED,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/IndoorEnvironmentHDRI015_12K/T_IndoorEnvironmentHDRI015_12K_TONEMAPPED
 T_ManholeCover05_4K_Height,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/ManholeCover05_4K/T_ManholeCover05_4K_Height
 T_ManholeCover05_4K_Mask,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/ManholeCover05_4K/T_ManholeCover05_4K_Mask
+T_black,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_black
+T_carbon_interior,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_carbon_interior
+T_carpet,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_carpet
+T_leather1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/source/T_leather1
+T_carbon_interior,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_carbon_interior
+T_carpet,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_carpet
+T_leather1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/car/bmw_x7_m60i/textures/T_leather1
+T_Clovers_D_tga,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/clovers_plants_foliage/textures/T_Clovers_D_tga
+T_Clovers_N_tga,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/clovers_plants_foliage/textures/T_Clovers_N_tga
+T_Clovers_Roughness_tga,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/clovers_plants_foliage/textures/T_Clovers_Roughness_tga
+T_ferns_1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/ferns_lowpoly_model/textures/T_ferns_1
+T_NormalMap_1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/ferns_lowpoly_model/textures/T_NormalMap_1
+T_Lavender_Flowers_G03_watermarked_2k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/flower/textures/T_Lavender_Flowers_G03_watermarked_2k
+T_Checker_with_dec_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Checker_with_dec_texture
+T_Grass_cards_MRAO,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_MRAO
+T_Grass_cards_RGBA,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_RGBA
+T_Grass_cards_SubsurfaceAmount,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_cards_SubsurfaceAmount
+T_Grass_tall_cards_SubsurfaceAmount,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_cards_SubsurfaceAmount
+T_Grass_tall_card_MRAO,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_MRAO
+T_Grass_tall_card_RGBA,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_Grass_tall_card_RGBA
+T_man_ref,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_pack_lowpoly_game_ready/textures/T_man_ref
+T_SF_Grass_Dif,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_patches_squares/textures/T_SF_Grass_Dif
+T_1300954650,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_1300954650
+T_2785131480,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_2785131480
+T_336840439,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_336840439
+T_3457643232,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_3457643232
+T_383085165,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_383085165
+T_534945782,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_534945782
+T_internal_ground_ao_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/grass_vegitation_mix/textures/T_internal_ground_ao_texture
+T_red_baron_grass_ornamental_Va7qqJC_600,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/plant_shrub/source/T_red_baron_grass_ornamental_Va7qqJC_600
+T_internal_ground_ao_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/plant_shrub/textures/T_internal_ground_ao_texture
+T_kisspng_flower_plant_tree_shrub_texture_ma,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/plant_shrub/textures/T_kisspng_flower_plant_tree_shrub_texture_ma
+T_5_leaf_ground_plant_256,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_5_leaf_ground_plant_256
+T_dandelion_alpha_256,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_dandelion_alpha_256
+T_Grass_Blades_alpha_256,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Grass_Blades_alpha_256
+T_Grass_Cloves_alpha_256,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Grass_Cloves_alpha_256
+T_Ground_Cover_Bunch_256,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Ground_Cover_Bunch_256
+T_internal_ground_ao_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_internal_ground_ao_texture
+T_Purple_Flower_alpha_256,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/grass/scanned_plants_and_grass_free_download/textures/T_Purple_Flower_alpha_256
+T_moss_rock_14_4096,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/source/moss_rock_14_sketchfab/T_moss_rock_14_4096
+T_moss_rock_14_heights_4096,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/source/moss_rock_14_sketchfab/T_moss_rock_14_heights_4096
+T_internal_ground_ao_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/textures/T_internal_ground_ao_texture
+T_moss_rock_14_4096,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/moss_rock_14_free_rock_pack_vol2/textures/T_moss_rock_14_4096
+T_32f934c788da4a389c2601f2c466e13e,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/obj_nat_rock_01/textures/T_32f934c788da4a389c2601f2c466e13e
+T_8b1ab5bc781b40a48fae2331aba07932,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/obj_nat_rock_01/textures/T_8b1ab5bc781b40a48fae2331aba07932
+T_internal_ground_ao_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/rock/textures/T_internal_ground_ao_texture
+T_squarerockcracked_4096,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/source/finished/T_squarerockcracked_4096
+T_internal_ground_ao_texture,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/textures/T_internal_ground_ao_texture
+T_squarerockcracked_4096,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/rock/square_rock_cracked_updated_materials/textures/T_squarerockcracked_4096
+T_ao_rotDn,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_ao_rotDn
+T_tex_base0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base0
+T_tex_base1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base1
+T_tex_base2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base2
+T_tex_base3,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base3
+T_tex_base4,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base4
+T_tex_base5,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base5
+T_tex_base6,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_base6
+T_tex_dish0,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish0
+T_tex_dish1,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish1
+T_tex_dish2,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/Meshes/satellite_radio_telescope_from_votv/textures/T_tex_dish2
 T_metal_plate_disp_4k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/metal_plate_4k_blend/textures/T_metal_plate_disp_4k
 T_NightEnvironmentHDRI008,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/NightEnvironmentHDRI008_12K/T_NightEnvironmentHDRI008
 T_NightEnvironmentHDRI008_12K_HDR,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/NightEnvironmentHDRI008_12K/T_NightEnvironmentHDRI008_12K_HDR
@@ -339,45 +486,59 @@ T_4K_walllpaper_11_displacement,роль не распознана по имен
 T_4K_walllpaper_11_specular,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/wallpaper_11_4K/wallpaper_11_4K/T_4K_walllpaper_11_specular
 T_weathered_peeling_timber_disp_4k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/weathered_peeling_timber_4k_blend/textures/T_weathered_peeling_timber_disp_4k
 T_white_rough_plaster_disp_4k,роль не распознана по имени (нужен суффикс _Color/_Normal/_Roughness/_AO/_Metallic),/Game/DARC/Imported/Textures/white_rough_plaster_4k_blend/textures/T_white_rough_plaster_disp_4k
-набор Ground074_4K_JPG,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Ground074_4K_JPG
-набор corrugated_iron_02,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_corrugated_iron_02
-набор Armstrong,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Armstrong
-набор painted_plaster_wall,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_painted_plaster_wall
-набор concrete_wall_008,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_concrete_wall_008
-набор floor_tiles_02,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_floor_tiles_02
-набор Poliigon_GrassPatchyGround_4585,материал: AO/BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Poliigon_GrassPatchyGround_4585
-набор metal_plate,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_metal_plate
-набор Ekran_2,материал: BaseColor — полный граф,/Game/DARC/Imported/Materials/M_Ekran_2
-набор komputer_komplekt_001,материал: BaseColor/Normal — полный граф,/Game/DARC/Imported/Materials/M_komputer_komplekt_001
-набор Asphalt010_4K_JPG,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Asphalt010_4K_JPG
-набор asphalt_02,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_asphalt_02
-набор Material_117_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Material_117_A
-набор Material_346_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Material_346_A
-набор Material_428_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Material_428_A
-набор T,материал: AO/BaseColor/Gloss/Metallic/Roughness — полный граф,/Game/DARC/Imported/Materials/M_T
-набор Bark001_4K_JPG,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Bark001_4K_JPG
-набор brick_wall_006,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_brick_wall_006
-набор Carpet012_4K_JPG,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Carpet012_4K_JPG
-набор concrete_layers,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_concrete_layers
-набор concrete_wall_004,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_concrete_wall_004
-набор denim_fabric_06,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_denim_fabric_06
-набор diagonal_parquet,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_diagonal_parquet
-набор fabric_leather_01,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_fabric_leather_01
-набор forest_leaves_02,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_forest_leaves_02
-набор forest_leaves_03,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_forest_leaves_03
-набор Ground108_4K_JPG,материал: AO/BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Ground108_4K_JPG
-набор ManholeCover05_4K,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_ManholeCover05_4K
-набор OldIron01_4K,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_OldIron01_4K
-набор old_linoleum_flooring_01,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_old_linoleum_flooring_01
-набор Onyx015_4K_JPG,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_Onyx015_4K_JPG
-набор oriented_strand_board,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_oriented_strand_board
-набор peeling_painted_wall,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_peeling_painted_wall
-набор ribbed_corduroy,материал: BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_ribbed_corduroy
-набор rock_face_04,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rock_face_04
-набор rubber_tiles,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rubber_tiles
-набор rusty_chain,материал: AO/BaseColor/Metallic/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rusty_chain
-набор rusty_metal_05,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_rusty_metal_05
-набор sparse_grass,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_sparse_grass
-набор 4K_walllpaper_11,материал: AO/BaseColor/Normal — полный граф,/Game/DARC/Imported/Materials/M_4K_walllpaper_11
-набор weathered_peeling_timber,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_weathered_peeling_timber
-набор white_rough_plaster,материал: BaseColor/Normal/Roughness — полный граф,/Game/DARC/Imported/Materials/M_white_rough_plaster
+набор Ground108_4K_JPG,материал: AO/BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Ground108_4K_JPG
+набор Asphalt010_4K_JPG,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Asphalt010_4K_JPG
+набор rock_face_04,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_rock_face_04
+набор Poliigon_GrassPatchyGround_4585,материал: AO/BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Poliigon_GrassPatchyGround_4585
+набор rusty_metal_05,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_rusty_metal_05
+набор metal_plate,материал: BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_metal_plate
+набор corrugated_iron_02,материал: BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_corrugated_iron_02
+набор concrete_wall_008,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_concrete_wall_008
+набор Ekran_2,материал: BaseColor (без изменений),/Game/DARC/Imported/Materials/M_Ekran_2
+набор komputer_komplekt_001,материал: BaseColor/Normal (без изменений),/Game/DARC/Imported/Materials/M_komputer_komplekt_001
+набор Armstrong,материал: AO/BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Armstrong
+набор asphalt_02,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_asphalt_02
+набор Material_117_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Material_117_A
+набор Material_346_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Material_346_A
+набор Material_428_A,материал: AO/BaseColor/Gloss/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Material_428_A
+набор T,материал: AO/BaseColor/Gloss/Metallic/Roughness (без изменений),/Game/DARC/Imported/Materials/M_T
+набор Bark001_4K_JPG,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Bark001_4K_JPG
+набор brick_wall_006,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_brick_wall_006
+набор Carpet012_4K_JPG,материал: AO/BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Carpet012_4K_JPG
+набор concrete_layers,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_concrete_layers
+набор concrete_wall_004,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_concrete_wall_004
+набор denim_fabric_06,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_denim_fabric_06
+набор diagonal_parquet,материал: AO/BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_diagonal_parquet
+набор fabric_leather_01,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_fabric_leather_01
+набор floor_tiles_02,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_floor_tiles_02
+набор forest_leaves_02,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_forest_leaves_02
+набор forest_leaves_03,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_forest_leaves_03
+набор Ground074_4K_JPG,материал: AO/BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Ground074_4K_JPG
+набор ManholeCover05_4K,материал: BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_ManholeCover05_4K
+набор Barricade_Ambient,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: AO,
+набор Barricade,материал: BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Barricade
+набор Grass_cards,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: AO/Normal/Roughness,
+набор Grass_tall_card,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: AO/Normal/Roughness,
+набор SF_Grass,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор 5_leaf_ground_plant,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор dandelion,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор Grass_Blades,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор Grass_Cloves,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор Ground_Cover_Bunch,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор Purple_Flower,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal,
+набор moss_rock_14,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal/Roughness,
+набор rock,материал: AO/BaseColor/Normal (без изменений),/Game/DARC/Imported/Materials/M_rock
+набор squarerockcracked,МАТЕРИАЛ НЕ СОБРАН: нет карты цвета (_Color/_BaseColor/_diff/_albedo/_COL); есть: Normal/Roughness,
+набор OldIron01_4K,материал: BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_OldIron01_4K
+набор old_linoleum_flooring_01,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_old_linoleum_flooring_01
+набор Onyx015_4K_JPG,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_Onyx015_4K_JPG
+набор oriented_strand_board,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_oriented_strand_board
+набор painted_plaster_wall,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_painted_plaster_wall
+набор peeling_painted_wall,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_peeling_painted_wall
+набор ribbed_corduroy,материал: BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_ribbed_corduroy
+набор rubber_tiles,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_rubber_tiles
+набор rusty_chain,материал: AO/BaseColor/Metallic/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_rusty_chain
+набор sparse_grass,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_sparse_grass
+набор 4K_walllpaper_11,материал: AO/BaseColor/Normal (без изменений),/Game/DARC/Imported/Materials/M_4K_walllpaper_11
+набор weathered_peeling_timber,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_weathered_peeling_timber
+набор white_rough_plaster,материал: BaseColor/Normal/Roughness (без изменений),/Game/DARC/Imported/Materials/M_white_rough_plaster

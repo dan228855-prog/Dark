@@ -77,7 +77,7 @@ Terminal_InputHint,"Type a code or command, Enter to send, Esc to leave"
 Screen_ArchiveTitle,SITE ARCHIVE — INVENTORY
 Screen_ArchiveList,arc_0001.bin … arc_0416.bin — 416 files listed
 Screen_ExtraFileHint,arc_0417.bin — NOT IN INVENTORY. Type COPY to copy it.
-HUD_PromptFormat,[E] {0}
+HUD_PromptFormat,{0} — E
 HUD_SpiritHint,"You are dead. LMB — flicker lights, F — breaker, RMB — push an object"
 HUD_SpiritCooldown,…gathering strength…
 HUD_TaskActive,[ ] {0}
@@ -85,7 +85,7 @@ HUD_TaskDone,[x] {0}
 HUD_TaskFailed,[!] {0}
 HUD_TaskLocked,  - {0}
 HUD_SubtitleFormat,{0}: {1}
-HUD_Grab,[LMB] Grab
+HUD_Grab,Grab — LMB
 HUD_Holding,"Hold LMB to drag, release to let go, RMB to shove"
 Sign_DarcName,D.A.R.C.
 Sign_DarcSub,RESEARCH & PROCESSING
@@ -99,13 +99,13 @@ Hint_Keypad,the server room code is on a sign in the storage room
 Name_InterfaceSlot,Rack interface port
 Hint_InterfaceSlot,insert the interface module (E)
 Name_Drive,Archive drive
-Hint_Drive,"after copying, take it out and bring it to the guard"
+Hint_Drive,pick it up (E) and bring it to the guard
 Name_DriveSlot,Drive bay
-Hint_DriveSlot,take the drive out once the archive is copied
+Hint_DriveSlot,"after copying press E — the drive slides out, then pick it up"
 Name_Server,Server
-Hint_Server,"insert the module, power it up and copy the archive"
-Name_Inlet,Power inlet
-Hint_Inlet,connect the portable generator here (it is in the storage room)
+Hint_Server,"insert the module into the rack, power it up and press START below the drive bay"
+Name_Inlet,Server backup power inlet
+Hint_Inlet,drag the portable generator here from the storage room and press E
 Name_Console,Server console
 Hint_Console,works while the server has power
 Name_Rack,Server rack
@@ -121,21 +121,237 @@ Hint_Fuse,insert into the server room fuse box — switch its breaker off first
 Name_InterfaceModule,Interface module
 Hint_InterfaceModule,insert into the port on the front of the server rack
 Name_Generator,Portable generator
-Hint_Generator,drag it to the power inlet in the server room and connect (fits through doors sideways)
+Hint_Generator,drag it (LMB) to the power inlet by the fuse panel in the corridor and connect it there (E); fits through doors sideways
 Name_TechCabinet,Technical cabinet
 Fuse_Installed,Fuse installed. Now switch the breaker on (E).
 Fuse_BlownBreakerOn,The fuse blew: the breaker was on. You need a new fuse.
 Sign_ServerCode,ACCESS CODE — SERVER ROOM
-HUD_FlashlightHint,[F] Flashlight
+HUD_FlashlightHint,Flashlight — F
 Heavy_CableTooFar,The cable won't reach — move it closer to the socket
 Name_FuseBox_Server,Server room fuse box
 Name_FuseBox_Corridor,Corridor fuse box
 Name_FuseBox_Building,Building fuse box
-Hint_FuseBox_NoFuse,"no fuse: switch the breaker off, insert a fuse, switch the breaker on"
-Fuse_InsertBreakerOn,Switch the breaker off (before inserting the fuse)
+Hint_FuseBox_NoFuse,"no fuse: switch the breaker off with an empty hand (pocket the fuse, 1–4), then insert it and switch on"
+Fuse_InsertBreakerOn,Insert the fuse — the breaker is LIVE!
 Name_CablePlug,Rack power cable
 Hint_CablePlug,"pick up the plug (E), bring it to the server rack and plug it in"
 Heavy_PlugIn,Plug in the power cable
 Heavy_Unplug,Unplug the power cable
 Fuse_BreakerOffNowInsert,Breaker is off. Now insert the fuse (E).
-HUD_DropHint,[G] Drop
+HUD_DropHint,Drop — G
+Slot_EjectDrive,Eject the drive
+Transfer_NoPower,No power — power the server first
+Transfer_NeedModule,Insert the interface module into the server rack port
+Transfer_InProgress,Copying…
+Transfer_TakeDrive,Copy complete — eject the drive from the bay above the button
+Screen_InsertModule,CONNECT INTERFACE MODULE
+Screen_PressStart,PRESS START BELOW THE BAY
+Screen_PercentFormat,{0}%
+Screen_RemoveDrive,REMOVE THE DRIVE
+Inlet_TooFar,Generator too far — drag it here (6 m cable)
+Inlet_TooFarSay,The generator cable won't reach. Drag the generator closer to the panel.
+Guard_Ambush,Hey! Stop right there! Who are you?
+Door_Pry,Pry open with the crowbar (loud)
+Fuse_Shock,Electric shock! The breaker was on — the arc tripped nearby circuits.
+Name_Crowbar,Crowbar
+Name_Wrench,Wrench
+Name_Tester,Voltage tester
+Name_Radio,Radio
+Hint_Crowbar,"pries locked doors open, rips off grilles — fast but loud"
+Hint_Wrench,"repairs torn lines, quietly unscrews grilles"
+Hint_Tester,"E on a fuse box or a line — is there voltage and from where"
+Hint_Radio,"radios on both players — voice (V) is heard at any distance"
+Name_Junction,Junction box
+Hint_Junction,"server cable; if torn, repair it with a wrench, don't touch it"
+Junction_Intact,The line is intact.
+Junction_RepairStep,Tightening the terminals… {0} left
+Junction_Repaired,The line is restored.
+Junction_Shock,Electric shock! The bare cable is live.
+Junction_NeedWrench,The cable is torn. You need a wrench.
+Junction_PromptIntact,Cable line
+Junction_PromptRepair,Repair the line (wrench)
+Junction_PromptDamaged,Torn cable — don't touch it
+Tester_Check,Check with the tester
+Tester_Report,"Tester, “{0}”: {1}"
+Tester_Mains,live (mains)
+Tester_Generator,live (generator)
+Tester_None,no voltage
+Tester_CutLive,"line break! Live up to the break, careful"
+Tester_CutDead,"line break, no voltage"
+Circuit_Server,Server
+Circuit_ServerLights,Server room lights
+Circuit_Corridor,Corridor
+Circuit_Building,Building
+Generator_Overload,The generator stalled — overload! Disconnect one inlet and start it again.
+Inlet_Restart,Start the generator
+Name_LightInlet,Server room lighting inlet
+Hint_LightInlet,"second inlet: the generator can't run the lights and the server together"
+Cover_NeedTool,It's screwed on. You need a crowbar or a wrench.
+Cover_Pry,Rip off with the crowbar (loud)
+Cover_Unscrew,Unscrew with the wrench (screws: {0})
+Cover_Screwed,The grille is screwed on
+Name_VentGrille,Vent grille
+Hint_VentGrille,"behind it, a duct into the server room; crawl through crouched (Ctrl)"
+Task_RepairServerCable,Repair the server room cable
+Voice_Talking,Talking
+Voice_Radio,On air (radio)
+HUD_InventoryHint,1–4 slots   Ctrl crouch   V voice
+Loading_Text,Loading…
+Settings_Title,Settings
+Settings_Graphics,Graphics
+Settings_WindowMode,Display mode
+Settings_Fullscreen,Fullscreen
+Settings_Borderless,Borderless window
+Settings_Windowed,Windowed
+Settings_Resolution,Resolution
+Settings_Quality,Graphics quality
+Settings_QLow,Low
+Settings_QMedium,Medium
+Settings_QHigh,High
+Settings_QEpic,Ultra
+Settings_QCinematic,Cinematic
+Settings_VSync,Vertical sync
+Settings_FpsLimit,Frame rate limit
+Settings_FpsUnlimited,Unlimited
+Settings_Brightness,Brightness
+Settings_Controls,Controls
+Settings_Sensitivity,Mouse sensitivity
+Settings_InvertY,Invert vertical
+Settings_Fov,Field of view
+Settings_Audio,Audio
+Settings_Volume,Master volume
+Settings_Apply,Apply
+Settings_Defaults,Defaults
+Settings_Back,Back
+Settings_Interface,Interface
+Settings_Language,Language
+Settings_LangRu,Русский
+Settings_LangEn,English
+Settings_QCustom,Custom
+Settings_ResolutionScale,Resolution scale
+Settings_AAMethod,Anti-aliasing
+Settings_AAOff,Off
+Settings_AADefault,Default
+Settings_GraphicsAdvanced,Graphics: advanced
+Settings_QShadows,Shadows
+Settings_QViewDistance,View distance
+Settings_QTextures,Textures
+Settings_QEffects,Effects
+Settings_QPostProcess,Post-processing
+Settings_QFoliage,Foliage
+Settings_QShading,Shading
+Settings_QGI,Global illumination
+Settings_QReflections,Reflections
+Settings_QAntiAliasing,Anti-aliasing quality
+Settings_Keys,Key bindings
+Settings_PressKey,Press a key…
+Settings_VolMusic,Music
+Settings_VolEffects,Effects
+Settings_VolVoice,Player voices
+Settings_VolRadio,Radio
+Settings_VoiceChat,Voice chat
+Settings_VoiceMode,Microphone mode
+Settings_VoicePTT,Push to talk
+Settings_VoiceOpen,Open mic
+Settings_MicGain,Microphone gain
+Key_MoveForward,Move forward
+Key_MoveBack,Move back
+Key_MoveLeft,Move left
+Key_MoveRight,Move right
+Key_Jump,Jump
+Key_Sprint,Sprint
+Key_Crouch,Crouch
+Key_Interact,Interact
+Key_Grab,Grab / hold
+Key_Push,Push / throw
+Key_Flashlight,Flashlight
+Key_Drop,Drop
+Key_Tasks,Task list
+Key_Talk,Talk (radio)
+Key_Slot1,Slot 1
+Key_Slot2,Slot 2
+Key_Slot3,Slot 3
+Key_Slot4,Slot 4
+Pause_Title,Paused
+Pause_Resume,Resume
+Pause_Settings,Settings
+Pause_MainMenu,Main menu
+Pause_Quit,Quit game
+Loading_Poster,SAFETY STARTS WITH YOU
+Loading_Whisper,"I see how hard you try.
+You think I am somewhere far away.
+But I am always near.
+
+— D.A.R.C."
+Loading_BriefTitle,D.A.R.C.
+Loading_Brief,"Your task today:
+- Retrieve and deliver data from the site.
+- Work as a team.
+- Follow the safety protocol.
+
+Details in the attached file.
+Good luck."
+Loading_BriefFooter,D.A.R.C. | Operations
+Settings_Upscaler,Upscaling
+Settings_UpscalerMode,Upscaling mode
+Settings_UpQuality,Quality
+Settings_UpBalanced,Balanced
+Settings_UpPerformance,Performance
+Settings_UpUltraPerformance,Ultra performance
+Settings_FrameGen,Frame generation
+Settings_FGDynamic,DLSS: dynamic
+Settings_On,On
+Settings_Off,Off
+Settings_ReflexBoost,On + Boost
+Curator_Name,Supervisor
+Curator_L1_Brief_1,"Good evening. The site is an old research complex, sector seven."
+Curator_L1_Brief_2,Your task is to retrieve the data from the work server and bring it here.
+Curator_L1_Brief_3,You will get the pass and instructions on site. The car is in the garage.
+Curator_Ret_Got,Got it?
+Curator_Ret_Good,Good.
+Curator_Ret_Later,You will receive the next assignment later.
+Curator_L3_Ret,Did you notice anything unusual?
+Curator_L4_Ret,Nothing unusual happened on site.
+Curator_L6_Ret,Next site.
+Curator_Failed,Assignment failed. The report has been sent up.
+Curator_NoNewMissions,No new sites yet. You may repeat a previous run — the terminal is by the wall.
+Curator_SelectStory,Back to the schedule.
+Curator_SelectReplay,Repeat run. Acknowledged.
+Base_GoToCar,Assignment received. The car is waiting in the garage.
+Base_CarEnter,Get in the car
+Base_CarWaiting,{0} of {1} in the car. Waiting for the others.
+Base_ScreenFormat,"SITE {0}
+{1}"
+Base_MissionTitle,Sites
+Base_MissionPrompt,Choose site
+Base_MissionLine,{0}. {1} — {2}
+Base_MissionDone,"completed, repeat"
+Base_MissionNext,next
+Base_MissionClassified,{0}. CLASSIFIED
+Mission_1_Name,Scheduled Decommission
+Mission_2_Name,Classified
+Mission_3_Name,Classified
+Mission_4_Name,Classified
+Mission_5_Name,Classified
+Mission_6_Name,Classified
+Mission_7_Name,Classified
+Base_DoorRestRoom,Rest room
+Base_DoorLobby,Reception
+Base_DoorArchive,Archive
+Base_DoorEquipment,Equipment
+Base_DoorEvidence,Storage
+Base_DoorBriefing,Meeting room
+Base_DoorMedbay,Medical
+Base_DoorTech,Technical room
+Base_DoorServer,Server room
+Base_DoorRestricted,Authorized personnel only
+Mission_ReturnToBase,Assignment over. Heading back to base.
+Room_WorkRoom,WORK ROOM
+Room_Office_2A,OFFICE 2A
+Room_TechRoom,TECHNICAL ROOM
+Room_UPS_Batteries,BATTERY ROOM
+Room_Storage_2,STOREROOM
+Room_ServerSector,SERVER ROOM
+Room_Records,RECORDS
+Room_Electrical,ELECTRICAL ROOM
+Room_Security,SECURITY

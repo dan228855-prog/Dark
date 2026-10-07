@@ -41,7 +41,7 @@ GameState уничтожается при каждой смене карты (б
 3. **Тексты подсказок.**
    - Импортировать `docs/ST_UI_RU.csv` в Content как String Table: Import → String Table, например `/Game/Localization/ST_UI`.
    - В Blueprint двери заполнить `Prompt Open / Close / Locked`, в Blueprint предмета `Prompt Pick Up / Drop`: у поля текста есть кнопка выбора строки из String Table.
-   - ⚠ Как в UE устроены два языка: таблица строк одна (на исходном языке), второй язык делается переводом через *Localization Dashboard*. Две отдельные таблицы RU и EN так не работают. `ST_UI_EN.csv` пригодится как готовый перевод для дашборда.
+   - ⚠ Как в UE устроены два языка: таблица строк одна (на исходном языке), второй язык делается переводом через *Localization Dashboard*. Две отдельные таблицы RU и EN так не работают. Сейчас язык переключается без дашборда: таблица ST_UI пересобирается из `Content/Localization/ST_UI.csv` + `ST_UI_EN.csv` (`UDarcGameUserSettings::ApplyLanguage`).
 4. **Комнаты.** В уровне поставить `DarcRoomVolume` на каждое помещение, подогнать размер коробки и вписать `Room Id` (`Checkpoint`, `Corridor`, `ServerRoom`…).
 5. **Таблица редких событий.**
    - Создать её: Miscellaneous → Data Table → строка `DarcRareEventRow`, например `DT_RareEvents`.

@@ -118,14 +118,17 @@ def make_task(filename, destination, name, replace=False):
     return task
 
 
-def fbx_options():
+def fbx_options(combine=True):
     options = unreal.FbxImportUI()
     options.set_editor_property("import_mesh", True)
     options.set_editor_property("import_as_skeletal", False)
     options.set_editor_property("import_materials", True)
     options.set_editor_property("import_textures", True)
     options.set_editor_property("mesh_type_to_import", unreal.FBXImportType.FBXIT_STATIC_MESH)
-    options.static_mesh_import_data.set_editor_property("combine_meshes", True)
+    options.static_mesh_import_data.set_editor_property("combine_meshes", combine)
+    if not combine:
+        # Машина: части с костями иначе уходят в скелетные модели, а остальные теряются.
+        options.set_editor_property("automated_import_should_detect_type", False)
     options.static_mesh_import_data.set_editor_property("generate_lightmap_u_vs", False)
     return options
 
@@ -158,6 +161,7 @@ def import_raw_assets():
         return
 
     tasks, archives, looping, unsupported = [], [], [], []
+    use_legacy_fbx = False
     manifest = load_manifest() or {}
     first_manifest_run = load_manifest() is None
     if first_manifest_run:
@@ -214,7 +218,11 @@ def import_raw_assets():
                 texture_report.append([key, "переимпортирована (файл изменился)" if replace else "импортирована", asset_path])
                 changed_textures.add(asset_path)
             if ext == ".fbx":
-                task.set_editor_property("options", fbx_options())
+                # Машины (RawAssets/Meshes/car/...) — по частям: руль и колёса крутятся отдельно.
+                is_vehicle = any(p.lower() in ("car", "cars", "vehicle", "vehicles") for p in rel_parts)
+                task.set_editor_property("options", fbx_options(combine=not is_vehicle))
+                if is_vehicle:
+                    use_legacy_fbx = True
             tasks.append(task)
             lowered = rel.lower()
             if kind == "Sounds" and ("loop" in lowered or "ambien" in lowered):
@@ -231,7 +239,13 @@ def import_raw_assets():
         return
 
     say("Импорт файлов: %d ..." % len(tasks))
+    # Части машины должны остаться в общих координатах (руль на своём месте) — это делает
+    # классический импорт FBX; новый (Interchange) настройки FbxImportUI не учитывает.
+    if use_legacy_fbx:
+        unreal.SystemLibrary.execute_console_command(None, "Interchange.FeatureFlags.Import.FBX 0")
     asset_tools.import_asset_tasks(tasks)
+    if use_legacy_fbx:
+        unreal.SystemLibrary.execute_console_command(None, "Interchange.FeatureFlags.Import.FBX 1")
     imported = sum(len(t.get_editor_property("imported_object_paths") or []) for t in tasks)
     say("Импортировано ассетов: %d" % imported)
 

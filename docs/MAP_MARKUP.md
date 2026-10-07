@@ -36,12 +36,14 @@ Id=ServerDoor
 
 | Тег | Параметры | Что получится |
 |---|---|---|
-| `DARC.Door` | флаги `.Locked`, `.Open`; `Id=`, `Hinge=Left/Right/Pivot` (где петля, по умолчанию Left), `Angle=95` | дверь, открывается E. Помечать **только створку**, не коробку |
+| `DARC.Door` | флаги `.Locked`, `.Open`, `.NoPry` (ломом не взломать); `Id=`, `Hinge=Left/Right/Pivot` (где петля, по умолчанию Left), `Angle=95`, `PryBreaks=<Id линии>` (взлом рвёт эту линию), `PryTask=` (задача, засчитываемая взломом) | дверь, открывается E. Запертую можно взломать ломом (громко). Помечать **только створку**, не коробку |
 | `DARC.Lamp` | `Circuit=Building` | лампа на цепи: гаснет/мигает вместе с цепью |
-| `DARC.FuseBox` | `Circuit=Server` (обязательно); флаги `.NoFuse` (без предохранителя), `.Off` (рубильник выключен); `Collateral=Corridor` (что гаснет, если сжечь предохранитель); `TaskOnBlow=RestoreCorridorLight` | щиток с рубильником и предохранителем |
+| `DARC.FuseBox` | `Circuit=Server` (обязательно); флаги `.NoFuse` (без предохранителя), `.Off` (рубильник выключен); `Collateral=Corridor` (что гаснет при ошибке); `TaskOnBlow=RestoreCorridorLight`; `Shock=25` (урон, если вставить предохранитель под напряжением) | щиток с рубильником и предохранителем. Вставка при включённом рубильнике — удар током, предохранитель выпадает, соседние контуры гаснут |
 | `DARC.Fuse` | `Id=` | предохранитель (предмет) |
-| `DARC.Generator` | `Mass=70` | генератор: тащить ЛКМ, подключить к вводу |
-| `DARC.Inlet` | `Circuit=Server`, `Cable=600` | ввод для генератора |
+| `DARC.Generator` | `Mass=70`, `Capacity=1` (сколько нагрузки вводов тянет) | генератор: тащить ЛКМ, подключить к вводу. Нагрузка больше `Capacity` — глохнет (перегрузка) |
+| `DARC.Inlet` | `Circuit=Server`, `Cable=600`, `Load=1` (нагрузка на генератор) | ввод для генератора. Заглохший генератор E запускает снова (или отключает этот ввод, если иначе снова перегрузка) |
+| `DARC.Junction` | `Circuit=Server` (обязательно), `Id=`, флаг `.Damaged`; `Steps=3` (нажатий ключом), `Shock=20`, `Task=` (задача «починить», появляется при обрыве), `Blocks=<задача>` (её блокирует обрыв) | кабельная линия: порвана — контур обесточен; ключ — чинить, тестер — проверить, рукой под напряжением — удар током |
+| `DARC.Cover` | `Id=`, `Screws=4`, `Task=` | снимаемая решётка/панель: лом — сорвать громко, ключ — открутить тихо (по винту) |
 
 ### Предметы и тяжёлое
 
@@ -51,6 +53,7 @@ Id=ServerDoor
 | `DARC.Keycard` | `Id=`, `Code=CatalogCode` | карта доступа, на ней 4 цифры кода выезда |
 | `DARC.Drive` | `Id=` | носитель данных |
 | `DARC.Module` | `Id=` | интерфейсный модуль |
+| `DARC.Tool` | `Type=Crowbar/Wrench/Tester/Radio`, `Name=`, `Hint=` | инструмент: лом (взлом дверей, решётки), ключ (починка линий, тихо снять решётку), тестер (E по щитку/линии — напряжение), рация (голос по радио, если у обоих) |
 | `DARC.Heavy` | `Mass=80`, флаг `.NoCable`, `Deliver=<Id точки>`, `Radius=150`, `Task=` | тяжёлый физический объект (стойка, шкаф). С кабелем — при рывке кабель срывается |
 | `DARC.Point` | `Id=` | просто точка (цель доставки). Удобно — Target Point. В игре скрыта |
 
@@ -61,9 +64,10 @@ Id=ServerDoor
 | `DARC.Terminal` | `Code=CatalogCode` или `FixedCode=1234`; флаг `.Unlocked`; `Task=`, `Door=<Id двери>`, `Circuit=`, `Title=`, `LockedTitle=`, `Lines=ключ,ключ`, `Words=ключ,ключ` (искажённые слова), `Commands=COPY:TakeExtraFile` | терминал с вводом кода |
 | `DARC.Keypad` | как терминал; по умолчанию `Code=ServerDoorCode` | кодовая панель двери |
 | `DARC.CardReader` | `Door=`, `Task=`, `Accepts=Keycard` | считыватель карты |
-| `DARC.Slot` | `Accepts=Drive/Module/Fuse/Keycard/Item`, `Holds=<Id предмета>` (что уже вставлено), флаг `.Fixed` (нельзя вынуть), `Task=` (вставили), `TaskRemove=` (вынули) | разъём под предмет |
-| `DARC.Station` | `Interface=<Id слота>`, `DriveSlot=<Id слота>`, `Task=`, `Circuit=Server`, `Flicker=Corridor`, `Seconds=40` | станция передачи данных |
+| `DARC.Slot` | `Accepts=Drive/Module/Fuse/Keycard/Item`, `Holds=<Id предмета>` (что уже вставлено), флаг `.Fixed` (нельзя вынуть), флаг `.Eject` (E выталкивает предмет на пол перед разъёмом, а не в руку), `Task=` (вставили), `TaskRemove=` (вынули) | разъём под предмет |
+| `DARC.Station` | `Interface=<Id слота>`, `DriveSlot=<Id слота>` (экран и кнопка «Пуск» ставятся у него), `Task=`, `TaskMains=` / `TaskGenerator=` (питание станции от щита / генератора), `Circuit=Server`, `Flicker=Corridor`, `Seconds=40` | станция передачи данных |
 | `DARC.CodeSign` | `Code=ServerDoorCode`, `Size=20` | табличка: поверх неё — цифры кода (на переднюю сторону, ось X объекта) |
+| `DARC.Sign` | `Key=Sign_DarcName` (строка из ST_UI), `Size=40`, `Up=0` (сдвиг вверх, см) | вывеска: текст из таблицы строк на передней стороне (ось X объекта), светлый, виден и ночью |
 
 ### Люди, комнаты, аномалии
 
@@ -82,18 +86,21 @@ Id=ServerDoor
 | Объект | Теги |
 |---|---|
 | Терминал каталога | `DARC.Terminal`, `Code=CatalogCode`, `Task=OpenCatalog`, `Circuit=Building`, `Title=Screen_CatalogTitle`, `Words=File_Corrupted_1,File_Corrupted_2,File_Corrupted_3,File_Corrupted_4`, `Lines=File_VerifyNote,File_MainStorage` |
-| Дверь серверной | `DARC.Door.Locked`, `Id=ServerDoor` |
+| Дверь серверной | `DARC.Door.Locked`, `Id=ServerDoor`, `PryBreaks=ServerJunction`, `PryTask=EnterServerRoom` |
+| Кабель серверной | `DARC.Junction`, `Circuit=Server`, `Id=ServerJunction`, `Task=RepairServerCable`, `Blocks=ConnectInterface` |
+| Вентиляция | `DARC.Cover`, `Id=VentGrille`, `Screws=4`, `Task=EnterServerRoom` (проём в стене + короб строит `Tools/darc_build_facility.py`) |
+| Инструменты | `DARC.Tool` + `Type=Crowbar` / `Wrench` / `Tester` / `Radio` |
 | Считыватель | `DARC.CardReader`, `Door=ServerDoor`, `Task=ServerDoorCard` |
 | Кодовая панель | `DARC.Keypad`, `Door=ServerDoor`, `Task=ServerDoorKeypad` |
 | Табличка с кодом | `DARC.CodeSign`, `Code=ServerDoorCode` |
 | Щитки | `DARC.FuseBox.NoFuse`, `Circuit=Server`, `Collateral=Corridor`, `TaskOnBlow=RestoreCorridorLight` · `DARC.FuseBox`, `Circuit=Corridor` · `DARC.FuseBox`, `Circuit=Building` |
 | Стойка | `DARC.Heavy`, `Deliver=RackPoint`, `Task=MoveServerRack` + `DARC.Point`, `Id=RackPoint` |
 | Модуль и разъём | `DARC.Module`, `Id=InterfaceModule` · `DARC.Slot`, `Id=InterfaceSlot`, `Accepts=Module`, `Task=ConnectInterface` |
-| Носитель и разъём | `DARC.Drive`, `Id=ArchiveDrive` · `DARC.Slot`, `Id=DriveSlot`, `Accepts=Drive`, `Holds=ArchiveDrive`, `TaskRemove=TakeDrive` |
-| Станция | `DARC.Station`, `Interface=InterfaceSlot`, `DriveSlot=DriveSlot`, `Task=CopyArchive` |
+| Носитель и разъём | `DARC.Drive`, `Id=ArchiveDrive` · `DARC.Slot`, `Id=DriveSlot`, `Accepts=Drive`, `Holds=ArchiveDrive`, `TaskRemove=TakeDrive`, флаг `.Eject` (`DARC.Slot.Eject`) |
+| Станция | `DARC.Station`, `Interface=InterfaceSlot`, `DriveSlot=DriveSlot`, `Task=CopyArchive`, `TaskMains=PowerViaPanel`, `TaskGenerator=PowerViaGenerator` |
 | Консоль сервера | `DARC.Terminal.Unlocked`, `Circuit=Server`, `Title=Screen_ArchiveTitle`, `Lines=Screen_ArchiveList,Screen_ExtraFileHint`, `Commands=COPY:TakeExtraFile` |
 | Карта и охранник | `DARC.Keycard`, `Id=AccessCard` · `DARC.Npc`, `Speaker=Speaker_Guard`, `Greeting=Guard_Greeting`, `Gives=AccessCard`, `TaskGive=GetAccessCard`, `GiveLines=Guard_GiveCard`, `Accepts=Drive`, `BeforeReceive=Guard_Finished`, `TaskReceive=DeliverDrive`, `ReceiveLines=Guard_Good,Guard_GoBack` |
-| Генератор и ввод | `DARC.Generator` · `DARC.Inlet`, `Circuit=Server` |
+| Генератор и вводы | `DARC.Generator` · `DARC.Inlet`, `Circuit=Server` · `DARC.Inlet`, `Circuit=ServerLights`, `Id=LightInlet` (свет серверной; оба сразу — перегрузка) |
 | Комнаты | `DARC.Room` + `Id=` одно из: `Outside`, `Lobby`, `Corridor`, `WorkRoom`, `TechCabinetRoom`, `TechRoom`, `Storage`, `ServerRoom` |
 
 ## Проверка
